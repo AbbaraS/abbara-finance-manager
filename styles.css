@@ -70,3 +70,48 @@
 .afm-todo-data { font-size: var(--font-ui-smaller); max-height: 200px; overflow: auto; margin: 0; }
 
 /* Your section styles go below. */
+
+/* Tables. */
+.afm-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-ui-small);
+}
+.afm-table th {
+	text-align: left;
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-medium);
+	color: var(--text-muted);
+	padding: var(--size-4-1) var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+.afm-table td {
+	padding: var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+	vertical-align: middle;
+}
+.afm-table tbody tr:hover { background: var(--background-modifier-hover); }
+.afm-table .afm-num {
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+.afm-bar-cell { width: 25%; }
+
+/* Share bars. */
+.afm-bar-track {
+	height: 6px;
+	border-radius: 3px;
+	background: var(--background-modifier-border);
+	overflow: hidden;
+}
+.afm-bar-fill {
+	height: 100%;
+	border-radius: 3px;
+	background: var(--interactive-accent);
+}
+
+/* Narrow screens: drop the bar column. */
+@media (max-width: 480px) {
+	.afm-bar-cell { display: none; }
+}
