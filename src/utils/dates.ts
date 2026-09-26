@@ -32,3 +32,9 @@ export function dayLabel(date: string, locale: string): string {
 	const [y, m, d] = date.split('-').map(Number);
 	return new Date(y, m - 1, d).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
+
+// True when `month` is this calendar month (so it isn't finished yet).
+export function isCurrentMonth(month: string): boolean {
+	const now = new Date();
+	return month === `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}

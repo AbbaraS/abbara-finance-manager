@@ -160,3 +160,36 @@
 	margin-top: var(--size-4-2);
 	font-size: var(--font-ui-smaller);
 }
+
+/* Comparison: bars from a centre line. */
+.afm-change-track {
+	position: relative;
+	height: 10px;
+}
+.afm-change-track::before { /* the zero line */
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: -3px;
+	bottom: -3px;
+	width: 1px;
+	background: var(--text-faint);
+}
+.afm-change-bar {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+}
+.afm-change-bar.is-up { background: var(--color-red); border-radius: 0 3px 3px 0; }
+.afm-change-bar.is-down { background: var(--color-green); border-radius: 3px 0 0 3px; }
+.afm-change-value {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+}
+.afm-change-icon { display: inline-flex; color: var(--text-muted); }
+.afm-change-icon svg { width: 12px; height: 12px; }
+
+@media (max-width: 480px) {
+	.afm-narrow-hide { display: none; }
+}
