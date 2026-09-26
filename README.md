@@ -44,15 +44,16 @@ src/
 styles.css
 ```
 
-## Lessons
+## Dashboard sections
 
-Each unfinished section shows a dashed box with its data. Build them in order:
+| Section | File | Technique |
+|---|---|---|
+| Summary cards | `summaryCards.ts` | cards from `monthSummary` |
+| Monthly overview | `monthlyBars.ts` | div bar chart, round axis steps, tooltips, click a month |
+| Running net | `dailyLine.ts` | hand-drawn SVG line, crosshair on hover / arrow keys |
+| By category | `categoryTable.ts` | table, share bars, click-to-expand transactions |
+| By account | `accountTable.ts` | table with share bars |
+| Compared with last month | `comparison.ts` | bars from a centre line, vs 3-month average |
+| Uncategorised | `uncategorisedList.ts` | copy a ready-made rule for `category_patterns.csv` |
 
-1. `accountTable.ts` – a table
-2. `categoryTable.ts` – table with click-to-expand rows
-3. `uncategorisedList.ts` – a list
-4. `comparison.ts` – table with + / − changes
-5. `monthlyBars.ts` – bar chart with divs
-6. `dailyLine.ts` – line chart with SVG
-
-`summaryCards.ts` is the worked example to copy from.
+Shared pieces live next to them: `tableHead`, `shareBar`, `expandable`, `showMore`, `chartFrame`, `svgAxes`.

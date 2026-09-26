@@ -60,15 +60,6 @@
 /* Empty state. */
 .afm-empty { text-align: center; padding: var(--size-4-12) var(--size-4-4); color: var(--text-muted); }
 
-/* Placeholders for sections not built yet (delete when all lessons are done). */
-.afm-todo {
-	border: 1px dashed var(--background-modifier-border);
-	border-radius: var(--radius-m);
-	padding: var(--size-4-3);
-}
-.afm-todo-title { font-weight: var(--font-semibold); margin-bottom: var(--size-4-2); }
-.afm-todo-data { font-size: var(--font-ui-smaller); max-height: 200px; overflow: auto; margin: 0; }
-
 /* Your section styles go below. */
 
 /* Tables. */
@@ -284,4 +275,50 @@
 
 @media (max-width: 480px) {
 	.afm-col-label { font-size: 0.6rem; }
+}
+
+/* Daily line chart (SVG). */
+.afm-line-chart { position: relative; }
+.afm-line-chart:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+}
+.afm-line-chart svg {
+	display: block;
+	width: 100%;
+	height: auto;
+	overflow: visible;
+}
+.afm-svg-grid { stroke: var(--background-modifier-border); stroke-width: 1; }
+.afm-svg-zero { stroke: var(--text-faint); stroke-width: 1; stroke-dasharray: 4 4; }
+.afm-axis-text { fill: var(--text-faint); font-size: 11px; }
+.afm-area { fill: var(--interactive-accent); opacity: 0.12; }
+.afm-line {
+	fill: none;
+	stroke: var(--interactive-accent);
+	stroke-width: 2;
+	stroke-linejoin: round;
+	stroke-linecap: round;
+}
+.afm-dot {
+	fill: var(--interactive-accent);
+	stroke: var(--background-primary);
+	stroke-width: 2;
+}
+.afm-end-label { fill: var(--text-normal); font-size: 12px; font-weight: 600; }
+.afm-hover-line { stroke: var(--text-muted); stroke-width: 1; }
+.afm-hover-overlay { fill: transparent; cursor: crosshair; }
+
+/* Tooltip above the hovered point. */
+.afm-tooltip {
+	position: absolute;
+	transform: translate(-50%, calc(-100% - 10px));
+	padding: var(--size-2-2) var(--size-4-2);
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	box-shadow: var(--shadow-s);
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+	pointer-events: none;
 }
