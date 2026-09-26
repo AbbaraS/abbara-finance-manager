@@ -149,3 +149,14 @@
 }
 .afm-detail td:first-child { padding-left: calc(var(--size-4-2) + 14px + var(--size-4-1)); }
 .afm-hidden { display: none; }
+
+/* Uncategorised list. */
+.afm-table .afm-action {
+	width: 1%;
+	text-align: center;
+	white-space: nowrap;
+}
+.afm-show-more {
+	margin-top: var(--size-4-2);
+	font-size: var(--font-ui-smaller);
+}
