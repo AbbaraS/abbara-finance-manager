@@ -1,9 +1,11 @@
 import { byAccount } from '../../models/groupSpending';
+import { countLabel } from '../../utils/countLabel';
 import { formatMoney } from '../../utils/money';
 import { formatPercent } from '../../utils/percent';
 import type { DashboardContext } from '../DashboardContext';
 import { section } from './section';
 import { shareBar } from './shareBar';
+import { tableHead } from './tableHead';
 
 // Spending per account: name, share bar, amount and percent.
 export function accountTable(el: HTMLElement, ctx: DashboardContext): void {
@@ -17,11 +19,12 @@ export function accountTable(el: HTMLElement, ctx: DashboardContext): void {
 
 	// 2. Table and header row.
 	const table = body.createEl('table', { cls: 'afm-table' });
-	const head = table.createEl('thead').createEl('tr');
-	head.createEl('th', { text: 'Account' });
-	head.createEl('th', { cls: 'afm-bar-cell', text: 'Share' });
-	head.createEl('th', { cls: 'afm-num', text: 'Amount' });
-	head.createEl('th', { cls: 'afm-num', text: '%' });
+	tableHead(table, [
+		{ text: 'Account' },
+		{ text: 'Share', cls: 'afm-bar-cell' },
+		{ text: 'Amount', cls: 'afm-num' },
+		{ text: '%', cls: 'afm-num' },
+	]);
 
 	// 3. One row per account.
 	const tbody = table.createEl('tbody');
@@ -29,7 +32,7 @@ export function accountTable(el: HTMLElement, ctx: DashboardContext): void {
 		const tr = tbody.createEl('tr');
 		const name = tr.createEl('td');
 		name.createDiv({ text: g.key });
-		name.createDiv({ cls: 'afm-muted', text: `${g.rows.length} transactions` });
+		name.createDiv({ cls: 'afm-muted', text: countLabel(g.rows.length) });
 		shareBar(tr.createEl('td', { cls: 'afm-bar-cell' }), g.share);
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(g.total, ctx.settings) });
 		tr.createEl('td', { cls: 'afm-num afm-muted', text: formatPercent(g.share) });

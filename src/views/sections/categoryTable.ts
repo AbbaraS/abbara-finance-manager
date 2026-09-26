@@ -1,11 +1,54 @@
 import { byCategory } from '../../models/groupSpending';
+import { sum } from '../../models/monthSummary';
+import { countLabel } from '../../utils/countLabel';
+import { formatMoney } from '../../utils/money';
+import { formatPercent } from '../../utils/percent';
 import type { DashboardContext } from '../DashboardContext';
+import { expandable } from './expandable';
 import { section } from './section';
-import { todo } from './todo';
+import { shareBar } from './shareBar';
+import { tableHead } from './tableHead';
+import { transactionRows } from './transactionRows';
 
-// Lesson 2: spending per category; click a row to show its transactions.
+// Spending per category; click a row to see its transactions.
 export function categoryTable(el: HTMLElement, ctx: DashboardContext): void {
+	// Data.
 	const groups = byCategory(ctx.rows, ctx.month, ctx.settings);
 	const body = section(el, 'Spending by category');
-	todo(body, 'Lesson 2 – category table with drill-down', groups.map(({ rows, ...g }) => ({ ...g, rows: rows.length })));
+	if (groups.length === 0) {
+		body.createDiv({ cls: 'afm-muted', text: 'No spending this month.' });
+		return;
+	}
+
+	// Table.
+	const table = body.createEl('table', { cls: 'afm-table' });
+	tableHead(table, [
+		{ text: 'Category' },
+		{ text: 'Share', cls: 'afm-bar-cell' },
+		{ text: 'Amount', cls: 'afm-num' },
+		{ text: '%', cls: 'afm-num' },
+	]);
+
+	// One category row, then its hidden transaction rows straight after it.
+	const tbody = table.createEl('tbody');
+	for (const g of groups) {
+		const tr = tbody.createEl('tr');
+		const name = tr.createEl('td');
+		const title = name.createDiv({ cls: 'afm-row-title' });
+		const icon = title.createSpan({ cls: 'afm-chevron' });
+		title.createSpan({ text: g.key });
+		name.createDiv({ cls: 'afm-muted afm-indent', text: countLabel(g.rows.length) });
+		shareBar(tr.createEl('td', { cls: 'afm-bar-cell' }), g.share);
+		tr.createEl('td', { cls: 'afm-num', text: formatMoney(g.total, ctx.settings) });
+		tr.createEl('td', { cls: 'afm-num afm-muted', text: formatPercent(g.share) });
+
+		expandable(tr, icon, transactionRows(tbody, g.rows, ctx.settings));
+	}
+
+	// Total.
+	const foot = table.createEl('tfoot').createEl('tr');
+	foot.createEl('td', { text: 'Total' });
+	foot.createEl('td', { cls: 'afm-bar-cell' });
+	foot.createEl('td', { cls: 'afm-num', text: formatMoney(sum(groups.map((g) => g.total)), ctx.settings) });
+	foot.createEl('td');
 }

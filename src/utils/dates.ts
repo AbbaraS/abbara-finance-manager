@@ -26,3 +26,9 @@ export function monthLabel(month: string, locale: string, short = false): string
 	const year = short ? '2-digit' : 'numeric';
 	return new Date(y, m - 1, 1).toLocaleDateString(locale, { month: 'short', year });
 }
+
+// "2026-07-14" -> "14 Jul".
+export function dayLabel(date: string, locale: string): string {
+	const [y, m, d] = date.split('-').map(Number);
+	return new Date(y, m - 1, d).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+}
