@@ -1,0 +1,72 @@
+/* Finance Manager – classes use the afm- prefix and Obsidian variables. */
+
+.afm-view {
+	padding: var(--size-4-4) var(--size-4-6);
+	max-width: 900px;
+	margin: 0 auto;
+}
+
+/* Header. */
+.afm-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-4);
+}
+.afm-title { margin: 0; font-size: var(--h2-size); }
+.afm-controls { display: flex; align-items: center; gap: var(--size-4-1); }
+
+/* Summary cards. */
+.afm-cards {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: var(--size-4-3);
+}
+.afm-card {
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	padding: var(--size-4-3) var(--size-4-4);
+}
+.afm-card-label {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+.afm-card-value {
+	font-size: 1.5em;
+	font-weight: var(--font-semibold);
+	font-variant-numeric: tabular-nums;
+}
+.afm-negative { color: var(--text-error); }
+
+/* Sections. */
+.afm-section { margin-top: var(--size-4-8); }
+.afm-section-title {
+	font-size: var(--font-ui-small);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin: 0 0 var(--size-4-2);
+}
+
+/* Small text. */
+.afm-note, .afm-muted { color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.afm-note { margin-top: var(--size-4-2); }
+
+/* Empty state. */
+.afm-empty { text-align: center; padding: var(--size-4-12) var(--size-4-4); color: var(--text-muted); }
+
+/* Placeholders for sections not built yet (delete when all lessons are done). */
+.afm-todo {
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	padding: var(--size-4-3);
+}
+.afm-todo-title { font-weight: var(--font-semibold); margin-bottom: var(--size-4-2); }
+.afm-todo-data { font-size: var(--font-ui-smaller); max-height: 200px; overflow: auto; margin: 0; }
+
+/* Your section styles go below. */

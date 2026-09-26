@@ -1,0 +1,20 @@
+{
+	"name": "abbara-finance-manager",
+	"version": "0.1.0",
+	"description": "Monthly finance dashboard for myFinances CSVs (https://obsidian.md)",
+	"main": "main.js",
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production"
+	},
+	"keywords": [],
+	"author": "AbbaraS",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/node": "^16.11.6",
+		"esbuild": "^0.28.1",
+		"obsidian": "latest",
+		"tslib": "2.4.0",
+		"typescript": "5.4.5"
+	}
+}

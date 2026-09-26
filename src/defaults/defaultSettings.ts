@@ -1,0 +1,15 @@
+import type { FinanceSettings } from '../models/FinanceSettings';
+
+// First-run settings; copied before use so edits never touch this object.
+export const DEFAULT_SETTINGS: FinanceSettings = {
+	dataFolder: 'Finance/combined',
+	currency: 'GBP',
+	locale: 'en-GB',
+	incomeCategories: ['Income', 'Interest earned'],
+	ignoreCategories: ['Investment'],
+};
+
+// A fresh copy of the defaults.
+export function copyDefaultSettings(): FinanceSettings {
+	return structuredClone(DEFAULT_SETTINGS);
+}
