@@ -10,7 +10,7 @@ import { shareBar } from './shareBar';
 import { tableHead } from './tableHead';
 import { transactionRows } from './transactionRows';
 
-// Spending per category; click a row to see its transactions.
+// Spending per category; click a row to see its transactions and change their category.
 export function categoryTable(el: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const groups = byCategory(ctx.rows, ctx.month, ctx.settings);
@@ -42,7 +42,7 @@ export function categoryTable(el: HTMLElement, ctx: DashboardContext): void {
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(g.total, ctx.settings) });
 		tr.createEl('td', { cls: 'afm-num afm-muted', text: formatPercent(g.share) });
 
-		expandable(tr, icon, transactionRows(tbody, g.rows, ctx.settings));
+		expandable(tr, icon, transactionRows(tbody, g.rows, ctx), g.key, ctx.expanded);
 	}
 
 	// Total.

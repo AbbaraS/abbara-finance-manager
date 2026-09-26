@@ -1,25 +1,22 @@
 import { ItemView, type WorkspaceLeaf } from 'obsidian';
-import { loadTransactions } from '../data/loadTransactions';
+import { CategoryModal } from '../edit/CategoryModal';
 import type FinancePlugin from '../main';
+import { categorise } from '../models/categorise';
 import { monthList } from '../models/monthList';
+import { SECTIONS } from '../models/sections';
 import type { Transaction } from '../models/Transaction';
 import type { DashboardContext } from './DashboardContext';
-import { accountTable } from './sections/accountTable';
-import { categoryTable } from './sections/categoryTable';
-import { comparison } from './sections/comparison';
-import { dailyLine } from './sections/dailyLine';
+import { SECTION_DRAWERS } from './sectionDrawers';
 import { emptyState } from './sections/emptyState';
 import { header } from './sections/header';
-import { monthlyBars } from './sections/monthlyBars';
-import { summaryCards } from './sections/summaryCards';
-import { uncategorisedList } from './sections/uncategorisedList';
 
 export const VIEW_TYPE = 'afm-dashboard';
 
 // The dashboard tab: holds the data and chosen month, and lays out the sections.
 export class DashboardView extends ItemView {
-	private rows: Transaction[] = [];
+	private raw: Transaction[] = [];
 	private month = '';
+	private expanded = new Set<string>();
 
 	constructor(leaf: WorkspaceLeaf, private plugin: FinancePlugin) {
 		super(leaf);
@@ -31,38 +28,36 @@ export class DashboardView extends ItemView {
 
 	async onOpen() { await this.reload(); }
 
-	// Reads the CSVs again, then redraws.
+	// Gets rows from the cache (reads the CSVs if needed), then redraws.
 	async reload() {
-		this.rows = await loadTransactions(this.app, this.plugin.settings.dataFolder);
+		this.raw = await this.plugin.cache.get(this.plugin.settings.dataFolder);
 		this.render();
 	}
 
-	// Redraws every section from the loaded rows (no file reads).
+	// Redraws every visible section. Keeps the scroll position.
 	render() {
 		const el = this.contentEl;
+		const scroll = el.scrollTop;
 		el.empty();
 		el.addClass('afm-view');
 
-		const months = monthList(this.rows);
+		const s = this.plugin.settings;
+		const rows = categorise(this.raw, s);
+		const months = monthList(rows);
 		if (months.length === 0) return emptyState(el, this.plugin);
 		if (!months.includes(this.month)) this.month = months[months.length - 1];
 
 		const ctx: DashboardContext = {
-			rows: this.rows, months, month: this.month, settings: this.plugin.settings,
+			rows, months, month: this.month, settings: s, expanded: this.expanded,
 			selectMonth: (m) => { this.month = m; this.render(); },
-			reload: () => void this.reload(),
+			reload: () => { this.plugin.cache.clear(); void this.reload(); },
+			editCategory: (picked, similar) => new CategoryModal(this.app, this.plugin, rows, picked, similar).open(),
 		};
 
-		// Top.
 		header(el, ctx);
-		summaryCards(el, ctx);
-		// Trends.
-		monthlyBars(el, ctx);
-		dailyLine(el, ctx);
-		// Breakdowns.
-		categoryTable(el, ctx);
-		accountTable(el, ctx);
-		comparison(el, ctx);
-		uncategorisedList(el, ctx);
+		const shown = SECTIONS.filter((x) => !s.hiddenSections.includes(x.id));
+		if (shown.length === 0) el.createDiv({ cls: 'afm-note', text: 'All sections are hidden. Turn them on in settings.' });
+		for (const x of shown) SECTION_DRAWERS[x.id](el, ctx);
+		el.scrollTop = scroll;
 	}
 }

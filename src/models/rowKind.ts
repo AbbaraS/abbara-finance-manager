@@ -1,3 +1,4 @@
+import { categoryKind } from './categoryKind';
 import type { FinanceSettings } from './FinanceSettings';
 import type { Transaction } from './Transaction';
 
@@ -6,17 +7,22 @@ export const UNCATEGORISED = 'Uncategorised';
 // income: money in. spend: money out. refund: money back in a spending category.
 export type RowKind = 'income' | 'spend' | 'refund' | 'skip';
 
-// True when a row belongs in totals (right currency, not a transfer, not ignored).
+// True when money in on this row's account can be income.
+export function isIncomeAccount(t: Transaction, s: FinanceSettings): boolean {
+	return s.incomeAccounts.includes(t.account);
+}
+
+// True when a row belongs in totals (right currency, not in a "Not counted" category).
 export function isCounted(t: Transaction, s: FinanceSettings): boolean {
-	return t.currency === s.currency && !t.isTransfer && !s.ignoreCategories.includes(t.category);
+	return t.currency === s.currency && categoryKind(t.category, s) !== 'excluded';
 }
 
 // Decides how one row affects the totals.
 export function rowKind(t: Transaction, s: FinanceSettings): RowKind {
 	if (!isCounted(t, s)) return 'skip';
 	if (t.amount < 0) return 'spend';
-	if (s.incomeCategories.includes(t.category) || t.category === UNCATEGORISED) return 'income';
-	return 'refund';
+	if (categoryKind(t.category, s) === 'spending') return 'refund';
+	return isIncomeAccount(t, s) ? 'income' : 'skip'; // income or uncategorised money in
 }
 
 // How much a row adds to spending (refunds give a negative number).

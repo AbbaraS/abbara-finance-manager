@@ -322,3 +322,61 @@
 	white-space: nowrap;
 	pointer-events: none;
 }
+
+/* Category chip: click to change a transaction's category. */
+.afm-view button.afm-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	height: auto;
+	padding: 1px var(--size-4-2);
+	border-radius: var(--radius-l);
+	font-size: var(--font-ui-smaller);
+	background: var(--background-modifier-hover);
+	box-shadow: none;
+	color: var(--text-normal);
+	cursor: pointer;
+}
+.afm-view button.afm-chip:hover { background: var(--background-modifier-active-hover); }
+.afm-view button.afm-chip.is-uncategorised { color: var(--text-muted); font-style: italic; }
+.afm-view button.afm-chip.is-edited { outline: 1px dashed var(--text-faint); } /* one-off edit */
+.afm-chip-icon { display: inline-flex; color: var(--text-faint); }
+.afm-chip-icon svg { width: 12px; height: 12px; }
+.afm-meta {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+	margin-top: 2px;
+}
+
+/* Money in: rows that aren't income are faded. */
+.afm-not-income td:first-child,
+.afm-not-income td.afm-num { color: var(--text-muted); }
+
+/* Change-category window. */
+.afm-picked {
+	padding: var(--size-4-2) var(--size-4-3);
+	margin-bottom: var(--size-4-2);
+	border-radius: var(--radius-m);
+	background: var(--background-secondary);
+}
+.afm-picked-title { font-weight: var(--font-semibold); }
+.afm-rule-preview {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: var(--size-4-2) 0;
+	font-size: var(--font-ui-small);
+}
+.afm-rule-preview .mod-warning { color: var(--text-error); }
+
+/* Settings: rule rows wrap their controls on narrow panes. */
+.afm-rule .setting-item-control { flex-wrap: wrap; justify-content: flex-end; }
+.afm-rule .setting-item-info { flex: 0 0 auto; min-width: 7em; }
+.afm-edits summary {
+	cursor: pointer;
+	padding: var(--size-4-2) 0;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+}

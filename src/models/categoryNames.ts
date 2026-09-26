@@ -1,9 +1,6 @@
-import { UNCATEGORISED } from './rowKind';
-import type { Transaction } from './Transaction';
+import type { FinanceSettings } from './FinanceSettings';
 
-// Every category used in the data (except Uncategorised), A-Z.
-export function categoryNames(rows: Transaction[]): string[] {
-	const names = new Set(rows.map((t) => t.category));
-	names.delete(UNCATEGORISED);
-	return [...names].sort((a, b) => a.localeCompare(b));
+// Every category name from settings, A-Z.
+export function categoryNames(s: FinanceSettings): string[] {
+	return s.categories.map((c) => c.name).sort((a, b) => a.localeCompare(b));
 }

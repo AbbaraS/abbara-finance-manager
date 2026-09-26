@@ -1,14 +1,15 @@
+import { UNCATEGORISED } from '../models/rowKind';
 import type { Transaction } from '../models/Transaction';
 import { monthOf } from '../utils/dates';
 import { parseCsv } from './parseCsv';
 
-// Turns one combined CSV into transactions. Bad rows are skipped.
+// Turns one combined CSV into transactions (not yet categorised). Bad rows are skipped.
 export function toTransactions(text: string): Transaction[] {
 	const [header, ...rows] = parseCsv(text);
 	if (!header) return [];
 	const col = (name: string) => header.findIndex((h) => h.trim().toLowerCase() === name);
-	const at = { id: col('id'), date: col('date'), account: col('account'), description: col('description'),
-		amount: col('amount'), currency: col('currency'), category: col('category'), transfer: col('is_transfer') };
+	const at = { date: col('date'), account: col('account'), description: col('description'),
+		amount: col('amount'), currency: col('currency') };
 
 	const list: Transaction[] = [];
 	for (const r of rows) {
@@ -16,16 +17,16 @@ export function toTransactions(text: string): Transaction[] {
 		const amount = parseFloat(r[at.amount] ?? '');
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(amount)) continue;
 		list.push({
-			id: r[at.id] ?? '',
+			key: '', // set by addKeys once every file is read
 			date,
 			month: monthOf(date),
 			day: Number(date.slice(8, 10)),
-			account: r[at.account] ?? '',
-			description: r[at.description] ?? '',
+			account: (r[at.account] ?? '').trim(),
+			description: (r[at.description] ?? '').replace(/\s+/g, ' ').trim(),
 			amount,
 			currency: (r[at.currency] ?? '').trim().toUpperCase(),
-			category: r[at.category] || 'Uncategorised',
-			isTransfer: (r[at.transfer] ?? '').trim().toLowerCase() === 'true',
+			category: UNCATEGORISED,
+			source: 'none',
 		});
 	}
 	return list;
