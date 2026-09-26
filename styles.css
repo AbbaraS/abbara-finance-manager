@@ -193,3 +193,95 @@
 @media (max-width: 480px) {
 	.afm-narrow-hide { display: none; }
 }
+
+/* Chart colours (checked for colour-blind contrast in light and dark). */
+.afm-view {
+	--afm-income: #086ddd;
+	--afm-spend: #c96300;
+}
+.theme-dark .afm-view {
+	--afm-income: #3b8eea;
+	--afm-spend: #c97a2a;
+}
+.afm-income { background: var(--afm-income); }
+.afm-spend { background: var(--afm-spend); }
+
+/* Legend. */
+.afm-legend {
+	display: flex;
+	gap: var(--size-4-4);
+	margin-bottom: var(--size-4-2);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+.afm-legend-item { display: flex; align-items: center; gap: var(--size-4-1); }
+.afm-swatch { width: 10px; height: 10px; border-radius: 2px; }
+
+/* Bar chart: labels column on the left (44px), month labels at the bottom (24px). */
+.afm-chart {
+	position: relative;
+	height: 200px;
+}
+.afm-grid {
+	position: absolute;
+	inset: 0 0 24px 44px;
+}
+.afm-gridline {
+	position: absolute;
+	left: 0;
+	right: 0;
+	border-top: 1px solid var(--background-modifier-border);
+}
+.afm-grid-label {
+	position: absolute;
+	right: calc(100% + 6px);
+	transform: translateY(-50%);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	white-space: nowrap;
+}
+.afm-columns {
+	position: absolute;
+	inset: 0 0 0 44px;
+	display: flex;
+	gap: 2px;
+}
+
+/* One month column. Reset Obsidian's button look first. */
+.afm-view button.afm-col {
+	all: unset;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	cursor: pointer;
+	border-radius: var(--radius-s);
+}
+.afm-view button.afm-col:hover,
+.afm-view button.afm-col.is-selected { background: var(--background-modifier-hover); }
+.afm-view button.afm-col:focus-visible { outline: 2px solid var(--interactive-accent); }
+.afm-col-bars {
+	flex: 1;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+	gap: 2px;
+	padding: 0 12%;
+}
+.afm-col-bar {
+	flex: 1;
+	max-width: 16px;
+	border-radius: 4px 4px 0 0;
+}
+.afm-col-label {
+	height: 24px;
+	line-height: 24px;
+	text-align: center;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+.afm-col.is-selected .afm-col-label { color: var(--text-normal); font-weight: var(--font-semibold); }
+
+@media (max-width: 480px) {
+	.afm-col-label { font-size: 0.6rem; }
+}

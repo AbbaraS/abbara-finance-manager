@@ -14,3 +14,12 @@ export function formatChange(value: number, s: FinanceSettings): string {
 	const sign = value > 0 ? '+' : value < 0 ? '−' : '';
 	return sign + formatMoney(Math.abs(value), s);
 }
+
+// Short money for axis labels: 2500 -> "£2.5K".
+export function formatCompact(value: number, s: FinanceSettings): string {
+	try {
+		return value.toLocaleString(s.locale, { style: 'currency', currency: s.currency, notation: 'compact', maximumFractionDigits: 1 });
+	} catch {
+		return String(Math.round(value));
+	}
+}
