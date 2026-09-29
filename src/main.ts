@@ -3,6 +3,7 @@ import { TransactionCache } from './data/TransactionCache';
 import { watchDataFolder } from './data/watchDataFolder';
 import { copyDefaultSettings } from './defaults/defaultSettings';
 import type { FinanceSettings } from './models/FinanceSettings';
+import { migrateSettings } from './models/migrateSettings';
 import { FinanceSettingTab } from './settings/SettingsTab';
 import { DashboardView, VIEW_TYPE } from './views/DashboardView';
 
@@ -37,7 +38,10 @@ export default class FinancePlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = { ...copyDefaultSettings(), ...((await this.loadData()) ?? {}) };
+		const saved = await this.loadData();
+		// Saved data without a version is from v1.
+		this.settings = saved ? { ...copyDefaultSettings(), version: 1, ...saved } : copyDefaultSettings();
+		migrateSettings(this.settings);
 	}
 
 	async saveSettings() {

@@ -6,6 +6,7 @@ export const SECTIONS = [
 	{ id: 'moneyIn', name: 'Money in' },
 	{ id: 'category', name: 'Spending by category' },
 	{ id: 'account', name: 'Spending by account' },
+	{ id: 'transfers', name: 'Transfers between accounts' },
 	{ id: 'comparison', name: 'Compared with last month' },
 	{ id: 'uncategorised', name: 'Uncategorised' },
 ] as const;

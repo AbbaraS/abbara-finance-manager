@@ -5,6 +5,7 @@ export type Direction = '' | 'in' | 'out';
 export interface Rule {
 	pattern: string;      // text in the description, any case
 	category: string;
+	subcategory?: string; // optional, e.g. "Gold" under Investment
 	account: string;      // '' = any account
 	direction: Direction;
 }

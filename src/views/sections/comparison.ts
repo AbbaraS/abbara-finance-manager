@@ -3,6 +3,8 @@ import { isCurrentMonth, monthLabel, previousMonths } from '../../utils/dates';
 import { formatMoney } from '../../utils/money';
 import { formatPercentChange } from '../../utils/percent';
 import type { DashboardContext } from '../DashboardContext';
+import { categoryLook } from '../look/categoryLook';
+import { iconDot } from '../look/iconDot';
 import { changeBar } from './changeBar';
 import { changeValue } from './changeValue';
 import { section } from './section';
@@ -18,7 +20,7 @@ export function comparison(el: HTMLElement, ctx: DashboardContext): void {
 	const changes = compareMonths(ctx.rows, ctx.month, ctx.settings);
 	const [last] = previousMonths(ctx.month, 1);
 	const s = ctx.settings;
-	const body = section(el, `Compared with ${monthLabel(last, s.locale)}`);
+	const body = section(el, `Compared with ${monthLabel(last, s.locale)}`, 'git-compare-arrows');
 	if (changes.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No spending in either month.' });
 		return;
@@ -46,7 +48,10 @@ export function comparison(el: HTMLElement, ctx: DashboardContext): void {
 	const tbody = table.createEl('tbody');
 	const rows = changes.map((c) => {
 		const tr = tbody.createEl('tr');
-		tr.createEl('td', { text: c.category });
+		const name = tr.createEl('td').createDiv({ cls: 'afm-row-title' });
+		const look = categoryLook(c.category, s);
+		iconDot(name, look.icon, look.color);
+		name.createSpan({ text: c.category });
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(c.thisMonth, s) });
 		tr.createEl('td', { cls: 'afm-num afm-muted afm-narrow-hide', text: formatMoney(c.lastMonth, s) });
 		changeBar(tr.createEl('td', { cls: 'afm-bar-cell' }), c.change, scale);

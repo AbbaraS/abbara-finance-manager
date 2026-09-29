@@ -13,7 +13,7 @@ import { svgAxes } from './svgAxes';
 export function dailyLine(el: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const points = dailyRunning(ctx.rows, ctx.month, ctx.settings);
-	const body = section(el, 'Running net through the month');
+	const body = section(el, 'Running net through the month', 'activity');
 	if (points.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No transactions this month.' });
 		return;

@@ -7,14 +7,22 @@ export const UNCATEGORISED = 'Uncategorised';
 // income: money in. spend: money out. refund: money back in a spending category.
 export type RowKind = 'income' | 'spend' | 'refund' | 'skip';
 
+// Kinds left out of income and spending (they have their own card / section).
+const NOT_COUNTED = new Set(['investment', 'transfer', 'excluded']);
+
 // True when money in on this row's account can be income.
 export function isIncomeAccount(t: Transaction, s: FinanceSettings): boolean {
 	return s.incomeAccounts.includes(t.account);
 }
 
-// True when a row belongs in totals (right currency, not in a "Not counted" category).
+// True when a category's rows go into income / spending (Uncategorised does).
+export function countsCategory(name: string, s: FinanceSettings): boolean {
+	return !NOT_COUNTED.has(categoryKind(name, s) ?? '');
+}
+
+// True when a row belongs in income / spending (right currency, a counted kind).
 export function isCounted(t: Transaction, s: FinanceSettings): boolean {
-	return t.currency === s.currency && categoryKind(t.category, s) !== 'excluded';
+	return t.currency === s.currency && countsCategory(t.category, s);
 }
 
 // Decides how one row affects the totals.

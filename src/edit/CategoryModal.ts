@@ -7,27 +7,32 @@ import { rulePattern } from '../models/rulePattern';
 import type { Transaction } from '../models/Transaction';
 import { countLabel } from '../utils/countLabel';
 import { categoryField } from './categoryField';
+import { detailsFields } from './detailsFields';
 import { directionOf } from './directionOf';
 import { pickedSummary } from './pickedSummary';
 import { similarFields } from './similarFields';
 
-// Window for changing the category of one or more transactions, once or with a rule.
+// Window for editing one or more transactions: category (once or with a rule), subcategory and note.
 export class CategoryModal extends Modal {
 	private choice: CategoryChoice;
 
 	constructor(app: App, private plugin: FinancePlugin, private rows: Transaction[], private picked: Transaction[], similar: boolean) {
 		super(app);
 		const first = picked[0];
+		const one = picked.length === 1;
 		this.choice = {
 			category: first.category === UNCATEGORISED ? '' : first.category,
 			newKind: null,
+			subcategory: one ? first.subcategory : '',
+			note: one ? first.note : '',
+			other: one ? first.otherAccount : '',
 			similar,
 			rule: { pattern: rulePattern(first.description), category: '', account: '', direction: directionOf(picked) },
 		};
 	}
 
 	onOpen() {
-		this.titleEl.setText(this.picked.length === 1 ? 'Change category' : `Change category for ${countLabel(this.picked.length)}`);
+		this.titleEl.setText(this.picked.length === 1 ? 'Edit transaction' : `Edit ${countLabel(this.picked.length)}`);
 		this.draw();
 	}
 
@@ -44,6 +49,7 @@ export class CategoryModal extends Modal {
 
 		pickedSummary(el, this.picked, this.plugin.settings);
 		categoryField(el, this.choice, this.plugin.settings, redraw);
+		detailsFields(el, this.choice, this.plugin.settings, this.rows, this.picked);
 		similarFields(el, this.choice, this.picked, this.rows, redraw);
 
 		new Setting(el)
@@ -59,7 +65,7 @@ export class CategoryModal extends Modal {
 
 		applyCategory(this.plugin.settings, this.picked, c);
 		void this.plugin.saveSettings();
-		new Notice(c.similar ? `Rule saved: "${c.rule.pattern.trim()}" → ${c.category.trim()}` : `Moved to ${c.category.trim()}`);
+		new Notice(c.similar ? `Rule saved: "${c.rule.pattern.trim()}" → ${c.category.trim()}` : 'Saved');
 		this.close();
 	}
 }

@@ -5,6 +5,7 @@ import { dayLabel } from '../../utils/dates';
 import { formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
 import { categoryButton } from './categoryButton';
+import { noteLine } from './noteLine';
 import { section } from './section';
 import { tableHead } from './tableHead';
 
@@ -16,7 +17,7 @@ export function moneyInList(el: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const s = ctx.settings;
 	const rows = moneyIn(ctx.rows, ctx.month, s);
-	const body = section(el, 'Money in');
+	const body = section(el, 'Money in', 'hand-coins');
 	if (s.incomeAccounts.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'Pick your income accounts in settings.' });
 		return;
@@ -45,6 +46,7 @@ export function moneyInList(el: HTMLElement, ctx: DashboardContext): void {
 		const cell = tr.createEl('td');
 		cell.createDiv({ text: t.description });
 		cell.createDiv({ cls: 'afm-muted', text: dayLabel(t.date, s.locale) });
+		noteLine(cell, t.note);
 		categoryButton(tr.createEl('td', { cls: 'afm-chip-cell' }), t, ctx);
 		tr.createEl('td', { cls: 'afm-muted afm-narrow-hide', text: COUNTS_AS[kind] });
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(t.amount, s) });

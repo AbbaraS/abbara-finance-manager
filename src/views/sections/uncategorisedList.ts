@@ -14,7 +14,7 @@ const LIMIT = 10;
 export function uncategorisedList(el: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const groups = uncategorised(ctx.rows, ctx.month, ctx.settings);
-	const body = section(el, 'Uncategorised');
+	const body = section(el, 'Uncategorised', 'circle-help');
 	if (groups.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'Everything is categorised this month.' });
 		return;

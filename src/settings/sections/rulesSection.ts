@@ -25,7 +25,7 @@ export function rulesSection(el: HTMLElement, ctx: SettingsContext): void {
 			rows.forEach((r) => r.el.toggleClass('afm-hidden', !r.text.includes(f)));
 		}))
 		.addButton((b) => b.setButtonText('Add rule').onClick(() => {
-			s.rules.unshift({ pattern: '', category: categoryNames(s)[0] ?? '', account: '', direction: '' });
+			s.rules.unshift({ pattern: '', category: categoryNames(s)[0] ?? '', subcategory: '', account: '', direction: '' });
 			ctx.saveAndRedraw();
 		}));
 	if (s.rules.length === 0) el.createDiv({ cls: 'setting-item-description', text: 'No rules yet.' });
@@ -33,16 +33,16 @@ export function rulesSection(el: HTMLElement, ctx: SettingsContext): void {
 	const hits = ruleHits(ctx.rows, s);
 	s.rules.forEach((rule, i) => {
 		const row = ruleRow(el, rule, i, hits[i], ctx);
-		rows.push({ el: row, text: `${rule.pattern} ${rule.category} ${rule.account}`.toLowerCase() });
+		rows.push({ el: row, text: `${rule.pattern} ${rule.category} ${rule.subcategory ?? ''} ${rule.account}`.toLowerCase() });
 	});
 }
 
-// One rule: pattern, category, account, direction, then up / down / delete.
+// One rule: pattern, category, subcategory, account, direction, then up / down / delete.
 function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: SettingsContext): HTMLElement {
 	const s = ctx.plugin.settings;
 	const accounts = [...new Set([...ctx.accounts, rule.account])].filter(Boolean);
 	const setting = new Setting(el)
-		.setClass('afm-rule')
+		.setClass('afm-wrap')
 		.setName(`${i + 1}.`)
 		.setDesc(rule.pattern.trim() ? `Used for ${countLabel(hits)}` : 'Empty: matches nothing')
 		.addText((t) => t.setPlaceholder('Description contains').setValue(rule.pattern)
@@ -51,6 +51,8 @@ function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: Sett
 			for (const name of categoryNames(s)) d.addOption(name, name);
 			d.setValue(rule.category).onChange((v) => { rule.category = v; ctx.save(); });
 		})
+		.addText((t) => t.setPlaceholder('Subcategory').setValue(rule.subcategory ?? '')
+			.onChange((v) => { rule.subcategory = v.trim(); ctx.save(); }))
 		.addDropdown((d) => {
 			d.addOption('', 'Any account');
 			for (const a of accounts) d.addOption(a, a);

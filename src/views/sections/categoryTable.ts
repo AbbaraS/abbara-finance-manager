@@ -4,9 +4,12 @@ import { countLabel } from '../../utils/countLabel';
 import { formatMoney } from '../../utils/money';
 import { formatPercent } from '../../utils/percent';
 import type { DashboardContext } from '../DashboardContext';
+import { categoryLook } from '../look/categoryLook';
+import { iconDot } from '../look/iconDot';
 import { expandable } from './expandable';
 import { section } from './section';
 import { shareBar } from './shareBar';
+import { subTotals } from './subTotals';
 import { tableHead } from './tableHead';
 import { transactionRows } from './transactionRows';
 
@@ -14,7 +17,7 @@ import { transactionRows } from './transactionRows';
 export function categoryTable(el: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const groups = byCategory(ctx.rows, ctx.month, ctx.settings);
-	const body = section(el, 'Spending by category');
+	const body = section(el, 'Spending by category', 'shopping-cart');
 	if (groups.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No spending this month.' });
 		return;
@@ -34,11 +37,14 @@ export function categoryTable(el: HTMLElement, ctx: DashboardContext): void {
 	for (const g of groups) {
 		const tr = tbody.createEl('tr');
 		const name = tr.createEl('td');
+		const look = categoryLook(g.key, ctx.settings);
 		const title = name.createDiv({ cls: 'afm-row-title' });
 		const icon = title.createSpan({ cls: 'afm-chevron' });
+		iconDot(title, look.icon, look.color);
 		title.createSpan({ text: g.key });
-		name.createDiv({ cls: 'afm-muted afm-indent', text: countLabel(g.rows.length) });
-		shareBar(tr.createEl('td', { cls: 'afm-bar-cell' }), g.share);
+		const subs = subTotals(g.rows, ctx.settings);
+		name.createDiv({ cls: 'afm-muted afm-indent', text: countLabel(g.rows.length) + (subs ? ` · ${subs}` : '') });
+		shareBar(tr.createEl('td', { cls: 'afm-bar-cell' }), g.share, look.color);
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(g.total, ctx.settings) });
 		tr.createEl('td', { cls: 'afm-num afm-muted', text: formatPercent(g.share) });
 

@@ -27,6 +27,9 @@ export function toTransactions(text: string): Transaction[] {
 			currency: (r[at.currency] ?? '').trim().toUpperCase(),
 			category: UNCATEGORISED,
 			source: 'none',
+			subcategory: '',
+			note: '',
+			otherAccount: '',
 		});
 	}
 	return list;

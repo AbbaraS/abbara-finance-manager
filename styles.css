@@ -15,7 +15,7 @@
 	gap: var(--size-4-2);
 	margin-bottom: var(--size-4-4);
 }
-.afm-title { margin: 0; font-size: var(--h2-size); }
+.afm-title { display: flex; align-items: center; gap: var(--size-4-2); margin: 0; font-size: var(--h2-size); }
 .afm-controls { display: flex; align-items: center; gap: var(--size-4-1); }
 
 /* Summary cards. */
@@ -44,8 +44,10 @@
 .afm-negative { color: var(--text-error); }
 
 /* Sections. */
-.afm-section { margin-top: var(--size-4-8); }
 .afm-section-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
 	font-size: var(--font-ui-small);
 	color: var(--text-muted);
 	text-transform: uppercase;
@@ -99,7 +101,7 @@
 .afm-bar-fill {
 	height: 100%;
 	border-radius: 3px;
-	background: var(--interactive-accent);
+	background: var(--afm-cat, var(--interactive-accent));
 }
 
 /* Narrow screens: drop the bar column. */
@@ -122,7 +124,7 @@
 .afm-row-title {
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-1);
+	gap: 6px;
 }
 .afm-chevron {
 	display: inline-flex;
@@ -131,14 +133,12 @@
 }
 .afm-chevron svg { width: 14px; height: 14px; }
 .afm-expandable.is-open .afm-chevron { transform: rotate(90deg); }
-.afm-indent { padding-left: calc(14px + var(--size-4-1)); }
 
 /* Transaction rows under a category. */
 .afm-detail td {
 	background: var(--background-secondary);
 	font-size: var(--font-ui-smaller);
 }
-.afm-detail td:first-child { padding-left: calc(var(--size-4-2) + 14px + var(--size-4-1)); }
 .afm-hidden { display: none; }
 
 /* Uncategorised list. */
@@ -323,25 +323,39 @@
 	pointer-events: none;
 }
 
-/* Category chip: click to change a transaction's category. */
-.afm-view button.afm-chip {
+/* Category badges, in the style of Custom Badges: tinted background, coloured icon and text.
+   --afm-cat is set per badge. Text is mixed toward the normal text colour so it stays readable. */
+.afm-badge {
 	display: inline-flex;
 	align-items: center;
-	gap: 2px;
-	height: auto;
-	padding: 1px var(--size-4-2);
-	border-radius: var(--radius-l);
+	gap: 4px;
+	padding: 1px var(--size-4-2) 1px 6px;
+	border-radius: var(--radius-s);
 	font-size: var(--font-ui-smaller);
-	background: var(--background-modifier-hover);
+	font-weight: var(--font-semibold);
+	line-height: 1.6;
+	white-space: nowrap;
+	color: color-mix(in srgb, var(--afm-cat) 55%, var(--text-normal)); /* ≥4.5:1 for every named colour, both themes */
+	background-color: color-mix(in srgb, var(--afm-cat) 14%, transparent);
+	border: 1px solid color-mix(in srgb, var(--afm-cat) 28%, transparent);
+}
+.afm-badge-icon, .afm-badge-chevron { display: inline-flex; }
+.afm-badge-icon svg { width: 13px; height: 13px; }
+.afm-badge-chevron { opacity: 0.6; }
+.afm-badge-chevron svg { width: 12px; height: 12px; }
+.afm-badge-sub { font-weight: var(--font-medium); }
+.afm-badge-sub::before { content: '›'; margin-right: 4px; opacity: 0.6; }
+
+/* Clickable badge: undo Obsidian's button look. */
+button.afm-badge {
+	height: auto;
 	box-shadow: none;
-	color: var(--text-normal);
 	cursor: pointer;
 }
-.afm-view button.afm-chip:hover { background: var(--background-modifier-active-hover); }
-.afm-view button.afm-chip.is-uncategorised { color: var(--text-muted); font-style: italic; }
-.afm-view button.afm-chip.is-edited { outline: 1px dashed var(--text-faint); } /* one-off edit */
-.afm-chip-icon { display: inline-flex; color: var(--text-faint); }
-.afm-chip-icon svg { width: 12px; height: 12px; }
+button.afm-badge:hover { background-color: color-mix(in srgb, var(--afm-cat) 24%, transparent); }
+button.afm-badge.is-uncategorised { font-style: italic; }
+button.afm-badge.is-edited { border-style: dashed; } /* one-off edit */
+
 .afm-meta {
 	display: flex;
 	align-items: center;
@@ -349,6 +363,32 @@
 	gap: var(--size-4-2);
 	margin-top: 2px;
 }
+
+/* Round tinted icon. */
+.afm-dot-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	color: color-mix(in srgb, var(--afm-cat) 65%, var(--text-normal));
+	background-color: color-mix(in srgb, var(--afm-cat) 16%, transparent);
+}
+.afm-dot-icon svg { width: 13px; height: 13px; }
+
+/* Note under a transaction. */
+.afm-note-line {
+	display: flex;
+	align-items: flex-start;
+	gap: 4px;
+	margin-top: 2px;
+	color: var(--text-muted);
+	font-style: italic;
+}
+.afm-note-icon { display: inline-flex; padding-top: 2px; }
+.afm-note-icon svg { width: 12px; height: 12px; }
 
 /* Money in: rows that aren't income are faded. */
 .afm-not-income td:first-child,
@@ -371,12 +411,79 @@
 }
 .afm-rule-preview .mod-warning { color: var(--text-error); }
 
-/* Settings: rule rows wrap their controls on narrow panes. */
-.afm-rule .setting-item-control { flex-wrap: wrap; justify-content: flex-end; }
-.afm-rule .setting-item-info { flex: 0 0 auto; min-width: 7em; }
+/* Settings: rule and category rows wrap their controls on narrow panes. */
+.afm-wrap .setting-item-control { flex-wrap: wrap; justify-content: flex-end; }
+.afm-wrap .setting-item-info { flex: 0 0 auto; min-width: 7em; }
 .afm-edits summary {
 	cursor: pointer;
 	padding: var(--size-4-2) 0;
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
 }
+
+/* Colour names (see models/colors.ts). Steps from the validated data-viz palette, per theme. */
+body {
+	--afm-c-blue: #2a78d6;
+	--afm-c-orange: #eb6834;
+	--afm-c-aqua: #1baf7a;
+	--afm-c-yellow: #eda100;
+	--afm-c-magenta: #e87ba4;
+	--afm-c-green: #008300;
+	--afm-c-violet: #4a3aa7;
+	--afm-c-red: #e34948;
+	--afm-c-gray: #8a8984;
+}
+.theme-dark {
+	--afm-c-blue: #3987e5;
+	--afm-c-orange: #d95926;
+	--afm-c-aqua: #199e70;
+	--afm-c-yellow: #c98500;
+	--afm-c-magenta: #d55181;
+	--afm-c-green: #008300;
+	--afm-c-violet: #9085e9;
+	--afm-c-red: #e66767;
+	--afm-c-gray: #8f8e87;
+}
+
+/* Title with its icon. */
+.afm-dot-icon.afm-title-icon { width: 34px; height: 34px; }
+.afm-dot-icon.afm-title-icon svg { width: 18px; height: 18px; }
+
+/* Sections sit on cards. */
+.afm-section {
+	margin-top: var(--size-4-4);
+	padding: var(--size-4-3) var(--size-4-4) var(--size-4-4);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-l);
+	background: var(--background-primary);
+}
+.afm-section-icon { display: inline-flex; color: var(--interactive-accent); }
+.afm-section-icon svg { width: 15px; height: 15px; }
+
+/* Summary cards: coloured icon and a soft tint of their colour. */
+.afm-card {
+	border-top: 3px solid var(--afm-cat);
+	background: linear-gradient(160deg, color-mix(in srgb, var(--afm-cat) 10%, var(--background-secondary)), var(--background-secondary) 70%);
+}
+.afm-card-top { display: flex; align-items: center; gap: var(--size-4-2); margin-bottom: var(--size-4-1); }
+.afm-card-extra { font-size: var(--font-ui-smaller); color: var(--text-muted); }
+
+/* Rows with a chevron and / or an icon dot. */
+.afm-indent { padding-left: calc(14px + 22px + 12px); }
+.afm-indent-dot { padding-left: calc(22px + 6px); }
+.afm-detail td:first-child { padding-left: calc(var(--size-4-2) + 14px + 22px + 12px); }
+
+/* Transfers table. */
+.afm-scroll { overflow-x: auto; }
+.afm-flow { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.afm-flow-arrow { display: inline-flex; color: var(--text-faint); }
+.afm-flow-arrow svg { width: 14px; height: 14px; }
+.afm-heat { background-color: color-mix(in srgb, var(--afm-c-blue) var(--afm-heat, 0%), transparent); }
+.afm-flows th.is-selected { color: var(--text-normal); font-weight: var(--font-semibold); }
+.afm-flows td.is-selected { font-weight: var(--font-semibold); }
+.afm-flows .afm-detail td:first-child { padding-left: calc(var(--size-4-2) + 14px + 6px); }
+.afm-strong { font-weight: var(--font-semibold); }
+
+/* Icon picker rows. */
+.afm-icon-suggestion { display: flex; align-items: center; gap: var(--size-4-2); }
+.afm-icon-suggestion-icon { display: inline-flex; }

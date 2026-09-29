@@ -3,6 +3,8 @@ import { countLabel } from '../../utils/countLabel';
 import { formatMoney } from '../../utils/money';
 import { formatPercent } from '../../utils/percent';
 import type { DashboardContext } from '../DashboardContext';
+import { accountLook } from '../look/accountLook';
+import { iconDot } from '../look/iconDot';
 import { section } from './section';
 import { shareBar } from './shareBar';
 import { tableHead } from './tableHead';
@@ -11,12 +13,12 @@ import { tableHead } from './tableHead';
 export function accountTable(el: HTMLElement, ctx: DashboardContext): void {
 	// 1. Data.
 	const groups = byAccount(ctx.rows, ctx.month, ctx.settings);
-	const body = section(el, 'Spending by account');
+	const body = section(el, 'Spending by account', 'landmark');
 	if (groups.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No spending this month.' });
 		return;
 	}
-
+	
 	// 2. Table and header row.
 	const table = body.createEl('table', { cls: 'afm-table' });
 	tableHead(table, [
@@ -31,9 +33,12 @@ export function accountTable(el: HTMLElement, ctx: DashboardContext): void {
 	for (const g of groups) {
 		const tr = tbody.createEl('tr');
 		const name = tr.createEl('td');
-		name.createDiv({ text: g.key });
-		name.createDiv({ cls: 'afm-muted', text: countLabel(g.rows.length) });
-		shareBar(tr.createEl('td', { cls: 'afm-bar-cell' }), g.share);
+		const title = name.createDiv({ cls: 'afm-row-title' });
+		const look = accountLook(g.key);
+		iconDot(title, look.icon, look.color);
+		title.createSpan({ text: g.key });
+		name.createDiv({ cls: 'afm-muted afm-indent-dot', text: countLabel(g.rows.length) });
+		shareBar(tr.createEl('td', { cls: 'afm-bar-cell' }), g.share, look.color);
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(g.total, ctx.settings) });
 		tr.createEl('td', { cls: 'afm-num afm-muted', text: formatPercent(g.share) });
 	}

@@ -7,6 +7,7 @@ import { dailyLine } from './sections/dailyLine';
 import { moneyInList } from './sections/moneyInList';
 import { monthlyBars } from './sections/monthlyBars';
 import { summaryCards } from './sections/summaryCards';
+import { transfersTable } from './sections/transfersTable';
 import { uncategorisedList } from './sections/uncategorisedList';
 
 // The function that draws each section.
@@ -17,6 +18,7 @@ export const SECTION_DRAWERS: Record<SectionId, (el: HTMLElement, ctx: Dashboard
 	moneyIn: moneyInList,
 	category: categoryTable,
 	account: accountTable,
+	transfers: transfersTable,
 	comparison,
 	uncategorised: uncategorisedList,
 };

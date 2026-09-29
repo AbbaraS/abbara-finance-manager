@@ -1,19 +1,20 @@
-import { setIcon, setTooltip } from 'obsidian';
+import { setTooltip } from 'obsidian';
+import { setIconSafe } from '../look/setIconSafe';
 import { UNCATEGORISED } from '../../models/rowKind';
 import type { Transaction } from '../../models/Transaction';
 import type { DashboardContext } from '../DashboardContext';
+import { badge } from '../look/badge';
 
 // Hover text for where the category came from.
 const SOURCE_TIP = { edit: 'One-off edit', rule: 'Set by a rule', none: 'No rule matches' };
 
-// A small chip showing a transaction's category; click to change it.
+// A transaction's category badge; click to edit the transaction.
 export function categoryButton(parent: HTMLElement, t: Transaction, ctx: DashboardContext): void {
-	const btn = parent.createEl('button', { cls: 'afm-chip' });
+	const btn = badge(parent, t.category, ctx.settings, t.subcategory, 'button');
 	btn.toggleClass('is-uncategorised', t.category === UNCATEGORISED);
 	btn.toggleClass('is-edited', t.source === 'edit');
-	btn.createSpan({ text: t.category });
-	setIcon(btn.createSpan({ cls: 'afm-chip-icon' }), 'chevron-down');
-	setTooltip(btn, `${SOURCE_TIP[t.source]}. Click to change.`);
+	setIconSafe(btn.createSpan({ cls: 'afm-badge-chevron' }), 'chevron-down');
+	setTooltip(btn, `${SOURCE_TIP[t.source]}. Click to edit.`);
 
 	btn.addEventListener('click', (e) => {
 		e.stopPropagation(); // don't toggle the row it sits in

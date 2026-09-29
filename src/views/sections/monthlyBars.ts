@@ -15,7 +15,7 @@ export function monthlyBars(el: HTMLElement, ctx: DashboardContext): void {
 	const { max, step } = niceScale(Math.max(...totals.flatMap((t) => [t.income, t.spending])));
 
 	// Chart.
-	const body = section(el, 'Monthly overview');
+	const body = section(el, 'Monthly overview', 'chart-column');
 	chartLegend(body, [{ label: 'Income', cls: 'afm-income' }, { label: 'Spending', cls: 'afm-spend' }]);
 	const chart = body.createDiv({ cls: 'afm-chart' });
 	chartGrid(chart, max, step, ctx.settings);

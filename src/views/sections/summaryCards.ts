@@ -1,28 +1,45 @@
+import { invested } from '../../models/invested';
 import { monthSummary } from '../../models/monthSummary';
-import { formatMoney } from '../../utils/money';
+import { formatChange, formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
+import { iconDot } from '../look/iconDot';
 
-// Example section: income, spending and net for the month.
+// Income, spending, net for the month, plus money invested (all time).
 export function summaryCards(el: HTMLElement, ctx: DashboardContext): void {
-	// 1. Get the numbers from a model function (pure, no DOM).
-	const s = monthSummary(ctx.rows, ctx.month, ctx.settings);
-
-	// 2. Build the DOM with createDiv / createEl.
+	const s = ctx.settings;
+	const m = monthSummary(ctx.rows, ctx.month, s);
 	const cards = el.createDiv({ cls: 'afm-cards' });
-	card(cards, 'Income', formatMoney(s.income, ctx.settings));
-	card(cards, 'Spending', formatMoney(s.spending, ctx.settings));
-	const net = card(cards, 'Net', formatMoney(s.net, ctx.settings));
-	net.toggleClass('afm-negative', s.net < 0); // 3. State as a CSS class, colour lives in styles.css
+
+	card(cards, 'Income', formatMoney(m.income, s), 'arrow-down-left', 'var(--afm-income)');
+	card(cards, 'Spending', formatMoney(m.spending, s), 'arrow-up-right', 'var(--afm-spend)');
+	const net = card(cards, 'Net', formatMoney(m.net, s), m.net < 0 ? 'trending-down' : 'trending-up',
+		m.net < 0 ? 'var(--afm-c-red)' : 'var(--afm-c-green)');
+	net.value.toggleClass('afm-negative', m.net < 0);
+
+	// Invested: only when an Investment-kind category exists.
+	if (s.categories.some((c) => c.kind === 'investment')) {
+		const inv = invested(ctx.rows, ctx.month, s);
+		const box = card(cards, 'Invested (all time)', formatMoney(inv.total, s), 'sprout', 'var(--afm-c-violet)');
+		box.extra.setText(inv.thisMonth ? `${formatChange(inv.thisMonth, s)} this month` : 'Nothing this month');
+		const subs = inv.bySub.filter((x) => x.total !== 0).slice(0, 3);
+		if (subs.length > 1) box.extra.createDiv({ text: subs.map((x) => `${x.name} ${formatMoney(x.total, s)}`).join(' · ') });
+	}
 
 	// Note about rows left out.
-	if (s.otherCurrency > 0) {
-		el.createDiv({ cls: 'afm-note', text: `${s.otherCurrency} rows in other currencies not counted.` });
+	if (m.otherCurrency > 0) {
+		el.createDiv({ cls: 'afm-note', text: `${m.otherCurrency} rows in other currencies not counted.` });
 	}
 }
 
-// One card; returns the value element so callers can style it.
-function card(parent: HTMLElement, label: string, value: string): HTMLElement {
+// One card with a coloured icon; returns its value and small-print elements.
+function card(parent: HTMLElement, label: string, value: string, icon: string, color: string) {
 	const box = parent.createDiv({ cls: 'afm-card' });
-	box.createDiv({ cls: 'afm-card-label', text: label });
-	return box.createDiv({ cls: 'afm-card-value', text: value });
+	box.setCssProps({ '--afm-cat': color });
+	const top = box.createDiv({ cls: 'afm-card-top' });
+	iconDot(top, icon, color);
+	top.createDiv({ cls: 'afm-card-label', text: label });
+	return {
+		value: box.createDiv({ cls: 'afm-card-value', text: value }),
+		extra: box.createDiv({ cls: 'afm-card-extra' }),
+	};
 }

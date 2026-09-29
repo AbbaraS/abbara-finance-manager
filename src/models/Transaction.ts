@@ -13,4 +13,7 @@ export interface Transaction {
 	currency: string;    // e.g. "GBP"
 	category: string;    // set by categorise()
 	source: CategorySource;
+	subcategory: string; // '' = none
+	note: string;
+	otherAccount: string; // transfers: the other account if set by hand, '' = find it
 }

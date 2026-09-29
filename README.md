@@ -25,15 +25,23 @@ Run `make` in myFinances and the dashboard reloads (or press the reload button).
 
 Categories live in the plugin, not in myFinances. Everything is in **Settings → Abbara Finance Manager**.
 
-- **Categories** each have a kind:
+- **Categories** each have an icon, a colour and a kind:
   - *Spending*: money out is spent, money in is a refund.
   - *Income*: money in counts as income.
-  - *Not counted*: left out of totals (transfers, savings, family money).
+  - *Investment*: left out of spending; added up in the **Invested** card.
+  - *Transfer between my accounts*: left out of totals; shown in **Transfers between accounts**.
+  - *Not counted*: left out of everything (e.g. family money).
 - **Rules** put transactions in a category when the description contains some text.
   They can be limited to one account or to money in / out. Checked top to bottom; first match wins.
 - **One-off edits** set one transaction's category. They beat rules.
+- **Subcategory and note**: any transaction can have a subcategory (e.g. *Income › Car sold*, *Investment › Gold*)
+  and a note. Rules can set a subcategory too.
 - On the dashboard, click a category chip (or the tag button in *Uncategorised*) to change it.
   Turn on *Apply to similar transactions* to save a rule instead of a one-off edit.
+
+Transfers: the other account is found by matching the same amount in another account within 4 days.
+If that side isn't in your data, the account that similar transfers usually go to is used.
+You can also set it by hand ("Sent to" / "Came from" when editing a transfer).
 
 Transactions are matched by a key made from date, account, amount and description,
 so edits survive re-running `make`.
@@ -58,7 +66,8 @@ src/
   models/            data types + pure calculations (no DOM)
   data/              reading CSVs from the vault
   views/             DashboardView + one file per section
-  edit/              change-category window
+  edit/              edit-transaction window
+  views/look/        badges, icon dots, colours
   settings/          settings tab + sections/
   utils/             dates, money
 styles.css
@@ -68,12 +77,13 @@ styles.css
 
 | Section | File | Technique |
 |---|---|---|
-| Summary cards | `summaryCards.ts` | cards from `monthSummary` |
+| Summary cards | `summaryCards.ts` | income, spending, net, invested (all time) |
 | Monthly overview | `monthlyBars.ts` | div bar chart, round axis steps, tooltips, click a month |
 | Running net | `dailyLine.ts` | hand-drawn SVG line, crosshair on hover / arrow keys |
 | Money in | `moneyInList.ts` | every payment into the income accounts, with category chips |
 | By category | `categoryTable.ts` | table, share bars, click-to-expand transactions with category chips |
 | By account | `accountTable.ts` | table with share bars |
+| Transfers | `transfersTable.ts` | account → account per month, cells tinted by size, expand to fix |
 | Compared with last month | `comparison.ts` | bars from a centre line, vs 3-month average |
 | Uncategorised | `uncategorisedList.ts` | pick a category and save a rule for each description |
 

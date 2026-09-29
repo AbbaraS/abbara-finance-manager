@@ -1,11 +1,14 @@
 import { setIcon } from 'obsidian';
 import { monthLabel } from '../../utils/dates';
 import type { DashboardContext } from '../DashboardContext';
+import { iconDot } from '../look/iconDot';
 
 // Title, month picker with previous/next buttons, and a reload button.
 export function header(el: HTMLElement, ctx: DashboardContext): void {
 	const bar = el.createDiv({ cls: 'afm-header' });
-	bar.createEl('h1', { cls: 'afm-title', text: 'Finances' });
+	const title = bar.createEl('h1', { cls: 'afm-title' });
+	iconDot(title, 'wallet', 'var(--interactive-accent)', 'afm-title-icon');
+	title.createSpan({ text: 'Finances' });
 	const controls = bar.createDiv({ cls: 'afm-controls' });
 
 	const i = ctx.months.indexOf(ctx.month);
