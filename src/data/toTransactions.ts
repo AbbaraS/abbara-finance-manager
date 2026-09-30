@@ -33,6 +33,8 @@ export function toTransactions(text: string): Transaction[] {
 			note: '',
 			tags: [],
 			otherAccount: '',
+			foundAccount: '',
+			partner: null,
 		});
 	}
 	return list;

@@ -22,10 +22,14 @@ export function transferRows(tbody: HTMLElement, rows: Transaction[], span: numb
 		line.createSpan({ cls: 'afm-muted', text: `${dayLabel(t.date, s.locale)} · ${t.account} · ${formatChange(t.amount, s)}` });
 		categoryButton(line, t, ctx);
 
-		// Other account: "Find automatically" or one picked by hand.
+		// The matching row in the other account.
+		const p = t.partner;
+		if (p) cell.createDiv({ cls: 'afm-muted', text: `Paired with: ${p.description} · ${dayLabel(p.date, s.locale)} · ${p.account} · ${formatChange(p.amount, s)}` });
+
+		// Other account: found automatically (shows what was found) or picked by hand.
 		const move = line.createEl('label', { cls: 'afm-move afm-muted', text: t.amount < 0 ? 'Sent to ' : 'Came from ' });
 		const select = move.createEl('select', { cls: 'dropdown' });
-		select.createEl('option', { value: '', text: 'Find automatically' });
+		select.createEl('option', { value: '', text: `Find automatically${!t.otherAccount && t.foundAccount ? ` (${t.foundAccount})` : ''}` });
 		for (const a of ctx.accounts) if (a !== t.account) select.createEl('option', { value: a, text: a });
 		select.value = t.otherAccount;
 		select.addEventListener('click', (e) => e.stopPropagation()); // don't toggle the row

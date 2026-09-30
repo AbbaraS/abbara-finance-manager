@@ -3,20 +3,22 @@ import type { Transaction } from './Transaction';
 
 export const UNCATEGORISED = 'Uncategorised';
 
-// income: money in. spend: money out. refund: money back in a Spending or People category.
-export type RowKind = 'income' | 'spend' | 'refund' | 'skip';
+// income: money in. spend: money out. refund: money back in a Spending category.
+// fromPeople: money in from People, not income and not taken off spending (see the debts section later).
+export type RowKind = 'income' | 'spend' | 'refund' | 'fromPeople' | 'skip';
 
 // False for transfers and savings: they have their own section / card, not income or spending.
 export function countsKind(t: Transaction): boolean {
 	return t.kind !== 'transfer' && t.kind !== 'saving';
 }
 
-// Decides how one row affects the totals. Only Income categories are income; other money in is a refund or not counted.
+// Decides how one row affects the totals. Only Income categories are income; other money in is a refund, from people or not counted.
 export function rowKind(t: Transaction, s: FinanceSettings): RowKind {
 	if (t.currency !== s.currency || !countsKind(t)) return 'skip';
 	if (t.amount < 0) return 'spend';
 	if (t.kind === 'income') return 'income';
-	return t.kind === 'spending' || t.kind === 'people' ? 'refund' : 'skip'; // uncategorised money in isn't counted
+	if (t.kind === 'people') return 'fromPeople';
+	return t.kind === 'spending' ? 'refund' : 'skip'; // uncategorised money in isn't counted
 }
 
 // How much a row adds to spending (refunds give a negative number).

@@ -12,7 +12,7 @@ export function categoriesSection(el: HTMLElement, ctx: SettingsContext): void {
 	const labels = ctx.plugin.labels.data;
 	new Setting(el)
 		.setName('Categories')
-		.setDesc('Spending and People: money out is spent, money in is a refund. Income: money in is income. Transfers and Savings: not counted. Subcategories are made in the edit window.')
+		.setDesc('Spending: money out is spent, money in is a refund. People: money out is spent, money in is from people (not income). Income: money in is income. Transfers and Savings: not counted. Subcategories are made in the edit window.')
 		.setHeading();
 
 	const kinds = Object.keys(KIND_LABELS) as CategoryKind[];

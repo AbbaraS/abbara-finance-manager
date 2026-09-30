@@ -35,7 +35,7 @@ export function categoryField(el: HTMLElement, c: CategoryChoice, labels: Labels
 	});
 	new Setting(el)
 		.setName('Counts as')
-		.setDesc('Spending and People: money out is spent, money in is a refund. Income: money in is income. Transfers and Savings: not counted.')
+		.setDesc('Spending: money out is spent, money in is a refund. People: money out is spent, money in is from people (not income). Income: money in is income. Transfers and Savings: not counted.')
 		.addDropdown((d) => d.addOptions(KIND_LABELS).setValue(c.newKind ?? 'spending')
 			.onChange((v) => { c.newKind = v as CategoryKind; redraw(); }));
 }

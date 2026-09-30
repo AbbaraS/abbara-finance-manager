@@ -2,6 +2,7 @@ import type { FinanceSettings } from './FinanceSettings';
 import type { Account } from './Labels';
 import { learnCounterparts, moveSignature } from './learnCounterparts';
 import { pairTransfers } from './pairTransfers';
+import { UNCATEGORISED } from './rowKind';
 import type { Transaction } from './Transaction';
 
 // Shown when the other account can't be found.
@@ -15,25 +16,48 @@ export interface Flow {
 	total: number;
 }
 
-// Groups rows in Transfer-kind categories into account-to-account flows.
-// The other account comes from: set by hand > the matching row in the other account > an account whose
-// "match" text is in the description > what similar rows usually pair with.
-export function transferFlows(rows: Transaction[], s: FinanceSettings, accounts: Account[]): Flow[] {
-	const kind = (t: Transaction) => t.kind;
-	const inCurrency = rows.filter((t) => t.currency === s.currency);
-	const moves = inCurrency.filter((t) => kind(t) === 'transfer');
-	const candidates = inCurrency.filter((t) => kind(t) === 'transfer' || kind(t) === null); // other side may be uncategorised
-	const pairs = pairTransfers(moves, candidates);
-	const learned = learnCounterparts(moves, pairs);
-
-	const flows = new Map<string, Flow>();
-	for (const t of moves) {
-		const partner = pairs.get(t.id);
-		if (t.amount > 0 && partner && kind(partner) === 'transfer') continue; // counted from the out side
+// Pairs the two sides of each transfer and sets foundAccount on transfers.
+// The other account comes from: set by hand > an account's match text > the matching row in the other account
+// > what similar rows usually pair with. An uncategorised row that is the other side of a transfer
+// becomes a transfer too, so it isn't counted as spending or listed twice.
+export function linkTransfers(rows: Transaction[], accounts: Account[]): Transaction[] {
+	const moves = rows.filter((t) => t.kind === 'transfer');
+	const candidates = rows.filter((t) => t.kind === 'transfer' || t.kind === null);
+	const matchOf = (t: Transaction) => {
 		const text = t.description.toLowerCase();
-		const matched = accounts.find((a) => a.match.trim() && a.name !== t.account && text.includes(a.match.trim().toLowerCase()))?.name;
-		const other = t.otherAccount || partner?.account || matched || learned.get(moveSignature(t)) || UNKNOWN_ACCOUNT;
-		const [from, to] = t.amount < 0 ? [t.account, other] : [other, t.account];
+		return accounts.find((a) => a.match.trim() && a.name !== t.account && text.includes(a.match.trim().toLowerCase()))?.name ?? '';
+	};
+	const known = (t: Transaction) => t.otherAccount || matchOf(t);
+
+	// Pair once, learn each description's usual other account, then pair again with that as a hint.
+	const learned = learnCounterparts(moves, pairTransfers(moves, candidates, known));
+	const hint = (t: Transaction) => known(t) || (t.kind === 'transfer' ? learned.get(moveSignature(t)) ?? '' : '');
+	const pairs = pairTransfers(moves, candidates, hint);
+
+	// New rows, then point partners at the new rows.
+	const out = rows.map((t): Transaction => {
+		const p = pairs.get(t.id);
+		const adopt = t.category === UNCATEGORISED && p?.kind === 'transfer'; // uncategorised other side
+		const isMove = t.kind === 'transfer' || adopt;
+		return {
+			...t,
+			...(adopt ? { category: p.category, kind: p.kind, subcategory: p.subcategory, source: 'pair' as const } : {}),
+			foundAccount: isMove ? t.otherAccount || p?.account || hint(t) || UNKNOWN_ACCOUNT : '',
+			partner: null,
+		};
+	});
+	const byId = new Map(out.map((t) => [t.id, t]));
+	for (const t of out) t.partner = byId.get(pairs.get(t.id)?.id ?? '') ?? null;
+	return out;
+}
+
+// Groups transfers into account-to-account flows. A pair is counted once, from the money-out side.
+export function transferFlows(rows: Transaction[], s: FinanceSettings): Flow[] {
+	const flows = new Map<string, Flow>();
+	for (const t of rows) {
+		if (t.kind !== 'transfer' || t.currency !== s.currency) continue;
+		if (t.amount > 0 && t.partner?.kind === 'transfer' && t.partner.foundAccount === t.account) continue; // counted from the out side
+		const [from, to] = t.amount < 0 ? [t.account, t.foundAccount] : [t.foundAccount, t.account];
 		if (from === to) continue;
 
 		const id = `${from}→${to}`;

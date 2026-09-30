@@ -19,13 +19,13 @@ export function transfersTable(el: HTMLElement, ctx: DashboardContext): void {
 	// Data: flows with money in the months shown.
 	const s = ctx.settings;
 	const months = monthWindow(ctx.months, ctx.month, MONTHS);
-	const flows = transferFlows(ctx.rows, s, ctx.labels.accounts).filter((f) => months.some((m) => f.months.has(m)));
+	const flows = transferFlows(ctx.rows, s).filter((f) => months.some((m) => f.months.has(m)));
 	const body = section(el, 'Transfers between accounts', 'arrow-left-right');
 	if (flows.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No transfers in these months. Put transfers in a Transfers category.' });
 		return;
 	}
-	body.createDiv({ cls: 'afm-note', text: 'The other account is found by matching amounts, or by an account\'s match text (settings). Click a row to see this month\'s transfers and move one.' });
+	body.createDiv({ cls: 'afm-note', text: 'Each transfer is paired with the same amount going the other way in your other account, and counted once. Accounts without statements are found by their match text (settings). Click a row to see this month\'s transfers and move one.' });
 
 	// Table (scrolls sideways on narrow panes).
 	const table = body.createDiv({ cls: 'afm-scroll' }).createEl('table', { cls: 'afm-table afm-flows' });

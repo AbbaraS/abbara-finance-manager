@@ -1,5 +1,5 @@
 import { sum } from '../../models/monthSummary';
-import { countsKind, incomeOf, rowKind, type RowKind } from '../../models/rowKind';
+import { countsKind, rowKind, type RowKind } from '../../models/rowKind';
 import { dayLabel } from '../../utils/dates';
 import { formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
@@ -9,15 +9,15 @@ import { section } from './section';
 import { tableHead } from './tableHead';
 
 // How each row ends up in the totals, in words.
-const COUNTS_AS: Record<RowKind, string> = { income: 'Income', refund: 'Refund', spend: 'Spending', skip: 'Not counted' };
+const COUNTS_AS: Record<RowKind, string> = { income: 'Income', fromPeople: 'From people', refund: 'Refund', spend: 'Spending', skip: 'Not counted' };
 
-// This month's money in (not transfers or savings). Only Income categories count as income; the rest are refunds or not counted.
+// This month's money in, except transfers, savings and refunds (refunds show under Spending by category).
 export function moneyInList(el: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const s = ctx.settings;
-	const rows = ctx.rows.filter((t) => t.month === ctx.month && t.amount > 0 && t.currency === s.currency && countsKind(t));
+	const rows = ctx.rows.filter((t) => t.month === ctx.month && t.amount > 0 && t.currency === s.currency && countsKind(t) && rowKind(t, s) !== 'refund');
 	const body = section(el, 'Money in', 'hand-coins');
-	body.createDiv({ cls: 'afm-note', text: 'Only Income categories count as income. Other money in goes back into its category as a refund; uncategorised money in isn\'t counted.' });
+	body.createDiv({ cls: 'afm-note', text: 'Only Income categories count as income. Money from People isn\'t income and isn\'t taken off spending. Refunds are under Spending by category; uncategorised money in isn\'t counted.' });
 	if (rows.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No money in this month.' });
 		return;
@@ -47,10 +47,15 @@ export function moneyInList(el: HTMLElement, ctx: DashboardContext): void {
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(t.amount, s) });
 	}
 
-	// Income total.
-	const foot = table.createEl('tfoot').createEl('tr');
-	foot.createEl('td', { text: 'Income' });
-	foot.createEl('td', { cls: 'afm-chip-cell' });
-	foot.createEl('td', { cls: 'afm-narrow-hide' });
-	foot.createEl('td', { cls: 'afm-num', text: formatMoney(sum(rows.map((t) => incomeOf(t, s))), s) });
+	// Totals: income, then money from people when there is some.
+	const foot = table.createEl('tfoot');
+	for (const [label, kind] of [['Income', 'income'], ['From people', 'fromPeople']] as const) {
+		const total = sum(rows.filter((t) => rowKind(t, s) === kind).map((t) => t.amount));
+		if (kind === 'fromPeople' && total === 0) continue;
+		const tr = foot.createEl('tr');
+		tr.createEl('td', { text: label });
+		tr.createEl('td', { cls: 'afm-chip-cell' });
+		tr.createEl('td', { cls: 'afm-narrow-hide' });
+		tr.createEl('td', { cls: 'afm-num', text: formatMoney(total, s) });
+	}
 }
