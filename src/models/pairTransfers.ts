@@ -26,9 +26,9 @@ export function pairTransfers(moves: Transaction[], candidates: Transaction[]): 
 	// Each row is used once.
 	const pairs = new Map<string, Transaction>();
 	for (const { a, b } of options) {
-		if (pairs.has(a.key) || pairs.has(b.key)) continue;
-		pairs.set(a.key, b);
-		pairs.set(b.key, a);
+		if (pairs.has(a.id) || pairs.has(b.id)) continue;
+		pairs.set(a.id, b);
+		pairs.set(b.id, a);
 	}
 	return pairs;
 }

@@ -1,35 +1,43 @@
 import { normalizePath, Notice, type App } from 'obsidian';
-import { emptyLabels } from '../defaults/defaultLabels';
+import { copyDefaultLabels, LABELS_VERSION } from '../defaults/defaultLabels';
 import type { Labels } from '../models/Labels';
 
 // Reads and writes your labels file (JSON in the vault).
 export class LabelStore {
-	data: Labels = emptyLabels();
+	data: Labels = copyDefaultLabels();
 	private text = '';      // last text read or written, to spot outside changes
-	private broken = false; // the file didn't parse: never overwrite it
+	private broken = false; // the file can't be used: never overwrite it
 
 	constructor(private app: App, private path: () => string) {}
 
-	// Reads the file; a missing file means no labels yet. Returns true when something changed.
+	// Reads the file, or makes it from the defaults when there's none. Returns true when something changed.
 	async load(): Promise<boolean> {
 		const path = normalizePath(this.path());
 		const adapter = this.app.vault.adapter;
-		const text = (await adapter.exists(path)) ? await adapter.read(path) : '';
+		if (!(await adapter.exists(path))) {
+			this.data = copyDefaultLabels();
+			this.broken = false;
+			await this.save();
+			return true;
+		}
+		const text = await adapter.read(path);
 		if (text === this.text) return false;
 		this.text = text;
 		try {
-			this.data = text.trim() ? { ...emptyLabels(), ...JSON.parse(text) } : emptyLabels();
+			const data = JSON.parse(text);
+			if (data.version !== LABELS_VERSION) throw new Error(`it's version ${data.version}, this plugin uses ${LABELS_VERSION}`);
+			this.data = { ...copyDefaultLabels(), ...data };
 			this.broken = false;
-		} catch {
+		} catch (e) {
 			this.broken = true;
-			new Notice(`Finance: ${path} isn't valid JSON. Fix it; it won't be overwritten until then.`);
+			new Notice(`Finance: can't use ${path}: ${(e as Error).message}. Fix, rename or delete it; it won't be overwritten.`, 0);
 		}
 		return true;
 	}
 
-	// Writes the file (making its folder if needed), unless it failed to load.
+	// Writes the file (making its folder if needed), unless the file there can't be used.
 	async save(): Promise<void> {
-		if (this.broken) return void new Notice('Finance: labels not saved, the labels file has a JSON error.');
+		if (this.broken) return void new Notice('Finance: labels not saved, the labels file can\'t be used.');
 		const path = normalizePath(this.path());
 		const adapter = this.app.vault.adapter;
 		const folder = path.split('/').slice(0, -1).join('/');
@@ -42,10 +50,5 @@ export class LabelStore {
 	async switchFile(): Promise<void> {
 		if (await this.app.vault.adapter.exists(normalizePath(this.path()))) await this.load();
 		else await this.save();
-	}
-
-	// True when nothing is saved yet.
-	isEmpty(): boolean {
-		return Object.keys(this.data.transactions).length === 0 && this.data.rules.length === 0;
 	}
 }

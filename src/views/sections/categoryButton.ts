@@ -10,7 +10,7 @@ const SOURCE_TIP = { edit: 'One-off edit', rule: 'Remembered merchant', none: 'N
 
 // A transaction's category badge; click to edit the transaction.
 export function categoryButton(parent: HTMLElement, t: Transaction, ctx: DashboardContext): void {
-	const btn = badge(parent, t.category, t.subcategory, 'button');
+	const btn = badge(parent, t.category, ctx.labels, t.subcategory, 'button', t.amount);
 	btn.toggleClass('is-uncategorised', t.category === UNCATEGORISED);
 	btn.toggleClass('is-edited', t.source === 'edit');
 	setIconSafe(btn.createSpan({ cls: 'afm-badge-chevron' }), 'chevron-down');

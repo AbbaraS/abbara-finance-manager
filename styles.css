@@ -346,6 +346,26 @@
 .afm-badge-sub { font-weight: var(--font-medium); }
 .afm-badge-sub::before { content: '›'; margin-right: 4px; opacity: 0.6; }
 
+/* Direction arrow at the end of a badge: ↙ money in, ↗ money out. */
+.afm-badge-dir { display: inline-flex; }
+.afm-badge-dir svg { width: 12px; height: 12px; stroke-width: 2.5; }
+.afm-badge-dir.is-in { color: var(--afm-income, var(--color-blue)); }
+.afm-badge-dir.is-out { color: var(--afm-spend, var(--color-orange)); }
+
+/* Tags under a transaction. */
+.afm-tag {
+	font-style: normal;
+	font-size: var(--font-ui-smaller);
+	color: var(--tag-color);
+	background-color: var(--tag-background);
+	border-radius: var(--tag-radius);
+	padding: 0 var(--size-4-1);
+}
+
+/* "Sent to" dropdown in the transfers table. */
+.afm-move { display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-ui-smaller); }
+.afm-move select { font-size: var(--font-ui-smaller); height: auto; padding-top: 0; padding-bottom: 0; }
+
 /* Clickable badge: undo Obsidian's button look. */
 button.afm-badge {
 	height: auto;
@@ -381,6 +401,7 @@ button.afm-badge.is-edited { border-style: dashed; } /* one-off edit */
 /* Note under a transaction. */
 .afm-note-line {
 	display: flex;
+	flex-wrap: wrap;
 	align-items: flex-start;
 	gap: 4px;
 	margin-top: 2px;
@@ -483,7 +504,3 @@ body {
 .afm-flows td.is-selected { font-weight: var(--font-semibold); }
 .afm-flows .afm-detail td:first-child { padding-left: calc(var(--size-4-2) + 14px + 6px); }
 .afm-strong { font-weight: var(--font-semibold); }
-
-/* Icon picker rows. */
-.afm-icon-suggestion { display: flex; align-items: center; gap: var(--size-4-2); }
-.afm-icon-suggestion-icon { display: inline-flex; }

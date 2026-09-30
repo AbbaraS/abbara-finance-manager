@@ -1,9 +1,11 @@
+import type { CategoryKind } from './Category';
+
 // Where a transaction's category came from.
 export type CategorySource = 'edit' | 'rule' | 'none';
 
-// One row from a myFinances combined CSV.
+// One row from a myFinances monthly CSV, with your labels applied (see categorise).
 export interface Transaction {
-	key: string;         // stable id, the key in your labels file (see transactionKeys.ts)
+	id: string;          // made by myFinances; your labels are saved against it
 	date: string;        // YYYY-MM-DD
 	month: string;       // YYYY-MM
 	day: number;         // 1-31
@@ -12,8 +14,10 @@ export interface Transaction {
 	amount: number;      // money out is negative
 	currency: string;    // e.g. "GBP"
 	category: string;    // set by categorise()
+	kind: CategoryKind | null; // the category's kind, null = uncategorised
 	source: CategorySource;
-	subcategory: string; // '' = none
+	subcategory: string; // '' = none; money in under Spending shows "Refund"
 	note: string;
+	tags: string[];
 	otherAccount: string; // transfers: the other account if set by hand, '' = find it
 }

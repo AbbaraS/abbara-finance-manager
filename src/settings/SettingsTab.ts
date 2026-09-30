@@ -3,9 +3,10 @@ import type FinancePlugin from '../main';
 import { accountNames } from '../models/accountNames';
 import { categorise } from '../models/categorise';
 import type { SettingsContext } from './context';
+import { accountsSection } from './sections/accountsSection';
+import { categoriesSection } from './sections/categoriesSection';
 import { dataSection } from './sections/dataSection';
 import { editsSection } from './sections/editsSection';
-import { incomeSection } from './sections/incomeSection';
 import { merchantsSection } from './sections/merchantsSection';
 import { sectionsSection } from './sections/sectionsSection';
 
@@ -30,14 +31,15 @@ export class FinanceSettingTab extends PluginSettingTab {
 			app: this.app, plugin, save: this.save,
 			saveAndRedraw: () => { void plugin.save(); this.display(); },
 			rows: categorise(raw, plugin.labels.data),
-			accounts: accountNames(raw),
+			accounts: accountNames(raw, plugin.labels.data.accounts),
 		};
 
 		const scroll = el.scrollTop;
 		el.empty();
 		dataSection(el, ctx);
 		sectionsSection(el, ctx);
-		incomeSection(el, ctx);
+		categoriesSection(el, ctx);
+		accountsSection(el, ctx);
 		merchantsSection(el, ctx);
 		editsSection(el, ctx);
 		el.scrollTop = scroll;

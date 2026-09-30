@@ -1,7 +1,9 @@
 import { ItemView, type WorkspaceLeaf } from 'obsidian';
 import { CategoryModal } from '../edit/CategoryModal';
 import type FinancePlugin from '../main';
+import { accountNames } from '../models/accountNames';
 import { categorise } from '../models/categorise';
+import { setLabel } from '../models/Labels';
 import { monthList } from '../models/monthList';
 import { SECTIONS } from '../models/sections';
 import type { Transaction } from '../models/Transaction';
@@ -42,16 +44,18 @@ export class DashboardView extends ItemView {
 		el.addClass('afm-view');
 
 		const s = this.plugin.settings;
-		const rows = categorise(this.raw, this.plugin.labels.data);
+		const labels = this.plugin.labels.data;
+		const rows = categorise(this.raw, labels);
 		const months = monthList(rows);
 		if (months.length === 0) return emptyState(el, this.plugin);
 		if (!months.includes(this.month)) this.month = months[months.length - 1];
 
 		const ctx: DashboardContext = {
-			rows, months, month: this.month, settings: s, expanded: this.expanded,
+			rows, months, month: this.month, settings: s, labels, accounts: accountNames(rows, labels.accounts), expanded: this.expanded,
 			selectMonth: (m) => { this.month = m; this.render(); },
 			reload: () => { this.plugin.cache.clear(); void this.reload(); },
 			editCategory: (picked, similar) => new CategoryModal(this.app, this.plugin, rows, picked, similar).open(),
+			saveLabel: (t, patch) => { setLabel(labels, t.id, patch); void this.plugin.save(); },
 		};
 
 		header(el, ctx);

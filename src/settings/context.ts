@@ -9,5 +9,5 @@ export interface SettingsContext {
 	save: () => void;           // debounced, for typing
 	saveAndRedraw: () => void;  // for changes that add, remove or move items
 	rows: Transaction[];        // categorised rows, for counts
-	accounts: string[];         // accounts found in the data
+	accounts: string[];         // accounts in the data + ones you added
 }

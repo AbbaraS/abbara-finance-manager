@@ -1,7 +1,7 @@
 // How a category counts in the totals.
-export type CategoryKind = 'spending' | 'income' | 'transfer' | 'investment';
+export type CategoryKind = 'spending' | 'people' | 'income' | 'transfer' | 'saving';
 
-// One fixed category (listed in defaults/categories.ts).
+// One category. The list lives in your labels file; defaults are in defaults/defaultLabels.ts.
 export interface Category {
 	name: string;
 	kind: CategoryKind;
@@ -9,10 +9,20 @@ export interface Category {
 	icon: string;  // Lucide icon id
 }
 
-// Heading each kind is listed under.
-export const KIND_GROUP: Record<CategoryKind, string> = {
+// Kind names, in list order.
+export const KIND_LABELS: Record<CategoryKind, string> = {
 	spending: 'Spending',
+	people: 'People',
 	income: 'Income',
-	transfer: 'Not counted',
-	investment: 'Not counted',
+	transfer: 'Transfers',
+	saving: 'Savings & investments',
+};
+
+// Icon for a new category of each kind.
+export const KIND_ICONS: Record<CategoryKind, string> = {
+	spending: 'tag',
+	people: 'user',
+	income: 'banknote',
+	transfer: 'arrow-left-right',
+	saving: 'piggy-bank',
 };

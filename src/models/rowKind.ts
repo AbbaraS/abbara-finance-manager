@@ -1,38 +1,22 @@
-import { categoryKind } from './categoryKind';
 import type { FinanceSettings } from './FinanceSettings';
 import type { Transaction } from './Transaction';
 
 export const UNCATEGORISED = 'Uncategorised';
 
-// income: money in. spend: money out. refund: money back in a spending category.
+// income: money in. spend: money out. refund: money back in a Spending or People category.
 export type RowKind = 'income' | 'spend' | 'refund' | 'skip';
 
-// Kinds left out of income and spending (they have their own card / section).
-const NOT_COUNTED = new Set(['investment', 'transfer']);
-
-// True when uncategorised money in on this row's account counts as income.
-export function isIncomeAccount(t: Transaction, s: FinanceSettings): boolean {
-	return s.incomeAccounts.includes(t.account);
+// False for transfers and savings: they have their own section / card, not income or spending.
+export function countsKind(t: Transaction): boolean {
+	return t.kind !== 'transfer' && t.kind !== 'saving';
 }
 
-// True when a category's rows go into income / spending (Uncategorised does).
-export function countsCategory(name: string): boolean {
-	return !NOT_COUNTED.has(categoryKind(name) ?? '');
-}
-
-// True when a row belongs in income / spending (right currency, a counted kind).
-export function isCounted(t: Transaction, s: FinanceSettings): boolean {
-	return t.currency === s.currency && countsCategory(t.category);
-}
-
-// Decides how one row affects the totals.
+// Decides how one row affects the totals. Only Income categories are income; other money in is a refund or not counted.
 export function rowKind(t: Transaction, s: FinanceSettings): RowKind {
-	if (!isCounted(t, s)) return 'skip';
+	if (t.currency !== s.currency || !countsKind(t)) return 'skip';
 	if (t.amount < 0) return 'spend';
-	const kind = categoryKind(t.category);
-	if (kind === 'spending') return 'refund';
-	if (kind === 'income') return 'income';
-	return isIncomeAccount(t, s) ? 'income' : 'skip'; // uncategorised money in
+	if (t.kind === 'income') return 'income';
+	return t.kind === 'spending' || t.kind === 'people' ? 'refund' : 'skip'; // uncategorised money in isn't counted
 }
 
 // How much a row adds to spending (refunds give a negative number).

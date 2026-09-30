@@ -1,6 +1,5 @@
-import { moneyIn } from '../../models/moneyIn';
 import { sum } from '../../models/monthSummary';
-import { incomeOf, rowKind, type RowKind } from '../../models/rowKind';
+import { countsKind, incomeOf, rowKind, type RowKind } from '../../models/rowKind';
 import { dayLabel } from '../../utils/dates';
 import { formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
@@ -12,17 +11,13 @@ import { tableHead } from './tableHead';
 // How each row ends up in the totals, in words.
 const COUNTS_AS: Record<RowKind, string> = { income: 'Income', refund: 'Refund', spend: 'Spending', skip: 'Not counted' };
 
-// Every payment into the income accounts this month; change a category to stop it counting as income.
+// This month's money in (not transfers or savings). Only Income categories count as income; the rest are refunds or not counted.
 export function moneyInList(el: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const s = ctx.settings;
-	const rows = moneyIn(ctx.rows, ctx.month, s);
+	const rows = ctx.rows.filter((t) => t.month === ctx.month && t.amount > 0 && t.currency === s.currency && countsKind(t));
 	const body = section(el, 'Money in', 'hand-coins');
-	if (s.incomeAccounts.length === 0) {
-		body.createDiv({ cls: 'afm-muted', text: 'Pick your income accounts in settings.' });
-		return;
-	}
-	body.createDiv({ cls: 'afm-note', text: `Payments into ${s.incomeAccounts.join(', ')}. Change a category if it isn't income (refund, family, savings…).` });
+	body.createDiv({ cls: 'afm-note', text: 'Only Income categories count as income. Other money in goes back into its category as a refund; uncategorised money in isn\'t counted.' });
 	if (rows.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No money in this month.' });
 		return;
@@ -45,8 +40,8 @@ export function moneyInList(el: HTMLElement, ctx: DashboardContext): void {
 		tr.toggleClass('afm-not-income', kind !== 'income');
 		const cell = tr.createEl('td');
 		cell.createDiv({ text: t.description });
-		cell.createDiv({ cls: 'afm-muted', text: dayLabel(t.date, s.locale) });
-		noteLine(cell, t.note);
+		cell.createDiv({ cls: 'afm-muted', text: `${dayLabel(t.date, s.locale)} · ${t.account}` });
+		noteLine(cell, t);
 		categoryButton(tr.createEl('td', { cls: 'afm-chip-cell' }), t, ctx);
 		tr.createEl('td', { cls: 'afm-muted afm-narrow-hide', text: COUNTS_AS[kind] });
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(t.amount, s) });

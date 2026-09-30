@@ -1,5 +1,5 @@
 import type { FinanceSettings } from './FinanceSettings';
-import { countsCategory, incomeOf, spendOf } from './rowKind';
+import { countsKind, incomeOf, spendOf } from './rowKind';
 import type { Transaction } from './Transaction';
 
 // Headline numbers for one month.
@@ -17,7 +17,7 @@ export function monthSummary(rows: Transaction[], month: string, s: FinanceSetti
 	const income = sum(inMonth.map((t) => incomeOf(t, s)));
 	const spending = sum(inMonth.map((t) => spendOf(t, s)));
 	const count = inMonth.filter((t) => incomeOf(t, s) !== 0 || spendOf(t, s) !== 0).length;
-	const otherCurrency = inMonth.filter((t) => t.currency !== s.currency && countsCategory(t.category)).length;
+	const otherCurrency = inMonth.filter((t) => t.currency !== s.currency && countsKind(t)).length;
 	return { income, spending, net: income - spending, count, otherCurrency };
 }
 

@@ -1,5 +1,4 @@
 import { Setting } from 'obsidian';
-import { CATEGORIES } from '../../defaults/categories';
 import type { Direction, Rule } from '../../models/Rule';
 import { ruleHits } from '../../models/ruleHits';
 import { countLabel } from '../../utils/countLabel';
@@ -29,7 +28,7 @@ export function merchantsSection(el: HTMLElement, ctx: SettingsContext): void {
 			rows.forEach((r) => r.el.toggleClass('afm-hidden', !r.text.includes(f)));
 		}))
 		.addButton((b) => b.setButtonText('Add').onClick(() => {
-			labels.rules.unshift({ pattern: '', category: CATEGORIES[0].name, subcategory: '', account: '', direction: '' });
+			labels.rules.unshift({ pattern: '', category: labels.categories[0]?.name ?? '', subcategory: '', account: '', direction: '' });
 			ctx.saveAndRedraw();
 		}));
 
@@ -51,7 +50,7 @@ function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: Sett
 		.addText((t) => t.setPlaceholder('Description contains').setValue(rule.pattern)
 			.onChange((v) => { rule.pattern = v; ctx.save(); }))
 		.addDropdown((d) => {
-			for (const c of CATEGORIES) d.addOption(c.name, c.name);
+			for (const c of ctx.plugin.labels.data.categories) d.addOption(c.name, c.name);
 			d.setValue(rule.category).onChange((v) => { rule.category = v; ctx.save(); });
 		})
 		.addText((t) => t.setPlaceholder('Subcategory').setValue(rule.subcategory ?? '')

@@ -6,7 +6,7 @@ import type { Transaction } from './Transaction';
 export function ruleHits(rows: Transaction[], labels: Labels): number[] {
 	const hits = labels.rules.map(() => 0);
 	for (const t of rows) {
-		if (labels.transactions[t.key]?.category) continue;
+		if (labels.transactions[t.id]?.category) continue;
 		const i = labels.rules.findIndex((r) => ruleMatches(r, t));
 		if (i >= 0) hits[i]++;
 	}

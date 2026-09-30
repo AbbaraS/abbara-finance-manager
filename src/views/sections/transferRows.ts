@@ -5,7 +5,8 @@ import type { DashboardContext } from '../DashboardContext';
 import { categoryButton } from './categoryButton';
 import { noteLine } from './noteLine';
 
-// Detail rows under a flow: this month's transfers, each spanning the whole table.
+// Detail rows under a flow: this month's transfers, each spanning the whole table,
+// with a dropdown to move one to another account.
 export function transferRows(tbody: HTMLElement, rows: Transaction[], span: number, ctx: DashboardContext): HTMLElement[] {
 	const s = ctx.settings;
 	if (rows.length === 0) {
@@ -20,7 +21,17 @@ export function transferRows(tbody: HTMLElement, rows: Transaction[], span: numb
 		line.createSpan({ text: t.description });
 		line.createSpan({ cls: 'afm-muted', text: `${dayLabel(t.date, s.locale)} · ${t.account} · ${formatChange(t.amount, s)}` });
 		categoryButton(line, t, ctx);
-		noteLine(cell, t.note);
+
+		// Other account: "Find automatically" or one picked by hand.
+		const move = line.createEl('label', { cls: 'afm-move afm-muted', text: t.amount < 0 ? 'Sent to ' : 'Came from ' });
+		const select = move.createEl('select', { cls: 'dropdown' });
+		select.createEl('option', { value: '', text: 'Find automatically' });
+		for (const a of ctx.accounts) if (a !== t.account) select.createEl('option', { value: a, text: a });
+		select.value = t.otherAccount;
+		select.addEventListener('click', (e) => e.stopPropagation()); // don't toggle the row
+		select.addEventListener('change', () => ctx.saveLabel(t, { other: select.value }));
+
+		noteLine(cell, t);
 		return tr;
 	});
 }

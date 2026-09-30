@@ -9,7 +9,7 @@ export function moveSignature(t: Transaction): string {
 export function learnCounterparts(moves: Transaction[], pairs: Map<string, Transaction>): Map<string, string> {
 	const counts = new Map<string, Map<string, number>>();
 	for (const t of moves) {
-		const other = pairs.get(t.key);
+		const other = pairs.get(t.id);
 		if (!other) continue;
 		const sig = moveSignature(t);
 		const byAccount = counts.get(sig) ?? new Map<string, number>();

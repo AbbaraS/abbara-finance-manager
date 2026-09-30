@@ -23,47 +23,56 @@ Run `make` in myFinances and the dashboard reloads (or press the reload button).
 
 ## Categories
 
-The categories are fixed, in `src/defaults/categories.ts`:
+Your categories live in the labels file. A new file starts with these:
 
-| Group | Categories | Counts as |
+| Kind | Categories | Counts as |
 |---|---|---|
-| Spending | Transport, Food, Shopping, Bills, Subscriptions, Family, General Spending | money out is spent, money in is a refund |
-| Income | PhD, GTA, UMSU, Other | money in is income |
-| Not counted | Transfer, Investment | Transfers section / Invested card |
+| Spending | Transport, Food, Shopping, Bills, Subscriptions, Family, General Spending | money out is spent; money in is a refund (subcategory *Refund*) |
+| People | People (subcategory = the person) | same as Spending |
+| Income | PhD (`UNIV OF MANCHESTER`), UMSU (`MAN UNI STUDENTS U BGC`) | money in is income |
+| Transfers | Transfer | Transfers section, not counted |
+| Savings & investments | Savings, Investment | *Saved & invested* card, not counted |
 
-- **Subcategories** are free text under a category (e.g. *Food › Groceries*). The edit window suggests ones you've used.
+- **Edit window** (click a category chip): pick a category or make a new one, pick a subcategory or make a new one,
+  add a note and tags. Badges end in an arrow: ↙ money in, ↗ money out.
 - **Merchants**: with *Remember for this merchant* on, the edit window saves "description contains X → category".
-  Other months and new statements then get it too. First match wins; the list is in settings (collapsed, searchable).
+  Other months and new statements get it too. First match wins. The two income sources above are merchants too;
+  add another income source by making an Income category and remembering its payer.
 - **One-off edits** set one transaction's category. They beat merchants.
-- On the dashboard, click a category chip (or the tag button in *Uncategorised*) to change it.
+- **Settings** lists categories (rename, colour, kind, delete), accounts, merchants and one-off edits.
 
-Transfers: the other account is found by matching the same amount in another account within 4 days.
-If that side isn't in your data, the account that similar transfers usually go to is used.
-You can also set it by hand ("Sent to" / "Came from" when editing a transfer).
+## Accounts and transfers
+
+Accounts in the data appear by themselves. Add others in settings (e.g. a savings account without statements yet).
+Name them the way myFinances will, so their statements link up later.
+
+The other side of a transfer is found from, in order:
+1. the account you picked by hand (*Sent to* / *Came from* in the Transfers section or the edit window);
+2. the same amount in another account within 4 days;
+3. an account whose **match text** is in the description (e.g. a sort code);
+4. where similar transfers usually go;
+5. otherwise *Unknown account*.
 
 ## Where your data lives
 
 | What | Where |
 |---|---|
 | Transactions | monthly CSVs from myFinances (`Finance/combined/<year>/<year>-<month>.csv`); other CSVs there are ignored |
-| Your labels: one-off categories, subcategories, notes, merchants | `Finance/labels.json` in the vault (setting: *Labels file*) |
+| Your categories, accounts, merchants and labels | `Finance/labels.json` in the vault (setting: *Labels file*) |
 | Plugin settings | `data.json` in the plugin folder |
 
-Each transaction has a short id: a hash of its date, account, amount and description (plus `#n` for identical rows).
-So labels survive re-running `make` and adding older statements.
-
-Upgrading from settings v2 moves categories, rules and edits out of `data.json` into the labels file once,
-and keeps the old file as `data-v2-backup.json` (see `src/models/migrateToLabels.ts`).
+Labels are saved against the `id` column that myFinances writes (a hash of account, date, amount and description).
+Moving files or changing categories doesn't change ids, so the labels file can be copied to another vault.
+A labels file from another version isn't loaded or overwritten: rename or delete it to start fresh.
 
 ## How totals work
 
 - Only rows in the chosen currency (default GBP) count.
-- Rows in *Transfer* or *Investment* are left out.
+- Transfers and Savings & investments are left out.
 - Money out is **spending**.
-- Money in under an *Income* category is **income**. Uncategorised money in is income only on an income account
-  (default `barclays - debit`).
-- Money in under a *Spending* category is a **refund** and reduces spending.
-- Money in anywhere else isn't counted.
+- Money in is **income** only under an Income category.
+- Money in under Spending or People is a **refund** and reduces spending.
+- Uncategorised money in isn't counted.
 
 All of this is in `src/models/rowKind.ts`.
 
@@ -74,7 +83,7 @@ src/
   main.ts            wiring only
   models/            data types + pure calculations (no DOM)
   data/              reading CSVs and the labels file from the vault
-  defaults/          fixed categories, default settings
+  defaults/          default categories and settings
   views/             DashboardView + one file per section
   edit/              edit-transaction window
   views/look/        badges, icon dots, colours
@@ -90,10 +99,10 @@ styles.css
 | Summary cards | `summaryCards.ts` | income, spending, net, invested (all time) |
 | Monthly overview | `monthlyBars.ts` | div bar chart, round axis steps, tooltips, click a month |
 | Running net | `dailyLine.ts` | hand-drawn SVG line, crosshair on hover / arrow keys |
-| Money in | `moneyInList.ts` | every payment into the income accounts, with category chips |
+| Money in | `moneyInList.ts` | every payment in this month (not transfers), how it counts, category chips |
 | By category | `categoryTable.ts` | table, share bars, click-to-expand transactions with category chips |
 | By account | `accountTable.ts` | table with share bars |
-| Transfers | `transfersTable.ts` | account → account per month, cells tinted by size, expand to fix |
+| Transfers | `transfersTable.ts` | account → account per month, cells tinted by size, expand to move a transfer |
 | Compared with last month | `comparison.ts` | bars from a centre line, vs 3-month average |
 | Uncategorised | `uncategorisedList.ts` | pick a category for each description; remembered for that merchant |
 

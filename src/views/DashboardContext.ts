@@ -1,4 +1,5 @@
 import type { FinanceSettings } from '../models/FinanceSettings';
+import type { Label, Labels } from '../models/Labels';
 import type { Transaction } from '../models/Transaction';
 
 // Everything a dashboard section needs to draw itself.
@@ -7,8 +8,11 @@ export interface DashboardContext {
 	months: string[];             // months with data, oldest first
 	month: string;                // the month being shown, "YYYY-MM"
 	settings: FinanceSettings;
-	expanded: Set<string>;        // open category rows, kept across redraws
+	labels: Labels;               // your categories, accounts and labels
+	accounts: string[];           // accounts in the data + ones you added
+	expanded: Set<string>;        // open rows, kept across redraws
 	selectMonth: (month: string) => void; // switch month and redraw
 	reload: () => void;                   // re-read the CSVs
-	editCategory: (picked: Transaction[], similar: boolean) => void; // opens the category picker
+	editCategory: (picked: Transaction[], similar: boolean) => void; // opens the edit window
+	saveLabel: (t: Transaction, patch: Label) => void;               // changes one label, saves and redraws
 }

@@ -49,7 +49,7 @@ export function comparison(el: HTMLElement, ctx: DashboardContext): void {
 	const rows = changes.map((c) => {
 		const tr = tbody.createEl('tr');
 		const name = tr.createEl('td').createDiv({ cls: 'afm-row-title' });
-		const look = categoryLook(c.category);
+		const look = categoryLook(c.category, ctx.labels);
 		iconDot(name, look.icon, look.color);
 		name.createSpan({ text: c.category });
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(c.thisMonth, s) });

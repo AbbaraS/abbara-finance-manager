@@ -11,11 +11,11 @@ export interface RulePreview {
 
 // Counts the rows a rule matches. `picked` rows lose their edit, so they aren't counted as edited.
 export function rulePreview(rule: Rule, rows: Transaction[], picked: Transaction[]): RulePreview {
-	const pickedKeys = new Set(picked.map((t) => t.key));
+	const pickedKeys = new Set(picked.map((t) => t.id));
 	const hits = rows.filter((t) => ruleMatches(rule, t));
 	return {
 		count: hits.length,
 		months: new Set(hits.map((t) => t.month)).size,
-		edited: hits.filter((t) => t.source === 'edit' && !pickedKeys.has(t.key)).length,
+		edited: hits.filter((t) => t.source === 'edit' && !pickedKeys.has(t.id)).length,
 	};
 }

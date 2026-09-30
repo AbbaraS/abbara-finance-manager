@@ -1,11 +1,9 @@
 import { Plugin } from 'obsidian';
 import { LabelStore } from './data/LabelStore';
-import { migrateOldData } from './data/migrateOldData';
 import { TransactionCache } from './data/TransactionCache';
-import { watchDataFolder } from './data/watchDataFolder';
-import { watchLabelsFile } from './data/watchLabelsFile';
+import { watchFiles } from './data/watchFiles';
+import { copyDefaultSettings } from './defaults/defaultSettings';
 import type { FinanceSettings } from './models/FinanceSettings';
-import { settingsFrom } from './models/settingsFrom';
 import { FinanceSettingTab } from './settings/SettingsTab';
 import { DashboardView, VIEW_TYPE } from './views/DashboardView';
 
@@ -16,19 +14,19 @@ export default class FinancePlugin extends Plugin {
 	cache!: TransactionCache;
 
 	async onload() {
-		const saved = await this.loadData();
-		this.settings = settingsFrom(saved ?? {});
+		// Settings: known fields only, so fields from older versions are dropped on the next save.
+		const saved: Record<string, unknown> = (await this.loadData()) ?? {};
+		this.settings = copyDefaultSettings();
+		for (const key of Object.keys(this.settings)) if (saved[key] !== undefined) Object.assign(this.settings, { [key]: saved[key] });
+
 		this.labels = new LabelStore(this.app, () => this.settings.labelsFile);
 		await this.labels.load();
-		await migrateOldData(this, saved);
-
 		this.cache = new TransactionCache(this.app);
 		this.registerView(VIEW_TYPE, (leaf) => new DashboardView(leaf, this));
 		this.addRibbonIcon('wallet', 'Open finance dashboard', () => this.openDashboard());
 		this.addCommand({ id: 'open-dashboard', name: 'Open dashboard', callback: () => this.openDashboard() });
 		this.addSettingTab(new FinanceSettingTab(this.app, this));
-		watchDataFolder(this);
-		watchLabelsFile(this);
+		watchFiles(this);
 	}
 
 	// Shows the dashboard, reusing an open one.

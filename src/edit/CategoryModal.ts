@@ -12,7 +12,7 @@ import { directionOf } from './directionOf';
 import { pickedSummary } from './pickedSummary';
 import { similarFields } from './similarFields';
 
-// Window for editing one or more transactions: category (once or remembered for the merchant), subcategory and note.
+// Window for editing one or more transactions: category (once or remembered for the merchant), subcategory, note and tags.
 export class CategoryModal extends Modal {
 	private choice: CategoryChoice;
 
@@ -22,8 +22,11 @@ export class CategoryModal extends Modal {
 		const one = picked.length === 1;
 		this.choice = {
 			category: first.category === UNCATEGORISED ? '' : first.category,
+			newKind: null,
 			subcategory: one ? first.subcategory : '',
+			newSub: false,
 			note: one ? first.note : '',
+			tags: one ? first.tags : [],
 			other: one ? first.otherAccount : '',
 			similar,
 			rule: { pattern: rulePattern(first.description), category: '', account: '', direction: directionOf(picked) },
@@ -47,8 +50,8 @@ export class CategoryModal extends Modal {
 		const redraw = () => this.draw();
 
 		pickedSummary(el, this.picked, this.plugin.settings);
-		categoryField(el, this.choice, redraw);
-		detailsFields(el, this.choice, this.plugin.labels.data, this.rows, this.picked);
+		categoryField(el, this.choice, this.plugin.labels.data, redraw);
+		detailsFields(el, this.choice, this.plugin.labels.data, this.rows, this.picked, redraw);
 		similarFields(el, this.choice, this.picked, this.rows, redraw);
 
 		new Setting(el)
@@ -59,12 +62,12 @@ export class CategoryModal extends Modal {
 	// Checks the form, writes to your labels and closes.
 	private save() {
 		const c = this.choice;
-		if (!c.category) return void new Notice('Pick a category first.');
+		if (!c.category.trim()) return void new Notice(c.newKind ? 'Name the new category first.' : 'Pick a category first.');
 		if (c.similar && !c.rule.pattern.trim()) return void new Notice('Type some text from the description for the rule.');
 
 		applyCategory(this.plugin.labels.data, this.picked, c);
 		void this.plugin.save();
-		new Notice(c.similar ? `Remembered: "${c.rule.pattern.trim()}" → ${c.category}` : 'Saved');
+		new Notice(c.similar ? `Remembered: "${c.rule.pattern.trim()}" → ${c.category.trim()}` : 'Saved');
 		this.close();
 	}
 }

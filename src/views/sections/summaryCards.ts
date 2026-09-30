@@ -4,7 +4,7 @@ import { formatChange, formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
 import { iconDot } from '../look/iconDot';
 
-// Income, spending, net for the month, plus money invested (all time).
+// Income, spending, net for the month, plus money saved and invested (all time).
 export function summaryCards(el: HTMLElement, ctx: DashboardContext): void {
 	const s = ctx.settings;
 	const m = monthSummary(ctx.rows, ctx.month, s);
@@ -16,9 +16,9 @@ export function summaryCards(el: HTMLElement, ctx: DashboardContext): void {
 		m.net < 0 ? 'var(--afm-c-red)' : 'var(--afm-c-green)');
 	net.value.toggleClass('afm-negative', m.net < 0);
 
-	// Invested (all time).
+	// Saved & invested (all time).
 	const inv = invested(ctx.rows, ctx.month, s);
-	const box = card(cards, 'Invested (all time)', formatMoney(inv.total, s), 'sprout', 'var(--afm-c-violet)');
+	const box = card(cards, 'Saved & invested (all time)', formatMoney(inv.total, s), 'sprout', 'var(--afm-c-violet)');
 	box.extra.setText(inv.thisMonth ? `${formatChange(inv.thisMonth, s)} this month` : 'Nothing this month');
 	const subs = inv.bySub.filter((x) => x.total !== 0).slice(0, 3);
 	if (subs.length > 1) box.extra.createDiv({ text: subs.map((x) => `${x.name} ${formatMoney(x.total, s)}`).join(' · ') });

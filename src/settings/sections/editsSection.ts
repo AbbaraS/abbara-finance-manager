@@ -1,5 +1,5 @@
 import { Setting } from 'obsidian';
-import { setLabel } from '../../models/setLabel';
+import { setLabel } from '../../models/Labels';
 import { countLabel } from '../../utils/countLabel';
 import { dayLabel } from '../../utils/dates';
 import { formatChange } from '../../utils/money';
@@ -10,8 +10,8 @@ import type { SettingsContext } from '../context';
 export function editsSection(el: HTMLElement, ctx: SettingsContext): void {
 	const s = ctx.plugin.settings;
 	const labels = ctx.plugin.labels.data;
-	const byKey = new Map(ctx.rows.map((t) => [t.key, t]));
-	const date = (key: string) => byKey.get(key)?.date ?? '';
+	const byKey = new Map(ctx.rows.map((t) => [t.id, t]));
+	const date = (id: string) => byKey.get(id)?.date ?? '';
 	const keys = Object.keys(labels.transactions).filter((k) => labels.transactions[k].category)
 		.sort((a, b) => date(b).localeCompare(date(a))); // newest first, missing rows last
 

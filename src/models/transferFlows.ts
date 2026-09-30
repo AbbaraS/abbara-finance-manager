@@ -1,5 +1,5 @@
-import { categoryKind } from './categoryKind';
 import type { FinanceSettings } from './FinanceSettings';
+import type { Account } from './Labels';
 import { learnCounterparts, moveSignature } from './learnCounterparts';
 import { pairTransfers } from './pairTransfers';
 import type { Transaction } from './Transaction';
@@ -16,9 +16,10 @@ export interface Flow {
 }
 
 // Groups rows in Transfer-kind categories into account-to-account flows.
-// The other account comes from: set by hand > the matching row in the other account > what similar rows usually pair with.
-export function transferFlows(rows: Transaction[], s: FinanceSettings): Flow[] {
-	const kind = (t: Transaction) => categoryKind(t.category);
+// The other account comes from: set by hand > the matching row in the other account > an account whose
+// "match" text is in the description > what similar rows usually pair with.
+export function transferFlows(rows: Transaction[], s: FinanceSettings, accounts: Account[]): Flow[] {
+	const kind = (t: Transaction) => t.kind;
 	const inCurrency = rows.filter((t) => t.currency === s.currency);
 	const moves = inCurrency.filter((t) => kind(t) === 'transfer');
 	const candidates = inCurrency.filter((t) => kind(t) === 'transfer' || kind(t) === null); // other side may be uncategorised
@@ -27,9 +28,11 @@ export function transferFlows(rows: Transaction[], s: FinanceSettings): Flow[] {
 
 	const flows = new Map<string, Flow>();
 	for (const t of moves) {
-		const partner = pairs.get(t.key);
+		const partner = pairs.get(t.id);
 		if (t.amount > 0 && partner && kind(partner) === 'transfer') continue; // counted from the out side
-		const other = t.otherAccount || partner?.account || learned.get(moveSignature(t)) || UNKNOWN_ACCOUNT;
+		const text = t.description.toLowerCase();
+		const matched = accounts.find((a) => a.match.trim() && a.name !== t.account && text.includes(a.match.trim().toLowerCase()))?.name;
+		const other = t.otherAccount || partner?.account || matched || learned.get(moveSignature(t)) || UNKNOWN_ACCOUNT;
 		const [from, to] = t.amount < 0 ? [t.account, other] : [other, t.account];
 		if (from === to) continue;
 
