@@ -1,25 +1,34 @@
 import { Plugin } from 'obsidian';
+import { LabelStore } from './data/LabelStore';
+import { migrateOldData } from './data/migrateOldData';
 import { TransactionCache } from './data/TransactionCache';
 import { watchDataFolder } from './data/watchDataFolder';
-import { copyDefaultSettings } from './defaults/defaultSettings';
+import { watchLabelsFile } from './data/watchLabelsFile';
 import type { FinanceSettings } from './models/FinanceSettings';
-import { migrateSettings } from './models/migrateSettings';
+import { settingsFrom } from './models/settingsFrom';
 import { FinanceSettingTab } from './settings/SettingsTab';
 import { DashboardView, VIEW_TYPE } from './views/DashboardView';
 
-// Entry point: loads settings and wires the dashboard, command and settings tab.
+// Entry point: loads settings and labels, and wires the dashboard, command and settings tab.
 export default class FinancePlugin extends Plugin {
 	settings!: FinanceSettings;
+	labels!: LabelStore;
 	cache!: TransactionCache;
 
 	async onload() {
-		await this.loadSettings();
+		const saved = await this.loadData();
+		this.settings = settingsFrom(saved ?? {});
+		this.labels = new LabelStore(this.app, () => this.settings.labelsFile);
+		await this.labels.load();
+		await migrateOldData(this, saved);
+
 		this.cache = new TransactionCache(this.app);
 		this.registerView(VIEW_TYPE, (leaf) => new DashboardView(leaf, this));
 		this.addRibbonIcon('wallet', 'Open finance dashboard', () => this.openDashboard());
 		this.addCommand({ id: 'open-dashboard', name: 'Open dashboard', callback: () => this.openDashboard() });
 		this.addSettingTab(new FinanceSettingTab(this.app, this));
 		watchDataFolder(this);
+		watchLabelsFile(this);
 	}
 
 	// Shows the dashboard, reusing an open one.
@@ -37,15 +46,14 @@ export default class FinancePlugin extends Plugin {
 		}
 	}
 
-	async loadSettings() {
-		const saved = await this.loadData();
-		// Saved data without a version is from v1.
-		this.settings = saved ? { ...copyDefaultSettings(), version: 1, ...saved } : copyDefaultSettings();
-		migrateSettings(this.settings);
+	// Re-reads the labels file; redraws when it changed.
+	async reloadLabels() {
+		if (await this.labels.load()) this.refreshViews();
 	}
 
-	async saveSettings() {
-		await this.saveData(this.settings);
+	// Saves settings and labels, then redraws.
+	async save() {
+		await Promise.all([this.saveData(this.settings), this.labels.save()]);
 		this.refreshViews();
 	}
 }

@@ -11,7 +11,7 @@ export interface Invested {
 
 // Adds up rows in Investment-kind categories.
 export function invested(rows: Transaction[], month: string, s: FinanceSettings): Invested {
-	const list = rows.filter((t) => t.currency === s.currency && categoryKind(t.category, s) === 'investment');
+	const list = rows.filter((t) => t.currency === s.currency && categoryKind(t.category) === 'investment');
 	const subs = new Map<string, number>();
 	for (const t of list) {
 		const name = t.subcategory || t.category;

@@ -19,7 +19,7 @@ export function uncategorisedList(el: HTMLElement, ctx: DashboardContext): void 
 		body.createDiv({ cls: 'afm-muted', text: 'Everything is categorised this month.' });
 		return;
 	}
-	body.createDiv({ cls: 'afm-note', text: 'Pick a category to add a rule; it applies to every month.' });
+	body.createDiv({ cls: 'afm-note', text: 'Pick a category; it\'s remembered for that merchant in every month.' });
 
 	// Table.
 	const table = body.createEl('table', { cls: 'afm-table' });
@@ -44,7 +44,7 @@ export function uncategorisedList(el: HTMLElement, ctx: DashboardContext): void 
 	showMore(body, rows, LIMIT);
 }
 
-// Icon button that opens the category picker for the whole group, with "similar" on.
+// Icon button that opens the category picker for the whole group, with "remember" on.
 function pickButton(parent: HTMLElement, g: UncategorisedGroup, ctx: DashboardContext): void {
 	const btn = parent.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': `Pick a category for "${g.description}"` } });
 	setIcon(btn, 'tag');

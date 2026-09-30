@@ -23,36 +23,45 @@ Run `make` in myFinances and the dashboard reloads (or press the reload button).
 
 ## Categories
 
-Categories live in the plugin, not in myFinances. Everything is in **Settings → Abbara Finance Manager**.
+The categories are fixed, in `src/defaults/categories.ts`:
 
-- **Categories** each have an icon, a colour and a kind:
-  - *Spending*: money out is spent, money in is a refund.
-  - *Income*: money in counts as income.
-  - *Investment*: left out of spending; added up in the **Invested** card.
-  - *Transfer between my accounts*: left out of totals; shown in **Transfers between accounts**.
-  - *Not counted*: left out of everything (e.g. family money).
-- **Rules** put transactions in a category when the description contains some text.
-  They can be limited to one account or to money in / out. Checked top to bottom; first match wins.
-- **One-off edits** set one transaction's category. They beat rules.
-- **Subcategory and note**: any transaction can have a subcategory (e.g. *Income › Car sold*, *Investment › Gold*)
-  and a note. Rules can set a subcategory too.
+| Group | Categories | Counts as |
+|---|---|---|
+| Spending | Transport, Food, Shopping, Bills, Subscriptions, Family, General Spending | money out is spent, money in is a refund |
+| Income | PhD, GTA, UMSU, Other | money in is income |
+| Not counted | Transfer, Investment | Transfers section / Invested card |
+
+- **Subcategories** are free text under a category (e.g. *Food › Groceries*). The edit window suggests ones you've used.
+- **Merchants**: with *Remember for this merchant* on, the edit window saves "description contains X → category".
+  Other months and new statements then get it too. First match wins; the list is in settings (collapsed, searchable).
+- **One-off edits** set one transaction's category. They beat merchants.
 - On the dashboard, click a category chip (or the tag button in *Uncategorised*) to change it.
-  Turn on *Apply to similar transactions* to save a rule instead of a one-off edit.
 
 Transfers: the other account is found by matching the same amount in another account within 4 days.
 If that side isn't in your data, the account that similar transfers usually go to is used.
 You can also set it by hand ("Sent to" / "Came from" when editing a transfer).
 
-Transactions are matched by a key made from date, account, amount and description,
-so edits survive re-running `make`.
+## Where your data lives
+
+| What | Where |
+|---|---|
+| Transactions | monthly CSVs from myFinances (`Finance/combined/<year>/<year>-<month>.csv`); other CSVs there are ignored |
+| Your labels: one-off categories, subcategories, notes, merchants | `Finance/labels.json` in the vault (setting: *Labels file*) |
+| Plugin settings | `data.json` in the plugin folder |
+
+Each transaction has a short id: a hash of its date, account, amount and description (plus `#n` for identical rows).
+So labels survive re-running `make` and adding older statements.
+
+Upgrading from settings v2 moves categories, rules and edits out of `data.json` into the labels file once,
+and keeps the old file as `data-v2-backup.json` (see `src/models/migrateToLabels.ts`).
 
 ## How totals work
 
 - Only rows in the chosen currency (default GBP) count.
-- Rows in a *Not counted* category are left out.
+- Rows in *Transfer* or *Investment* are left out.
 - Money out is **spending**.
-- Money in is **income** only on an income account (default `barclays - debit`),
-  when its category is *Income* or it has no category yet.
+- Money in under an *Income* category is **income**. Uncategorised money in is income only on an income account
+  (default `barclays - debit`).
 - Money in under a *Spending* category is a **refund** and reduces spending.
 - Money in anywhere else isn't counted.
 
@@ -64,7 +73,8 @@ All of this is in `src/models/rowKind.ts`.
 src/
   main.ts            wiring only
   models/            data types + pure calculations (no DOM)
-  data/              reading CSVs from the vault
+  data/              reading CSVs and the labels file from the vault
+  defaults/          fixed categories, default settings
   views/             DashboardView + one file per section
   edit/              edit-transaction window
   views/look/        badges, icon dots, colours
@@ -85,6 +95,6 @@ styles.css
 | By account | `accountTable.ts` | table with share bars |
 | Transfers | `transfersTable.ts` | account → account per month, cells tinted by size, expand to fix |
 | Compared with last month | `comparison.ts` | bars from a centre line, vs 3-month average |
-| Uncategorised | `uncategorisedList.ts` | pick a category and save a rule for each description |
+| Uncategorised | `uncategorisedList.ts` | pick a category for each description; remembered for that merchant |
 
 Hide any section in settings. Shared pieces live next to them: `tableHead`, `shareBar`, `expandable`, `showMore`, `chartFrame`, `svgAxes`.

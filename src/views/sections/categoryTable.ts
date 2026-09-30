@@ -37,7 +37,7 @@ export function categoryTable(el: HTMLElement, ctx: DashboardContext): void {
 	for (const g of groups) {
 		const tr = tbody.createEl('tr');
 		const name = tr.createEl('td');
-		const look = categoryLook(g.key, ctx.settings);
+		const look = categoryLook(g.key);
 		const title = name.createDiv({ cls: 'afm-row-title' });
 		const icon = title.createSpan({ cls: 'afm-chevron' });
 		iconDot(title, look.icon, look.color);

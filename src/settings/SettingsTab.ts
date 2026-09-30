@@ -3,11 +3,10 @@ import type FinancePlugin from '../main';
 import { accountNames } from '../models/accountNames';
 import { categorise } from '../models/categorise';
 import type { SettingsContext } from './context';
-import { categoriesSection } from './sections/categoriesSection';
 import { dataSection } from './sections/dataSection';
 import { editsSection } from './sections/editsSection';
 import { incomeSection } from './sections/incomeSection';
-import { rulesSection } from './sections/rulesSection';
+import { merchantsSection } from './sections/merchantsSection';
 import { sectionsSection } from './sections/sectionsSection';
 
 // Settings tab shell: loads the rows for counts, then lays out the sections.
@@ -16,7 +15,7 @@ export class FinanceSettingTab extends PluginSettingTab {
 
 	constructor(app: App, private plugin: FinancePlugin) {
 		super(app, plugin);
-		this.save = debounce(() => void plugin.saveSettings(), 600, true);
+		this.save = debounce(() => void plugin.save(), 600, true);
 	}
 
 	display(): void {
@@ -29,8 +28,8 @@ export class FinanceSettingTab extends PluginSettingTab {
 		const raw = await plugin.cache.get(plugin.settings.dataFolder);
 		const ctx: SettingsContext = {
 			app: this.app, plugin, save: this.save,
-			saveAndRedraw: () => { void plugin.saveSettings(); this.display(); },
-			rows: categorise(raw, plugin.settings),
+			saveAndRedraw: () => { void plugin.save(); this.display(); },
+			rows: categorise(raw, plugin.labels.data),
 			accounts: accountNames(raw),
 		};
 
@@ -39,8 +38,7 @@ export class FinanceSettingTab extends PluginSettingTab {
 		dataSection(el, ctx);
 		sectionsSection(el, ctx);
 		incomeSection(el, ctx);
-		categoriesSection(el, ctx);
-		rulesSection(el, ctx);
+		merchantsSection(el, ctx);
 		editsSection(el, ctx);
 		el.scrollTop = scroll;
 	}

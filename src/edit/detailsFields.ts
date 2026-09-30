@@ -1,20 +1,21 @@
 import { Setting } from 'obsidian';
 import { accountNames } from '../models/accountNames';
 import type { CategoryChoice } from '../models/CategoryChoice';
-import type { FinanceSettings } from '../models/FinanceSettings';
+import { categoryKind } from '../models/categoryKind';
+import type { Labels } from '../models/Labels';
 import type { Transaction } from '../models/Transaction';
 import { subcategoryNames } from '../models/subcategoryNames';
 
 // Subcategory (with suggestions), note, and the other account for transfers.
-export function detailsFields(el: HTMLElement, c: CategoryChoice, s: FinanceSettings, rows: Transaction[], picked: Transaction[]): void {
+export function detailsFields(el: HTMLElement, c: CategoryChoice, labels: Labels, rows: Transaction[], picked: Transaction[]): void {
 	// Subcategory, suggesting ones already used in this category.
 	new Setting(el)
 		.setName('Subcategory')
-		.setDesc('Optional, e.g. "Car sold" under Income or "Gold" under Investment.')
+		.setDesc('Optional, e.g. "Groceries" under Food or "Gold" under Investment.')
 		.addText((t) => {
 			t.setPlaceholder('None').setValue(c.subcategory).onChange((v) => (c.subcategory = v));
 			const list = el.createEl('datalist', { attr: { id: 'afm-sub-suggestions' } });
-			for (const name of subcategoryNames(c.category, s, rows)) list.createEl('option', { value: name });
+			for (const name of subcategoryNames(c.category, labels, rows)) list.createEl('option', { value: name });
 			t.inputEl.setAttr('list', list.id);
 		});
 
@@ -27,7 +28,7 @@ export function detailsFields(el: HTMLElement, c: CategoryChoice, s: FinanceSett
 	}
 
 	// Other account: only for transfers.
-	if (s.categories.find((x) => x.name === c.category)?.kind !== 'transfer') return;
+	if (categoryKind(c.category) !== 'transfer') return;
 	const own = picked[0].account;
 	new Setting(el)
 		.setName(picked[0].amount < 0 ? 'Sent to' : 'Came from')

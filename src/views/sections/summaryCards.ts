@@ -16,14 +16,12 @@ export function summaryCards(el: HTMLElement, ctx: DashboardContext): void {
 		m.net < 0 ? 'var(--afm-c-red)' : 'var(--afm-c-green)');
 	net.value.toggleClass('afm-negative', m.net < 0);
 
-	// Invested: only when an Investment-kind category exists.
-	if (s.categories.some((c) => c.kind === 'investment')) {
-		const inv = invested(ctx.rows, ctx.month, s);
-		const box = card(cards, 'Invested (all time)', formatMoney(inv.total, s), 'sprout', 'var(--afm-c-violet)');
-		box.extra.setText(inv.thisMonth ? `${formatChange(inv.thisMonth, s)} this month` : 'Nothing this month');
-		const subs = inv.bySub.filter((x) => x.total !== 0).slice(0, 3);
-		if (subs.length > 1) box.extra.createDiv({ text: subs.map((x) => `${x.name} ${formatMoney(x.total, s)}`).join(' · ') });
-	}
+	// Invested (all time).
+	const inv = invested(ctx.rows, ctx.month, s);
+	const box = card(cards, 'Invested (all time)', formatMoney(inv.total, s), 'sprout', 'var(--afm-c-violet)');
+	box.extra.setText(inv.thisMonth ? `${formatChange(inv.thisMonth, s)} this month` : 'Nothing this month');
+	const subs = inv.bySub.filter((x) => x.total !== 0).slice(0, 3);
+	if (subs.length > 1) box.extra.createDiv({ text: subs.map((x) => `${x.name} ${formatMoney(x.total, s)}`).join(' · ') });
 
 	// Note about rows left out.
 	if (m.otherCurrency > 0) {

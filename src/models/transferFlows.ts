@@ -18,7 +18,7 @@ export interface Flow {
 // Groups rows in Transfer-kind categories into account-to-account flows.
 // The other account comes from: set by hand > the matching row in the other account > what similar rows usually pair with.
 export function transferFlows(rows: Transaction[], s: FinanceSettings): Flow[] {
-	const kind = (t: Transaction) => categoryKind(t.category, s);
+	const kind = (t: Transaction) => categoryKind(t.category);
 	const inCurrency = rows.filter((t) => t.currency === s.currency);
 	const moves = inCurrency.filter((t) => kind(t) === 'transfer');
 	const candidates = inCurrency.filter((t) => kind(t) === 'transfer' || kind(t) === null); // other side may be uncategorised

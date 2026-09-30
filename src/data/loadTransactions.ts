@@ -3,10 +3,10 @@ import type { Transaction } from '../models/Transaction';
 import { toTransactions } from './toTransactions';
 import { addKeys } from './transactionKeys';
 
-// CSV files inside the data folder (any depth).
+// Monthly CSVs (named like 2026-01.csv) inside the data folder, any depth. Other CSVs (overall.csv...) are skipped.
 export function dataFiles(app: App, folder: string): TFile[] {
 	const prefix = normalizePath(folder) + '/';
-	return app.vault.getFiles().filter((f) => f.extension === 'csv' && f.path.startsWith(prefix));
+	return app.vault.getFiles().filter((f) => /^\d{4}-\d{2}\.csv$/.test(f.name) && f.path.startsWith(prefix));
 }
 
 // Reads every CSV in the data folder, oldest first, with stable keys.

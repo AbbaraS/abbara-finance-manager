@@ -1,7 +1,7 @@
 import type { CategoryKind } from './Category';
-import type { FinanceSettings } from './FinanceSettings';
+import { findCategory } from './findCategory';
 
 // The kind of a category, or null for Uncategorised / unknown names.
-export function categoryKind(name: string, s: FinanceSettings): CategoryKind | null {
-	return s.categories.find((c) => c.name === name)?.kind ?? null;
+export function categoryKind(name: string): CategoryKind | null {
+	return findCategory(name)?.kind ?? null;
 }

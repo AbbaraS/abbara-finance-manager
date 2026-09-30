@@ -42,7 +42,7 @@ export class DashboardView extends ItemView {
 		el.addClass('afm-view');
 
 		const s = this.plugin.settings;
-		const rows = categorise(this.raw, s);
+		const rows = categorise(this.raw, this.plugin.labels.data);
 		const months = monthList(rows);
 		if (months.length === 0) return emptyState(el, this.plugin);
 		if (!months.includes(this.month)) this.month = months[months.length - 1];

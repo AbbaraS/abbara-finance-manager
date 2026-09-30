@@ -1,5 +1,5 @@
 import { Setting } from 'obsidian';
-import { categoryNames } from '../../models/categoryNames';
+import { CATEGORIES } from '../../defaults/categories';
 import type { Direction, Rule } from '../../models/Rule';
 import { ruleHits } from '../../models/ruleHits';
 import { countLabel } from '../../utils/countLabel';
@@ -9,37 +9,40 @@ import type { SettingsContext } from '../context';
 // Labels for the direction dropdown.
 const DIRECTIONS: Record<Direction, string> = { '': 'In or out', in: 'Money in', out: 'Money out' };
 
-// Every rule in order (first match wins), with a filter, edit fields and move/delete buttons.
-export function rulesSection(el: HTMLElement, ctx: SettingsContext): void {
-	const s = ctx.plugin.settings;
+// Merchant memory: the rules saved by "Remember for this merchant", collapsed, with a filter and edit fields.
+export function merchantsSection(el: HTMLElement, ctx: SettingsContext): void {
+	const labels = ctx.plugin.labels.data;
 	new Setting(el)
-		.setName('Rules')
-		.setDesc('Checked top to bottom; the first match sets the category. One-off edits beat rules. Add rules from the dashboard or here.')
+		.setName('Merchants')
+		.setDesc('Saved from the edit window. Checked top to bottom; the first match sets the category. One-off edits beat these.')
 		.setHeading();
+
+	// Collapsed list, so it doesn't push the rest of the page down.
+	const list = el.createEl('details', { cls: 'afm-edits' });
+	list.createEl('summary', { text: `Show ${countLabel(labels.rules.length, 'merchant')}` });
 
 	// Filter + add.
 	const rows: { el: HTMLElement; text: string }[] = [];
-	new Setting(el)
-		.addSearch((q) => q.setPlaceholder('Filter rules').onChange((v) => {
+	new Setting(list)
+		.addSearch((q) => q.setPlaceholder('Filter merchants').onChange((v) => {
 			const f = v.trim().toLowerCase();
 			rows.forEach((r) => r.el.toggleClass('afm-hidden', !r.text.includes(f)));
 		}))
-		.addButton((b) => b.setButtonText('Add rule').onClick(() => {
-			s.rules.unshift({ pattern: '', category: categoryNames(s)[0] ?? '', subcategory: '', account: '', direction: '' });
+		.addButton((b) => b.setButtonText('Add').onClick(() => {
+			labels.rules.unshift({ pattern: '', category: CATEGORIES[0].name, subcategory: '', account: '', direction: '' });
 			ctx.saveAndRedraw();
 		}));
-	if (s.rules.length === 0) el.createDiv({ cls: 'setting-item-description', text: 'No rules yet.' });
 
-	const hits = ruleHits(ctx.rows, s);
-	s.rules.forEach((rule, i) => {
-		const row = ruleRow(el, rule, i, hits[i], ctx);
+	const hits = ruleHits(ctx.rows, labels);
+	labels.rules.forEach((rule, i) => {
+		const row = ruleRow(list, rule, i, hits[i], ctx);
 		rows.push({ el: row, text: `${rule.pattern} ${rule.category} ${rule.subcategory ?? ''} ${rule.account}`.toLowerCase() });
 	});
 }
 
 // One rule: pattern, category, subcategory, account, direction, then up / down / delete.
 function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: SettingsContext): HTMLElement {
-	const s = ctx.plugin.settings;
+	const rules = ctx.plugin.labels.data.rules;
 	const accounts = [...new Set([...ctx.accounts, rule.account])].filter(Boolean);
 	const setting = new Setting(el)
 		.setClass('afm-wrap')
@@ -48,7 +51,7 @@ function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: Sett
 		.addText((t) => t.setPlaceholder('Description contains').setValue(rule.pattern)
 			.onChange((v) => { rule.pattern = v; ctx.save(); }))
 		.addDropdown((d) => {
-			for (const name of categoryNames(s)) d.addOption(name, name);
+			for (const c of CATEGORIES) d.addOption(c.name, c.name);
 			d.setValue(rule.category).onChange((v) => { rule.category = v; ctx.save(); });
 		})
 		.addText((t) => t.setPlaceholder('Subcategory').setValue(rule.subcategory ?? '')
@@ -61,11 +64,11 @@ function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: Sett
 		.addDropdown((d) => d.addOptions(DIRECTIONS).setValue(rule.direction)
 			.onChange((v) => { rule.direction = v as Direction; ctx.save(); }))
 		.addExtraButton((b) => b.setIcon('arrow-up').setTooltip('Move up').setDisabled(i === 0)
-			.onClick(() => move(s.rules, i, -1, ctx)))
-		.addExtraButton((b) => b.setIcon('arrow-down').setTooltip('Move down').setDisabled(i === s.rules.length - 1)
-			.onClick(() => move(s.rules, i, 1, ctx)));
-	confirmDelete(setting, 'Delete rule', () => {
-		s.rules.splice(i, 1);
+			.onClick(() => move(rules, i, -1, ctx)))
+		.addExtraButton((b) => b.setIcon('arrow-down').setTooltip('Move down').setDisabled(i === rules.length - 1)
+			.onClick(() => move(rules, i, 1, ctx)));
+	confirmDelete(setting, 'Forget merchant', () => {
+		rules.splice(i, 1);
 		ctx.saveAndRedraw();
 	});
 	return setting.settingEl;

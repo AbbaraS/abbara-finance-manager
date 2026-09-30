@@ -4,11 +4,11 @@ import { directionOf } from './directionOf';
 import type { Transaction } from '../models/Transaction';
 import { rulePreviewText } from './rulePreviewText';
 
-// "Apply to similar" toggle, and the rule fields with a live match count when it's on.
+// "Remember for this merchant" toggle, and the rule fields with a live match count when it's on.
 export function similarFields(el: HTMLElement, c: CategoryChoice, picked: Transaction[], rows: Transaction[], redraw: () => void): void {
 	new Setting(el)
-		.setName('Apply to similar transactions')
-		.setDesc('Saves a rule, so other months and new statements get this category too.')
+		.setName('Remember for this merchant')
+		.setDesc('Other months and new statements get this category too.')
 		.addToggle((t) => t.setValue(c.similar).onChange((v) => { c.similar = v; redraw(); }));
 	if (!c.similar) return;
 

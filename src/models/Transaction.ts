@@ -3,7 +3,7 @@ export type CategorySource = 'edit' | 'rule' | 'none';
 
 // One row from a myFinances combined CSV.
 export interface Transaction {
-	key: string;         // stable id for one-off edits, see transactionKeys.ts
+	key: string;         // stable id, the key in your labels file (see transactionKeys.ts)
 	date: string;        // YYYY-MM-DD
 	month: string;       // YYYY-MM
 	day: number;         // 1-31

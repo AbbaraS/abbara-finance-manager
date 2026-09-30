@@ -13,6 +13,19 @@ export function dataSection(el: HTMLElement, ctx: SettingsContext): void {
 			.onChange((v) => { s.dataFolder = v.trim().replace(/\/+$/, ''); ctx.save(); }));
 
 	new Setting(el)
+		.setName('Labels file')
+		.setDesc('Vault JSON file with your categories per transaction, notes and merchants. Back it up with your vault.')
+		.addText((t) => {
+			t.setPlaceholder('Finance/labels.json').setValue(s.labelsFile);
+			// Only on Enter / leaving the field, so half-typed paths never get a file.
+			t.inputEl.addEventListener('change', async () => {
+				s.labelsFile = t.getValue().trim() || 'Finance/labels.json';
+				await ctx.plugin.labels.switchFile();
+				ctx.saveAndRedraw();
+			});
+		});
+
+	new Setting(el)
 		.setName('Currency')
 		.setDesc('Only rows in this currency are counted (ISO code, e.g. GBP).')
 		.addText((t) => t.setValue(s.currency)
