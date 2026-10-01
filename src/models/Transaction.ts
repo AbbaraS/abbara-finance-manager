@@ -1,7 +1,7 @@
 import type { CategoryKind } from './Category';
 
 // Where a transaction's category came from.
-export type CategorySource = 'edit' | 'rule' | 'pair' | 'none'; // pair: other side of a transfer
+export type CategorySource = 'edit' | 'rule' | 'pair' | 'none'; // rule: the counterparty's category; pair: other side of a transfer
 
 // One transaction from the database, with your labels applied (see categorise).
 export interface Transaction {
@@ -11,6 +11,7 @@ export interface Transaction {
 	day: number;         // 1-31
 	account: string;     // e.g. "barclays - debit"
 	description: string;
+	counterparty: string; // name, '' = none (set by categorise)
 	amount: number;      // money out is negative
 	currency: string;    // e.g. "GBP"
 	category: string;    // set by categorise()

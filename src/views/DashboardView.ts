@@ -5,11 +5,12 @@ import { accountNames } from '../models/accountNames';
 import { categorise } from '../models/categorise';
 import { setLabel } from '../models/Labels';
 import { monthList } from '../models/monthList';
-import { SECTIONS } from '../models/sections';
+import { orderedSections } from '../models/sections';
 import type { DashboardContext } from './DashboardContext';
 import { SECTION_DRAWERS } from './sectionDrawers';
 import { emptyState } from './sections/emptyState';
 import { header } from './sections/header';
+import { section } from './sections/section';
 
 export const VIEW_TYPE = 'afm-dashboard';
 
@@ -49,13 +50,17 @@ export class DashboardView extends ItemView {
 			redraw: () => this.render(),
 			editCategory: (picked, similar, newSub) => new CategoryModal(this.app, this.plugin, rows, picked, similar, newSub).open(),
 			save: () => void this.plugin.save(),
+			saveSettings: () => void this.plugin.saveSettings(),
 			saveLabel: (t, patch) => { setLabel(labels, t.id, patch); void this.plugin.save(); },
 		};
 
 		header(el, ctx);
-		const shown = SECTIONS.filter((x) => !s.hiddenSections.includes(x.id));
+		const shown = orderedSections(s.sectionOrder).filter((x) => !s.hiddenSections.includes(x.id));
 		if (shown.length === 0) el.createDiv({ cls: 'afm-note', text: 'All sections are hidden. Turn them on in settings.' });
-		for (const x of shown) SECTION_DRAWERS[x.id](el, ctx);
+		for (const x of shown) {
+			const body = section(el, x, ctx);
+			if (body) SECTION_DRAWERS[x.id](body, ctx);
+		}
 		el.scrollTop = scroll;
 	}
 }

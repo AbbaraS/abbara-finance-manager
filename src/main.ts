@@ -52,4 +52,10 @@ export default class FinancePlugin extends Plugin {
 		await Promise.all([this.saveData(this.settings), this.db.save()]);
 		this.refreshViews();
 	}
+
+	// Saves settings only (not the database), then redraws.
+	async saveSettings() {
+		await this.saveData(this.settings);
+		this.refreshViews();
+	}
 }

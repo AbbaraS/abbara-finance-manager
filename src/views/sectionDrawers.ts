@@ -1,11 +1,13 @@
 import type { SectionId } from '../models/sections';
 import type { DashboardContext } from './DashboardContext';
 import { accountTable } from './sections/accountTable';
-import { categoryTable } from './sections/categoryTable';
+import { categoryCards } from './sections/categoryCards';
 import { comparison } from './sections/comparison';
+import { counterpartyTable } from './sections/counterpartyTable';
 import { dailyLine } from './sections/dailyLine';
 import { moneyInList } from './sections/moneyInList';
 import { monthlyBars } from './sections/monthlyBars';
+import { peopleCards } from './sections/peopleCards';
 import { subscriptionTable } from './sections/subscriptionTable';
 import { summaryCards } from './sections/summaryCards';
 import { transfersTable } from './sections/transfersTable';
@@ -17,7 +19,9 @@ export const SECTION_DRAWERS: Record<SectionId, (el: HTMLElement, ctx: Dashboard
 	monthly: monthlyBars,
 	daily: dailyLine,
 	moneyIn: moneyInList,
-	category: categoryTable,
+	category: categoryCards,
+	people: peopleCards,
+	counterparty: counterpartyTable,
 	subscriptions: subscriptionTable,
 	account: accountTable,
 	transfers: transfersTable,

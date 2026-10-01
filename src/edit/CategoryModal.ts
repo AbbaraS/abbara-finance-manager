@@ -1,10 +1,11 @@
 import { App, Modal, Notice, Setting } from 'obsidian';
 import type FinancePlugin from '../main';
 import { applyCategory } from '../models/applyCategory';
-import { KEEP_SUBSCRIPTION, NEW_SUBSCRIPTION, type CategoryChoice } from '../models/CategoryChoice';
+import { KEEP_COUNTERPARTY, KEEP_SUBSCRIPTION, NEW_SUBSCRIPTION, type CategoryChoice } from '../models/CategoryChoice';
+import { findCounterparty } from '../models/counterparties';
+import { cleanPatterns } from '../models/counterpartyMatches';
+import { guessName, guessPattern } from '../models/guessCounterparty';
 import { UNCATEGORISED } from '../models/rowKind';
-import { rulePattern } from '../models/rulePattern';
-import { cleanPatterns } from '../models/ruleMatches';
 import type { Transaction } from '../models/Transaction';
 import { countLabel } from '../utils/countLabel';
 import { categoryField } from './categoryField';
@@ -14,8 +15,8 @@ import { pickedSummary } from './pickedSummary';
 import { similarFields } from './similarFields';
 import { draftSubscription, subscriptionFields } from './subscriptionFields';
 
-// Window for editing one or more transactions: category (once or remembered for the merchant), person, subcategory,
-// subscription, note and tags. `newSubscription` opens it ready to name a new subscription.
+// Window for editing one or more transactions: category (once or remembered for the counterparty), person, subcategory,
+// counterparty, subscription, note and tags. `newSubscription` opens it ready to name a new subscription.
 export class CategoryModal extends Modal {
 	private choice: CategoryChoice;
 
@@ -24,6 +25,8 @@ export class CategoryModal extends Modal {
 		const first = picked[0];
 		const one = picked.length === 1;
 		const labels = plugin.db.labels;
+		const patterns = cleanPatterns(picked.map((t) => guessPattern(t.description)));
+		const shared = picked.every((t) => t.counterparty === first.counterparty) ? first.counterparty : '';
 		this.choice = {
 			category: first.category === UNCATEGORISED ? '' : first.category,
 			newKind: null,
@@ -37,8 +40,9 @@ export class CategoryModal extends Modal {
 			tags: one ? first.tags : [],
 			other: one ? first.otherAccount : '',
 			similar,
-			rule: { patterns: cleanPatterns(picked.map((t) => rulePattern(t.description))), category: '', account: '', direction: directionOf(picked) },
-			addTo: null,
+			draft: { name: guessName(patterns[0] ?? ''), patterns, category: '', account: '', direction: directionOf(picked) },
+			addTo: shared ? findCounterparty(labels, shared) ?? null : null, // rows that already share one add to it
+			counterparty: one ? labels.transactions[first.id]?.counterparty ?? '' : KEEP_COUNTERPARTY,
 		};
 	}
 
@@ -73,14 +77,20 @@ export class CategoryModal extends Modal {
 	private save() {
 		const c = this.choice;
 		if (!c.category.trim()) return void new Notice(c.newKind ? 'Name the new category first.' : 'Pick a category first.');
-		if (c.similar && cleanPatterns(c.rule.patterns).length === 0) return void new Notice('Type some text from the description for the rule.');
+		const labels = this.plugin.db.labels;
+		const name = c.draft.name.trim();
+		if (c.similar && !c.addTo && !name) return void new Notice('Name the counterparty first.');
+		if (c.similar && !c.addTo && labels.counterparties.some((x) => x.name.toLowerCase() === name.toLowerCase())) {
+			return void new Notice(`"${name}" already exists. Pick it under Save as.`);
+		}
+		if (c.similar && !c.addTo && cleanPatterns(c.draft.patterns).length === 0) return void new Notice('Type some text from the description.');
 		const sub = c.newSubscription.name.trim();
 		if (c.subscription === NEW_SUBSCRIPTION && !sub) return void new Notice('Name the new subscription first.');
-		if (c.subscription === NEW_SUBSCRIPTION && this.plugin.db.labels.subscriptions.some((s) => s.name === sub)) return void new Notice(`"${sub}" already exists.`);
+		if (c.subscription === NEW_SUBSCRIPTION && labels.subscriptions.some((s) => s.name === sub)) return void new Notice(`"${sub}" already exists.`);
 
-		applyCategory(this.plugin.db.labels, this.picked, c);
+		applyCategory(labels, this.picked, c);
 		void this.plugin.save();
-		new Notice(c.similar ? `Remembered: ${cleanPatterns(c.rule.patterns).map((x) => `"${x}"`).join(', ')} → ${c.category.trim()}` : 'Saved');
+		new Notice(c.similar ? `Remembered ${c.addTo?.name ?? name} → ${c.category.trim()}` : 'Saved');
 		this.close();
 	}
 }

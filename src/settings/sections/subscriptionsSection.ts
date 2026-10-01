@@ -2,7 +2,8 @@ import { Notice, Setting } from 'obsidian';
 import { PERIOD_LABELS, STATUS_LABELS, type Period, type Subscription, type SubscriptionStatus } from '../../models/Subscription';
 import { addSubscription, deleteSubscription, deleteType, renameSubscription, renameType } from '../../models/subscriptions';
 import { countLabel } from '../../utils/countLabel';
-import { parseMoney } from '../../utils/money';
+import { formatMoney, parseMoney } from '../../utils/money';
+import { setIconSafe } from '../../views/look/setIconSafe';
 import { collapsible } from '../collapsible';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
@@ -12,7 +13,7 @@ export function subscriptionsSection(el: HTMLElement, ctx: SettingsContext): voi
 	const labels = ctx.plugin.db.labels;
 	new Setting(el)
 		.setName('Subscriptions')
-		.setDesc('A payment gets a subscription when its description has the text and, if set, the amount. When two have the same price, the one due nearest the date wins. Name new ones from the edit window.')
+		.setDesc('A payment gets a subscription when it\'s with its counterparty and, if set, has its amount and extra text. When two fit, the one due nearest the date wins. The category still comes from the counterparty. Name new ones from the edit window.')
 		.setHeading();
 
 	// Types.
@@ -45,18 +46,34 @@ export function subscriptionsSection(el: HTMLElement, ctx: SettingsContext): voi
 	new Setting(list).addButton((b) => b.setButtonText('Add').onClick(() => {
 		let n = 1;
 		while (labels.subscriptions.some((s) => s.name === `New subscription ${n}`)) n++;
-		addSubscription(labels, { name: `New subscription ${n}`, type: labels.types[0]?.name ?? '', match: '', amount: null, period: 'month', payments: null, paidBefore: 0, status: '' });
+		addSubscription(labels, { name: `New subscription ${n}`, type: labels.types[0]?.name ?? '', counterparty: '', match: '', amount: null, period: 'month', payments: null, paidBefore: 0, status: '' });
 		ctx.saveAndRedraw();
 	}));
+
+	// Look-alikes you said aren't subscriptions, as chips; × shows one on the dashboard again.
+	const st = ctx.plugin.settings;
+	if (st.hiddenRepeats.length === 0) return;
+	const hidden = new Setting(el).setName('Not subscriptions').setDesc('Hidden from "Look like subscriptions". Remove one to see it there again.');
+	const chips = hidden.descEl.createDiv({ cls: 'afm-chips' });
+	for (const key of st.hiddenRepeats) {
+		const [text, amount] = key.split('|');
+		const chip = chips.createSpan({ cls: 'afm-tag', text: `${text} · ${formatMoney(-Number(amount), st)}` });
+		const remove = chip.createSpan({ cls: 'afm-tag-remove', attr: { 'aria-label': 'Show again' } });
+		setIconSafe(remove, 'x');
+		remove.addEventListener('click', () => {
+			st.hiddenRepeats = st.hiddenRepeats.filter((k) => k !== key);
+			ctx.saveAndRedraw();
+		});
+	}
 }
 
-// One subscription: name, type, text, amount, how often, out of, paid before, status, delete.
+// One subscription: name, type, counterparty, extra text, amount, how often, out of, paid before, status, delete.
 function subscriptionRow(el: HTMLElement, sub: Subscription, ctx: SettingsContext): void {
 	const labels = ctx.plugin.db.labels;
 	const used = ctx.rows.filter((t) => t.subscription === sub.name).length;
 	const row = new Setting(el)
 		.setClass('afm-wrap')
-		.setDesc(sub.match ? countLabel(used, 'payment') : 'No text: matches nothing (only payments you pick)')
+		.setDesc(sub.counterparty || sub.match ? countLabel(used, 'payment') : 'No counterparty or text: matches nothing (only payments you pick)')
 		.addText((t) => {
 			t.setPlaceholder('Name').setValue(sub.name);
 			t.inputEl.addEventListener('change', () => {
@@ -72,7 +89,16 @@ function subscriptionRow(el: HTMLElement, sub: Subscription, ctx: SettingsContex
 			for (const t of labels.types) d.addOption(t.name, t.name);
 			d.setValue(sub.type).onChange((v) => { sub.type = v; ctx.save(); });
 		})
-		.addText((t) => t.setPlaceholder('Description contains').setValue(sub.match).onChange((v) => { sub.match = v.trim(); ctx.save(); }))
+		.addDropdown((d) => {
+			d.addOption('', 'No counterparty');
+			for (const cp of [...labels.counterparties].sort((a, b) => a.name.localeCompare(b.name))) d.addOption(cp.name, cp.name);
+			d.setValue(sub.counterparty).onChange((v) => { sub.counterparty = v; ctx.saveAndRedraw(); });
+		})
+		.addText((t) => {
+			t.setPlaceholder(sub.counterparty ? 'Also contains (optional)' : 'Description contains').setValue(sub.match)
+				.onChange((v) => { sub.match = v.trim(); ctx.save(); });
+			t.inputEl.title = 'Text in the description. With a counterparty, only needed to tell apart two plans at the same price.';
+		})
 		.addText((t) => t.setPlaceholder('Any amount').setValue(sub.amount === null ? '' : sub.amount.toFixed(2))
 			.onChange((v) => { sub.amount = parseMoney(v); ctx.save(); }))
 		.addDropdown((d) => d.addOptions(PERIOD_LABELS).setValue(sub.period).onChange((v) => { sub.period = v as Period; ctx.save(); }))

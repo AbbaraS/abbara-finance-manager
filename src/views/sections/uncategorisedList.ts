@@ -3,7 +3,6 @@ import { uncategorised, type UncategorisedGroup } from '../../models/uncategoris
 import { countLabel } from '../../utils/countLabel';
 import { formatChange } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
-import { section } from './section';
 import { showMore } from './showMore';
 import { tableHead } from './tableHead';
 
@@ -11,10 +10,9 @@ import { tableHead } from './tableHead';
 const LIMIT = 10;
 
 // Uncategorised rows grouped by description. Pick a category for one group, or tick several and edit them together.
-export function uncategorisedList(el: HTMLElement, ctx: DashboardContext): void {
+export function uncategorisedList(body: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const groups = uncategorised(ctx.rows, ctx.month, ctx.settings);
-	const body = section(el, 'Uncategorised', 'circle-help');
 	if (groups.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'Everything is categorised this month.' });
 		return;

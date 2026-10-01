@@ -9,6 +9,7 @@ export function noteLine(parent: HTMLElement, t: Transaction, ctx: DashboardCont
 	const key = `tags:${t.id}`; // open tag boxes stay open across redraws
 	const open = ctx.expanded.has(key);
 	const line = parent.createDiv({ cls: 'afm-note-line' });
+	line.addEventListener('click', (e) => e.stopPropagation()); // typing tags doesn't open the row
 
 	// Tags: plain, or the tag box while editing.
 	if (open) {

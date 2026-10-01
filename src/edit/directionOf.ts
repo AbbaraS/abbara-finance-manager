@@ -1,4 +1,4 @@
-import type { Direction } from '../models/Rule';
+import type { Direction } from '../models/Counterparty';
 import type { Transaction } from '../models/Transaction';
 
 // 'in' if every row is money in, 'out' if every row is money out, '' if mixed.

@@ -7,7 +7,6 @@ import { categoryLook } from '../look/categoryLook';
 import { iconDot } from '../look/iconDot';
 import { changeBar } from './changeBar';
 import { changeValue } from './changeValue';
-import { section } from './section';
 import { showMore } from './showMore';
 import { tableHead } from './tableHead';
 
@@ -15,12 +14,11 @@ import { tableHead } from './tableHead';
 const LIMIT = 8;
 
 // Each category this month vs last month and vs the recent average.
-export function comparison(el: HTMLElement, ctx: DashboardContext): void {
+export function comparison(body: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const changes = compareMonths(ctx.rows, ctx.month, ctx.settings);
 	const [last] = previousMonths(ctx.month, 1);
 	const s = ctx.settings;
-	const body = section(el, `Compared with ${monthLabel(last, s.locale)}`, 'git-compare-arrows');
 	if (changes.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No spending in either month.' });
 		return;
@@ -37,7 +35,7 @@ export function comparison(el: HTMLElement, ctx: DashboardContext): void {
 	tableHead(table, [
 		{ text: 'Category' },
 		{ text: 'This month', cls: 'afm-num' },
-		{ text: 'Last month', cls: 'afm-num afm-narrow-hide' },
+		{ text: monthLabel(last, s.locale), cls: 'afm-num afm-narrow-hide' },
 		{ text: 'Change', cls: 'afm-bar-cell' },
 		{ text: '', cls: 'afm-num' },
 		{ text: 'vs average', cls: 'afm-num' },

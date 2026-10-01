@@ -5,15 +5,13 @@ import { formatPercent } from '../../utils/percent';
 import type { DashboardContext } from '../DashboardContext';
 import { accountLook } from '../look/accountLook';
 import { iconDot } from '../look/iconDot';
-import { section } from './section';
 import { shareBar } from './shareBar';
 import { tableHead } from './tableHead';
 
 // Spending per account: name, share bar, amount and percent.
-export function accountTable(el: HTMLElement, ctx: DashboardContext): void {
+export function accountTable(body: HTMLElement, ctx: DashboardContext): void {
 	// 1. Data.
 	const groups = byAccount(ctx.rows, ctx.month, ctx.settings);
-	const body = section(el, 'Spending by account', 'landmark');
 	if (groups.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No spending this month.' });
 		return;

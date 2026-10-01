@@ -11,7 +11,7 @@ import { run } from './sqlite';
 import { labelStatements, readIds, readTables, readVersion, resultKey, resultStatement } from './tables';
 
 // Database version this plugin understands (PRAGMA user_version, set by myFinances db.py).
-export const DB_VERSION = 3;
+export const DB_VERSION = 5;
 
 // Your finance database (SQLite, made by myFinances): transactions come from Python, your labels from here.
 export class Database {
@@ -54,10 +54,10 @@ export class Database {
 			return;
 		}
 
-		// A new database starts with the default categories and merchants; otherwise save only what changed (new rows).
+		// A new database starts with the default categories and counterparties; otherwise save only what changed (new rows).
 		if (this.labels.categories.length > 0) return this.save(false);
-		const { categories, rules } = copyDefaultLabels();
-		this.labels = { ...this.labels, categories, rules };
+		const { categories, counterparties } = copyDefaultLabels();
+		this.labels = { ...this.labels, categories, counterparties };
 		await this.save();
 	}
 

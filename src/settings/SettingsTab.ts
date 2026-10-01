@@ -5,9 +5,9 @@ import { categorise } from '../models/categorise';
 import type { SettingsContext } from './context';
 import { accountsSection } from './sections/accountsSection';
 import { categoriesSection } from './sections/categoriesSection';
+import { counterpartiesSection } from './sections/counterpartiesSection';
 import { dataSection } from './sections/dataSection';
 import { editsSection } from './sections/editsSection';
-import { merchantsSection } from './sections/merchantsSection';
 import { peopleSection } from './sections/peopleSection';
 import { sectionsSection } from './sections/sectionsSection';
 import { subscriptionsSection } from './sections/subscriptionsSection';
@@ -47,7 +47,7 @@ export class FinanceSettingTab extends PluginSettingTab {
 		peopleSection(el, ctx);
 		subscriptionsSection(el, ctx);
 		accountsSection(el, ctx);
-		merchantsSection(el, ctx);
+		counterpartiesSection(el, ctx);
 		editsSection(el, ctx);
 		el.scrollTop = scroll;
 	}

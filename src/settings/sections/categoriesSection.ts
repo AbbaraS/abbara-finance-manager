@@ -1,11 +1,13 @@
 import { Notice, Setting } from 'obsidian';
-import { addCategory, deleteCategory, renameCategory } from '../../models/categories';
-import { KIND_LABELS, type CategoryKind } from '../../models/Category';
+import { addCategory, deleteCategory, renameCategory, subcategoriesOf } from '../../models/categories';
+import { KIND_LABELS, type Category, type CategoryKind } from '../../models/Category';
 import { COLOR_NAMES } from '../../models/colors';
+import { moveCategory, placeChoices } from '../../models/restructure';
 import { countLabel } from '../../utils/countLabel';
 import { badge } from '../../views/look/badge';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
+import { MoveModal } from '../MoveModal';
 import { subcategoryList } from './subcategoryList';
 
 // Your categories, grouped by kind: rename, colour, kind, delete; add new ones at the end.
@@ -39,11 +41,17 @@ export function categoriesSection(el: HTMLElement, ctx: SettingsContext): void {
 			})
 			.addDropdown((d) => d.addOptions(KIND_LABELS).setValue(c.kind)
 				.onChange((v) => { c.kind = v as CategoryKind; ctx.saveAndRedraw(); }));
-		confirmDelete(row, 'Delete category, its subcategories, people, merchants and one-off edits', () => {
-			deleteCategory(labels, c.name);
-			ctx.saveAndRedraw();
-		});
-		if (c.kind !== 'people') subcategoryList(el, ctx, c.name);
+		// People categories just delete; others can move, merge or delete into somewhere else.
+		if (c.kind === 'people') {
+			confirmDelete(row, 'Delete category, its subcategories, people and one-off edits (counterparties stay)', () => {
+				deleteCategory(labels, c.name);
+				ctx.saveAndRedraw();
+			});
+			continue;
+		}
+		row.addExtraButton((b) => b.setIcon('folder-input').setTooltip('Move or merge').onClick(() => moveWindow(ctx, c, used)))
+			.addExtraButton((b) => b.setIcon('trash-2').setTooltip('Delete category').onClick(() => moveWindow(ctx, c, used, true)));
+		subcategoryList(el, ctx, c.name);
 	}
 
 	// Add.
@@ -58,4 +66,29 @@ export function categoriesSection(el: HTMLElement, ctx: SettingsContext): void {
 			addCategory(labels, name, kind);
 			ctx.saveAndRedraw();
 		}));
+}
+
+// Asks where a category's transactions and counterparties go, then moves it there: under another category as a subcategory,
+// or merged into a category or subcategory. Deleting is the same move, with Uncategorised (the old delete) first.
+function moveWindow(ctx: SettingsContext, c: Category, used: number, del = false): void {
+	const labels = ctx.plugin.db.labels;
+	const skip = { category: c.name, sub: '' };
+	const choices = del
+		? [{ label: 'Uncategorised (one-off edits removed, counterparties keep no category)', place: null }, ...placeChoices(labels, skip)]
+		: placeChoices(labels, skip, c.name);
+	new MoveModal(ctx.app, {
+		title: `${del ? 'Delete' : 'Move'} ${c.name}`,
+		desc: del
+			? `${used} transactions use it. Leave them uncategorised, or move them somewhere else first.`
+			: `Its ${used} transactions and counterparties go with it. Pick "<category> › ${c.name} (new)" to make it a subcategory, or another place to merge into.`,
+		button: del ? 'Delete' : 'Move',
+		warning: del,
+		choices,
+		subs: subcategoriesOf(labels, c.name).length ? c.name : '',
+		onDone: (place, keepSubs) => {
+			if (place) moveCategory(labels, ctx.plugin.db.rows, c.name, place, keepSubs);
+			else deleteCategory(labels, c.name);
+			ctx.saveAndRedraw();
+		},
+	}).open();
 }

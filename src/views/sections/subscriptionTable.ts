@@ -7,9 +7,9 @@ import { dayLabel } from '../../utils/dates';
 import { formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
 import { expandable } from './expandable';
-import { section } from './section';
 import { showMore } from './showMore';
 import { tableHead } from './tableHead';
+import { rowName } from './rowName';
 
 // "£2.99 a month".
 const PER: Record<Period, string> = { week: 'a week', month: 'a month', quarter: 'every 3 months', year: 'a year' };
@@ -22,10 +22,9 @@ const LIMIT = 5;
 
 // Your subscriptions and instalments: price, payments so far, this month and in total; click one for its payments.
 // Below, spending that repeats like a subscription but has no name yet.
-export function subscriptionTable(el: HTMLElement, ctx: DashboardContext): void {
+export function subscriptionTable(body: HTMLElement, ctx: DashboardContext): void {
 	const s = ctx.settings;
 	const list = subscriptionSummaries(ctx.rows, ctx.labels, ctx.month, s).sort((a, b) => RANK[a.sub.status] - RANK[b.sub.status]);
-	const body = section(el, 'Subscriptions', 'repeat');
 	if (list.length === 0) body.createDiv({ cls: 'afm-muted', text: 'None yet. Name one from a payment\'s edit window, or from the list below.' });
 	else subscriptionList(body, list, ctx);
 
@@ -38,8 +37,14 @@ export function subscriptionTable(el: HTMLElement, ctx: DashboardContext): void 
 		const text = line.createDiv();
 		text.createDiv({ text: r.description });
 		text.createDiv({ cls: 'afm-muted', text: `${formatMoney(r.amount, s)} · ${countLabel(r.rows.length, 'payment')} in ${countLabel(r.months, 'month')}` });
-		const btn = line.createEl('button', { text: 'Name it' });
-		btn.addEventListener('click', () => ctx.editCategory(r.rows, false, true));
+		const buttons = line.createDiv({ cls: 'afm-repeat-buttons' });
+		const hide = buttons.createEl('button', { text: 'Not a subscription' });
+		setTooltip(hide, 'Hide it from this list. Bring it back in settings, under Subscriptions.');
+		hide.addEventListener('click', () => {
+			s.hiddenRepeats.push(r.key);
+			ctx.saveSettings();
+		});
+		buttons.createEl('button', { text: 'Name it' }).addEventListener('click', () => ctx.editCategory(r.rows, false, true));
 		return line;
 	});
 	showMore(body, rows, LIMIT);
@@ -111,7 +116,7 @@ function paymentRows(tbody: HTMLElement, x: SubscriptionSummary, ctx: DashboardC
 		const tr = tbody.createEl('tr', { cls: 'afm-detail' });
 		tr.setCssProps({ '--afm-depth': '0' }); // under the name, no category icon here
 		const cell = tr.createEl('td');
-		cell.createDiv({ text: t.description });
+		rowName(cell, t);
 		cell.createDiv({ cls: 'afm-muted', text: `${dayLabel(t.date, s.locale)} ${t.date.slice(0, 4)} · ${t.account}` });
 		tr.createEl('td', { cls: 'afm-num afm-muted', text: t.payment ? (x.sub.payments ? `${t.payment}/${x.sub.payments}` : `#${t.payment}`) : 'Refund' });
 		tr.createEl('td', { cls: 'afm-narrow-hide' });

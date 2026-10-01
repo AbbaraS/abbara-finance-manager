@@ -24,9 +24,9 @@ export const DEFAULT_LABELS: Labels = {
 	subcategories: [],
 	people: [],
 	accounts: [],
-	rules: [
-		{ patterns: ['UNIV OF MANCHESTER'], category: 'PhD', subcategory: '', account: '', direction: 'in' },
-		{ patterns: ['MAN UNI STUDENTS U BGC'], category: 'UMSU', subcategory: '', account: '', direction: 'in' },
+	counterparties: [
+		{ name: 'University of Manchester', patterns: ['UNIV OF MANCHESTER'], category: 'PhD', subcategory: '', account: '', direction: 'in' },
+		{ name: 'Students\' Union', patterns: ['MAN UNI STUDENTS U BGC'], category: 'UMSU', subcategory: '', account: '', direction: 'in' },
 	],
 	types: [{ name: 'Subscription' }, { name: 'Instalments' }],
 	subscriptions: [],

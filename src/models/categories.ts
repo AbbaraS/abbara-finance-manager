@@ -25,17 +25,17 @@ export function renameCategory(labels: Labels, from: string, to: string): void {
 	for (const c of labels.categories) if (c.name === from) c.name = to;
 	for (const s of labels.subcategories) if (s.parent === from) s.parent = to;
 	for (const p of labels.people) if (p.category === from) p.category = to;
-	for (const r of labels.rules) if (r.category === from) r.category = to;
+	for (const r of labels.counterparties) if (r.category === from) r.category = to;
 	for (const l of Object.values(labels.transactions)) if (l.category === from) l.category = to;
 }
 
-// Deletes a category with its subcategories, people, merchant rules and one-off edits; those rows fall back to other rules.
+// Deletes a category with its subcategories, people and one-off edits; its counterparties stay, without a category.
 export function deleteCategory(labels: Labels, name: string): void {
 	const people = new Set(labels.people.filter((p) => p.category === name).map((p) => p.name));
 	labels.categories = labels.categories.filter((c) => c.name !== name);
 	labels.subcategories = labels.subcategories.filter((s) => s.parent !== name);
 	labels.people = labels.people.filter((p) => p.category !== name);
-	labels.rules = labels.rules.filter((r) => r.category !== name);
+	for (const r of labels.counterparties) if (r.category === name) Object.assign(r, { category: '', subcategory: '', person: '' });
 	for (const [id, l] of Object.entries(labels.transactions)) {
 		if (l.category === name || people.has(l.person ?? '')) setLabel(labels, id, { category: '', sub: '', person: '' });
 	}
@@ -52,26 +52,26 @@ export function addSubcategory(labels: Labels, parent: string, name: string, per
 	labels.subcategories.push({ name, parent, person });
 }
 
-// Renames a subcategory on its merchants and labels too.
+// Renames a subcategory on its counterparties and labels too.
 export function renameSubcategory(labels: Labels, s: Subcategory, to: string): void {
-	for (const r of labels.rules) if (r.category === s.parent && (r.person ?? '') === s.person && r.subcategory === s.name) r.subcategory = to;
+	for (const r of labels.counterparties) if (r.category === s.parent && (r.person ?? '') === s.person && r.subcategory === s.name) r.subcategory = to;
 	for (const l of Object.values(labels.transactions)) if (usesSub(l, s)) l.sub = to;
 	s.name = to;
 }
 
-// Deletes a subcategory; its merchants and labels keep their category.
+// Deletes a subcategory; its counterparties and labels keep their category.
 export function deleteSubcategory(labels: Labels, s: Subcategory): void {
 	labels.subcategories = labels.subcategories.filter((x) => x !== s);
-	for (const r of labels.rules) if (r.category === s.parent && (r.person ?? '') === s.person && r.subcategory === s.name) r.subcategory = '';
+	for (const r of labels.counterparties) if (r.category === s.parent && (r.person ?? '') === s.person && r.subcategory === s.name) r.subcategory = '';
 	for (const [id, l] of Object.entries(labels.transactions)) if (usesSub(l, s)) setLabel(labels, id, { sub: '' });
 }
 
-// True when a label's subcategory is this one (a label without a category takes its rule's).
+// True when a label's subcategory is this one (a label without a category takes its counterparty's).
 function usesSub(l: { category?: string; sub?: string; person?: string }, s: Subcategory): boolean {
 	return l.sub === s.name && (!l.category || l.category === s.parent) && (!l.person || l.person === s.person);
 }
 
-// Adds subcategories and people that merchants, labels or rows use but the lists don't have yet,
+// Adds subcategories and people that counterparties, labels or rows use but the lists don't have yet,
 // and drops ones whose category or person is gone. Returns true when the lists changed.
 export function syncLists(labels: Labels, rows: Transaction[]): boolean {
 	const before = JSON.stringify([labels.subcategories, labels.people]);
@@ -85,7 +85,7 @@ export function syncLists(labels: Labels, rows: Transaction[]): boolean {
 		if (who) addPerson(labels, who, category);
 		if (sub && sub !== REFUND) addSubcategory(labels, category, sub, who); // Refund is only shown, not saved
 	};
-	for (const r of labels.rules) use(r.category, r.subcategory, r.person);
+	for (const r of labels.counterparties) if (r.category) use(r.category, r.subcategory, r.person);
 	for (const l of Object.values(labels.transactions)) if (l.category) use(l.category, l.sub, l.person);
 	for (const t of rows) use(t.category, t.subcategory, t.person);
 	return JSON.stringify([labels.subcategories, labels.people]) !== before;

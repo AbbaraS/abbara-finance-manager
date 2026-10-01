@@ -1,21 +1,24 @@
 import { addDays, daysBetween } from '../utils/dates';
 import type { FinanceSettings } from './FinanceSettings';
 import { setLabel, type Labels } from './Labels';
-import { rulePattern } from './rulePattern';
+import { guessPattern } from './guessCounterparty';
 import { NO_SUBSCRIPTION, PERIOD_DAYS, type Period, type Subscription } from './Subscription';
 import type { Transaction } from './Transaction';
 
 // Matching payments to subscriptions, their totals, and adding / renaming / deleting subscriptions and types.
 
-// True when a payment's description has the subscription's text and, if set, its amount.
+// True when a payment is with the subscription's counterparty, has its text and its amount (each only if set).
+// A subscription with neither counterparty nor text matches nothing.
 export function subscriptionMatches(s: Subscription, t: Transaction): boolean {
-	if (t.amount >= 0 || !s.match.trim()) return false;
+	const text = s.match.trim().toLowerCase();
+	if (t.amount >= 0 || (!s.counterparty && !text)) return false;
+	if (s.counterparty && t.counterparty !== s.counterparty) return false;
 	if (s.amount !== null && Math.abs(-t.amount - s.amount) > 0.005) return false;
-	return t.description.toLowerCase().includes(s.match.trim().toLowerCase());
+	return !text || t.description.toLowerCase().includes(text);
 }
 
 // Sets each row's subscription and payment number (rows oldest first). Set by hand wins; otherwise the subscription
-// whose text and amount match, and when several do (same price), the one whose last payment was about one period before.
+// that matches (see subscriptionMatches), and when several do, the one whose last payment was about one period before.
 export function linkSubscriptions(rows: Transaction[], labels: Labels): void {
 	const byName = new Map(labels.subscriptions.map((s) => [s.name, s]));
 	const last = new Map<string, string>(); // subscription -> date of its latest payment so far
@@ -84,23 +87,24 @@ export function monthlyCost(list: SubscriptionSummary[]): number {
 
 // Spending that looks like a subscription without a name yet: the same merchant and amount in 3 or more months.
 export interface Repeat {
+	key: string;         // "TEXT|amount", what "Not a subscription" remembers
 	description: string; // the merchant part of the description
 	amount: number;      // cost of one payment
 	months: number;
 	rows: Transaction[];
 }
 
-// Unnamed repeats, most months first.
+// Unnamed repeats, most months first, except ones you hid.
 export function unnamedRepeats(rows: Transaction[], s: FinanceSettings): Repeat[] {
 	const groups = new Map<string, Transaction[]>();
 	for (const t of rows) {
 		if (t.subscription || t.amount >= 0 || t.kind !== 'spending' || t.currency !== s.currency) continue;
-		const key = `${rulePattern(t.description)}|${t.amount.toFixed(2)}`;
+		const key = `${guessPattern(t.description)}|${t.amount.toFixed(2)}`;
 		groups.set(key, [...(groups.get(key) ?? []), t]);
 	}
-	return [...groups.values()]
-		.map((list) => ({ description: rulePattern(list[0].description), amount: -list[0].amount, months: new Set(list.map((t) => t.month)).size, rows: list }))
-		.filter((g) => g.months >= 3)
+	return [...groups]
+		.map(([key, list]) => ({ key, description: guessPattern(list[0].description), amount: -list[0].amount, months: new Set(list.map((t) => t.month)).size, rows: list }))
+		.filter((g) => g.months >= 3 && !s.hiddenRepeats.includes(g.key))
 		.sort((a, b) => b.months - a.months || b.amount - a.amount);
 }
 

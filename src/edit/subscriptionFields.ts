@@ -1,20 +1,23 @@
 import { Setting } from 'obsidian';
 import { KEEP_SUBSCRIPTION, NEW_SUBSCRIPTION, type CategoryChoice } from '../models/CategoryChoice';
 import type { Labels } from '../models/Labels';
-import { rulePattern } from '../models/rulePattern';
+import { guessPattern } from '../models/guessCounterparty';
 import { NO_SUBSCRIPTION, PERIOD_LABELS, type Period, type Subscription } from '../models/Subscription';
 import { guessPeriod } from '../models/subscriptions';
 import type { Transaction } from '../models/Transaction';
 import { parseMoney } from '../utils/money';
 
-// A new subscription filled in from the picked payments: their merchant, amount and how often they repeat.
+// A new subscription filled in from the picked payments: their counterparty (else text from the description),
+// amount and how often they repeat.
 export function draftSubscription(labels: Labels, rows: Transaction[], picked: Transaction[]): Subscription {
 	const first = picked[0];
-	const match = rulePattern(first.description);
+	const counterparty = picked.every((t) => t.counterparty === first.counterparty) ? first.counterparty : '';
+	const match = counterparty ? '' : guessPattern(first.description);
 	const oneAmount = picked.every((t) => t.amount === first.amount) && first.amount < 0;
-	const repeats = rows.filter((t) => t.amount === first.amount && rulePattern(t.description) === match);
+	const same = (t: Transaction) => (counterparty ? t.counterparty === counterparty : guessPattern(t.description) === match);
+	const repeats = rows.filter((t) => t.amount === first.amount && same(t));
 	return {
-		name: '', type: labels.types[0]?.name ?? '', match, amount: oneAmount ? -first.amount : null,
+		name: counterparty, type: labels.types[0]?.name ?? '', counterparty, match, amount: oneAmount ? -first.amount : null,
 		period: guessPeriod(repeats), payments: null, paidBefore: 0, status: '',
 	};
 }
@@ -24,7 +27,7 @@ export function subscriptionFields(el: HTMLElement, c: CategoryChoice, labels: L
 	const found = picked.length === 1 ? picked[0].subscription : '';
 	new Setting(el)
 		.setName('Subscription')
-		.setDesc('Found by description and amount. Pick one here if a payment got the wrong one.')
+		.setDesc('Found by counterparty and price. Pick one here if a payment got the wrong one.')
 		.addDropdown((d) => {
 			if (picked.length > 1) d.addOption(KEEP_SUBSCRIPTION, 'Keep as they are');
 			d.addOption('', `Automatic (${found || 'none'})`);
@@ -47,8 +50,16 @@ export function subscriptionFields(el: HTMLElement, c: CategoryChoice, labels: L
 		d.setValue(n.type).onChange((v) => (n.type = v));
 	});
 	new Setting(el)
-		.setName('Description contains')
-		.setDesc('Payments with this text and amount get this subscription.')
+		.setName('Counterparty')
+		.setDesc('Its payments at the amount below get this subscription.')
+		.addDropdown((d) => {
+			d.addOption('', 'None (use the text below)');
+			for (const cp of [...labels.counterparties].sort((a, b) => a.name.localeCompare(b.name))) d.addOption(cp.name, cp.name);
+			d.setValue(n.counterparty).onChange((v) => { n.counterparty = v; redraw(); });
+		});
+	new Setting(el)
+		.setName(n.counterparty ? 'Description also contains' : 'Description contains')
+		.setDesc(n.counterparty ? 'Optional. Only to tell apart two plans with the same counterparty and price.' : 'Payments with this text and amount get this subscription.')
 		.addText((t) => t.setValue(n.match).onChange((v) => (n.match = v)));
 	new Setting(el)
 		.setName('Amount')

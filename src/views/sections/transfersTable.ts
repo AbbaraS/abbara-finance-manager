@@ -7,7 +7,6 @@ import { monthWindow } from '../../utils/monthWindow';
 import type { DashboardContext } from '../DashboardContext';
 import { expandable } from './expandable';
 import { flowName } from './flowName';
-import { section } from './section';
 import { tableHead } from './tableHead';
 import { transferRows } from './transferRows';
 
@@ -15,12 +14,11 @@ import { transferRows } from './transferRows';
 const MONTHS = 6;
 
 // Money moved between your own accounts, one row per direction, one column per month.
-export function transfersTable(el: HTMLElement, ctx: DashboardContext): void {
+export function transfersTable(body: HTMLElement, ctx: DashboardContext): void {
 	// Data: flows with money in the months shown.
 	const s = ctx.settings;
 	const months = monthWindow(ctx.months, ctx.month, MONTHS);
 	const flows = transferFlows(ctx.rows, s).filter((f) => months.some((m) => f.months.has(m)));
-	const body = section(el, 'Transfers between accounts', 'arrow-left-right');
 	if (flows.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No transfers in these months. Put transfers in a Transfers category.' });
 		return;

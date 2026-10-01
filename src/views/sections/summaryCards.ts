@@ -1,16 +1,27 @@
 import { invested } from '../../models/invested';
 import { monthSummary } from '../../models/monthSummary';
+import { incomeOf } from '../../models/rowKind';
 import { formatChange, formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
 import { iconDot } from '../look/iconDot';
 
-// Income, spending, net for the month, plus money saved and invested (all time).
-export function summaryCards(el: HTMLElement, ctx: DashboardContext): void {
+// Income (by income category), spending, net for the month, plus money saved and invested (all time).
+export function summaryCards(body: HTMLElement, ctx: DashboardContext): void {
 	const s = ctx.settings;
 	const m = monthSummary(ctx.rows, ctx.month, s);
-	const cards = el.createDiv({ cls: 'afm-cards' });
+	const cards = body.createDiv({ cls: 'afm-cards' });
 
-	card(cards, 'Income', formatMoney(m.income, s), 'arrow-down-left', 'var(--afm-income)');
+	// Income, with each income category under it (no refunds or money from people).
+	const income = card(cards, 'Income', formatMoney(m.income, s), 'arrow-down-left', 'var(--afm-income)');
+	const sources = new Map<string, number>();
+	for (const t of ctx.rows) if (t.month === ctx.month && incomeOf(t, s)) sources.set(t.category, (sources.get(t.category) ?? 0) + incomeOf(t, s));
+	if (sources.size === 0) income.extra.setText('No income this month');
+	for (const [name, total] of [...sources].sort((a, b) => b[1] - a[1])) {
+		const line = income.extra.createDiv({ cls: 'afm-card-line' });
+		line.createSpan({ text: name });
+		line.createSpan({ text: formatMoney(total, s) });
+	}
+
 	card(cards, 'Spending', formatMoney(m.spending, s), 'arrow-up-right', 'var(--afm-spend)');
 	const net = card(cards, 'Net', formatMoney(m.net, s), m.net < 0 ? 'trending-down' : 'trending-up',
 		m.net < 0 ? 'var(--afm-c-red)' : 'var(--afm-c-green)');
@@ -25,7 +36,7 @@ export function summaryCards(el: HTMLElement, ctx: DashboardContext): void {
 
 	// Note about rows left out.
 	if (m.otherCurrency > 0) {
-		el.createDiv({ cls: 'afm-note', text: `${m.otherCurrency} rows in other currencies not counted.` });
+		body.createDiv({ cls: 'afm-note', text: `${m.otherCurrency} rows in other currencies not counted.` });
 	}
 }
 

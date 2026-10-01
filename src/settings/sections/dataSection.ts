@@ -8,7 +8,7 @@ export function dataSection(el: HTMLElement, ctx: SettingsContext): void {
 
 	new Setting(el)
 		.setName('Database file')
-		.setDesc('The finance.db made by myFinances (transactions, categories, merchants and your labels): a full path, ~/... or a path inside the vault.')
+		.setDesc('The finance.db made by myFinances (transactions, categories, counterparties and your labels): a full path, ~/... or a path inside the vault.')
 		.addText((t) => {
 			t.setPlaceholder('~/source/myFinances/data/finance.db').setValue(s.dbFile);
 			// Only on Enter / leaving the field, so half-typed paths aren't opened.

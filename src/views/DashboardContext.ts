@@ -18,5 +18,6 @@ export interface DashboardContext {
 	redraw: () => void;                   // redraw without saving
 	editCategory: (picked: Transaction[], similar: boolean, newSubscription?: boolean) => void; // opens the edit window
 	save: () => void;                                                // saves your labels and redraws
+	saveSettings: () => void;                                        // saves settings only (order, collapsed) and redraws
 	saveLabel: (t: Transaction, patch: Label) => void;               // changes one label, saves and redraws
 }

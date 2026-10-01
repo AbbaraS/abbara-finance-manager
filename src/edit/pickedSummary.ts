@@ -5,13 +5,14 @@ import { dayLabel } from '../utils/dates';
 import { formatChange } from '../utils/money';
 
 // Where the category came from, in words.
-const SOURCE_TEXT = { edit: 'one-off edit', rule: 'remembered merchant', pair: 'other side of a transfer', none: '' };
+const SOURCE_TEXT = { edit: 'one-off edit', rule: 'from its counterparty', pair: 'other side of a transfer', none: '' };
 
 // Box at the top of the window describing what's being changed.
 export function pickedSummary(el: HTMLElement, picked: Transaction[], s: FinanceSettings): void {
 	const box = el.createDiv({ cls: 'afm-picked' });
 	const first = picked[0];
 	box.createDiv({ cls: 'afm-picked-title', text: first.description });
+	if (picked.every((t) => t.counterparty === first.counterparty) && first.counterparty) box.createDiv({ cls: 'afm-muted', text: `Counterparty: ${first.counterparty}` });
 
 	const total = picked.reduce((a, t) => a + t.amount, 0);
 	const accounts = [...new Set(picked.map((t) => t.account))].join(', ');

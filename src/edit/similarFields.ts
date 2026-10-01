@@ -1,61 +1,79 @@
 import { Setting } from 'obsidian';
-import { findCategory } from '../models/categories';
-import type { CategoryChoice } from '../models/CategoryChoice';
+import { KEEP_COUNTERPARTY, type CategoryChoice } from '../models/CategoryChoice';
+import { findCounterparty } from '../models/counterparties';
+import type { Counterparty } from '../models/Counterparty';
+import { cleanPatterns, counterpartyMatches } from '../models/counterpartyMatches';
 import type { Labels } from '../models/Labels';
-import type { Rule } from '../models/Rule';
-import { cleanPatterns } from '../models/ruleMatches';
 import type { Transaction } from '../models/Transaction';
+import { counterpartyPreviewText } from './counterpartyPreviewText';
 import { directionOf } from './directionOf';
-import { rulePreviewText } from './rulePreviewText';
 
-// "Remember for this merchant" toggle, and the rule fields with a live match count when it's on.
+// "Remember for this counterparty" toggle and its fields, with a live count when it's on.
+// When it's off, a counterparty can be picked by hand for rows its spellings don't find.
 export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels, picked: Transaction[], rows: Transaction[], redraw: () => void): void {
+	const names = labels.counterparties.map((x) => x.name).sort((a, b) => a.localeCompare(b));
 	new Setting(el)
-		.setName('Remember for this merchant')
-		.setDesc('Other months and new statements get this category too.')
+		.setName('Remember for this counterparty')
+		.setDesc('Saves who this is (e.g. Uber), so other months and new statements get the same name and category.')
 		.addToggle((t) => t.setValue(c.similar).onChange((v) => { c.similar = v; redraw(); }));
-	if (!c.similar) return;
 
-	// Saved merchants with the same category, subcategory and person: the patterns can be added to one of them.
-	const sub = c.subcategory.trim();
-	const person = findCategory(labels, c.category.trim())?.kind === 'people' ? c.person.trim() : '';
-	const same = labels.rules.filter((r) => r.category === c.category.trim() && (r.subcategory ?? '') === sub && (r.person ?? '') === person);
-	if (c.addTo && !same.includes(c.addTo)) c.addTo = null;
-	if (same.length > 0) {
+	// Off: pick by hand.
+	if (!c.similar) {
+		if (names.length === 0) return;
+		const found = picked.length === 1 ? labels.counterparties.find((x) => counterpartyMatches(x, picked[0]))?.name : '';
 		new Setting(el)
-			.setName('Save as')
-			.setDesc('Add spelling variations (UBER, UBR) to the merchant you already have.')
+			.setName('Counterparty')
+			.setDesc('Only needed when its spellings don\'t find this transaction.')
 			.addDropdown((d) => {
-				d.addOption('', 'New merchant');
-				same.forEach((r, i) => d.addOption(String(i), `Add to: ${r.patterns.join(' / ')}`));
-				d.setValue(c.addTo ? String(same.indexOf(c.addTo)) : '');
-				d.onChange((v) => { c.addTo = v === '' ? null : same[Number(v)]; redraw(); });
+				if (picked.length > 1) d.addOption(KEEP_COUNTERPARTY, 'Leave as it is');
+				d.addOption('', found ? `Found by spellings: ${found}` : 'None (found by spellings)');
+				for (const n of names) d.addOption(n, n);
+				d.setValue(c.counterparty).onChange((v) => (c.counterparty = v));
 			});
+		return;
 	}
 
-	// What the preview checks: the chosen merchant with these patterns added, or the new rule.
+	// On: a new counterparty, or add the spellings to a saved one.
+	if (c.addTo && !labels.counterparties.includes(c.addTo)) c.addTo = null;
+	const moves = c.addTo?.category && c.addTo.category !== c.category.trim();
+	new Setting(el)
+		.setName('Save as')
+		.setDesc(moves ? `${c.addTo!.name} is in ${c.addTo!.category} now; it moves to ${c.category.trim() || 'the category above'}.`
+			: 'Add spellings (UBER, UBR) to a counterparty you already have, or make a new one.')
+		.addDropdown((d) => {
+			d.addOption('', 'New counterparty');
+			for (const n of names) d.addOption(n, `Add to ${n}`);
+			d.setValue(c.addTo?.name ?? '');
+			d.onChange((v) => { c.addTo = v ? findCounterparty(labels, v) ?? null : null; redraw(); });
+		});
+	if (!c.addTo) {
+		new Setting(el).setName('Name').setDesc('Shown instead of the description.')
+			.addText((t) => t.setPlaceholder('e.g. Uber').setValue(c.draft.name).onChange((v) => (c.draft.name = v)));
+	}
+
+	// What the preview checks: the saved counterparty with these spellings added, or the new one.
 	const preview = createDiv(); // filled below, placed after the fields
-	const ruleNow = (): Rule => (c.addTo ? { ...c.addTo, patterns: cleanPatterns([...c.addTo.patterns, ...c.rule.patterns]) } : c.rule);
-	const update = () => rulePreviewText(preview, ruleNow(), rows, picked);
+	const now = (): Counterparty => (c.addTo ? { ...c.addTo, patterns: cleanPatterns([...c.addTo.patterns, ...c.draft.patterns]) } : c.draft);
+	const update = () => counterpartyPreviewText(preview, now(), rows, picked);
 
 	new Setting(el)
 		.setName('Description contains')
 		.setDesc('One per line; any of them matches. Any case. Shorten to catch more, e.g. "AMAZON" instead of "AMAZON* 3V2No9C65".')
 		.addTextArea((t) => {
-			t.setValue(c.rule.patterns.join('\n')).onChange((v) => { c.rule.patterns = v.split('\n'); update(); });
-			t.inputEl.rows = Math.min(Math.max(c.rule.patterns.length, 2), 6);
+			t.setValue(c.draft.patterns.join('\n')).onChange((v) => { c.draft.patterns = v.split('\n'); update(); });
+			t.inputEl.rows = Math.min(Math.max(c.draft.patterns.length, 2), 6);
 		});
 
-	// Only offered for a new merchant, when every picked row shares the account / direction.
+	// Only offered for a new counterparty, when every picked row shares the account / direction.
 	const accounts = [...new Set(picked.map((t) => t.account))];
 	if (!c.addTo && accounts.length === 1) {
-		new Setting(el).setName(`Only on ${accounts[0]}`).addToggle((t) => t.setValue(c.rule.account !== '')
-			.onChange((v) => { c.rule.account = v ? accounts[0] : ''; update(); }));
+		new Setting(el).setName(`Only on ${accounts[0]}`).addToggle((t) => t.setValue(c.draft.account !== '')
+			.onChange((v) => { c.draft.account = v ? accounts[0] : ''; update(); }));
 	}
 	const dir = directionOf(picked);
 	if (!c.addTo && dir) {
-		new Setting(el).setName(`Only money ${dir}`).addToggle((t) => t.setValue(c.rule.direction !== '')
-			.onChange((v) => { c.rule.direction = v ? dir : ''; update(); }));
+		new Setting(el).setName(`Only money ${dir}`).addToggle((t) => t.setValue(c.draft.direction !== '')
+			.onChange((v) => { c.draft.direction = v ? dir : ''; update(); }));
 	}
 
 	el.appendChild(preview);

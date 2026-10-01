@@ -6,14 +6,12 @@ import { areaPath, linePath, type Point } from '../../utils/svgPath';
 import type { DashboardContext } from '../DashboardContext';
 import { chartFrame } from './chartFrame';
 import { lineHover } from './lineHover';
-import { section } from './section';
 import { svgAxes } from './svgAxes';
 
 // Running net (income − spending) day by day, drawn as an SVG line.
-export function dailyLine(el: HTMLElement, ctx: DashboardContext): void {
+export function dailyLine(body: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const points = dailyRunning(ctx.rows, ctx.month, ctx.settings);
-	const body = section(el, 'Running net through the month', 'activity');
 	if (points.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No transactions this month.' });
 		return;

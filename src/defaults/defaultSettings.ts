@@ -6,6 +6,10 @@ export const DEFAULT_SETTINGS: FinanceSettings = {
 	currency: 'GBP',
 	locale: 'en-GB',
 	hiddenSections: [],
+	sectionOrder: [],
+	collapsedSections: [],
+	shownCounterparties: [],
+	hiddenRepeats: [],
 };
 
 // A fresh copy of the defaults.

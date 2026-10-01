@@ -10,12 +10,14 @@ export interface SubscriptionType {
 	name: string;
 }
 
-// A named regular payment, found by description text and amount (e.g. "iCloud+": APPLE.COM/BILL, £2.99 a month).
+// A named regular payment: a counterparty's payments at a price (e.g. "iCloud+": Apple, £2.99 a month).
+// Match text is only needed to tell apart two plans of one counterparty at the same price, or when there's no counterparty.
 export interface Subscription {
 	id?: number;             // database id, empty until first saved
 	name: string;
 	type: string;            // type name, '' = none
-	match: string;           // text in the description, any case
+	counterparty: string;    // counterparty whose payments these are, '' = found by match text only
+	match: string;           // extra text in the description, any case; '' = any
 	amount: number | null;   // cost of one payment; null = any amount
 	period: Period;
 	payments: number | null; // how many in total ("out of 10"); null = ongoing

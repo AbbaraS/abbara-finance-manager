@@ -141,6 +141,10 @@
 }
 .afm-hidden { display: none; }
 
+/* Transaction names; rows you can click to open. */
+.afm-name { overflow-wrap: anywhere; }
+.afm-clickable { cursor: pointer; }
+
 /* Uncategorised list. */
 .afm-table .afm-action {
 	width: 1%;
@@ -413,7 +417,7 @@ button.afm-badge.is-edited { border-style: dashed; } /* one-off edit */
 .afm-note-icon { display: inline-flex; padding-top: 2px; }
 .afm-note-icon svg { width: 12px; height: 12px; }
 
-/* Money in: rows that aren't income are faded. */
+/* Faded rows (cancelled subscriptions). */
 .afm-not-income td:first-child,
 .afm-not-income td.afm-num { color: var(--text-muted); }
 
@@ -537,7 +541,8 @@ button.afm-tag-button {
 }
 button.afm-tag-button.is-open { color: var(--text-accent); border-style: solid; }
 @media (hover: hover) {
-	tr:not(:hover) button.afm-tag-button:not(.is-open) { opacity: 0; }
+	tr:not(:hover) button.afm-tag-button:not(.is-open),
+	.afm-item:not(:hover) button.afm-tag-button:not(.is-open) { opacity: 0; }
 }
 
 /* Uncategorised: tick boxes and the bulk bar. */
@@ -623,6 +628,7 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 	font-weight: var(--font-semibold);
 	color: var(--text-muted);
 }
+.afm-repeat-buttons { display: flex; gap: var(--size-4-1); flex: none; }
 .afm-repeat {
 	display: flex;
 	align-items: center;
@@ -634,3 +640,144 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 
 /* Settings: subcategory lists sit under their category or person. */
 .afm-subs { margin: 0 0 var(--size-4-2) var(--size-4-6); }
+
+/* Subcategories in settings: a compact grid of small editable chips. */
+.afm-sub-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(12em, 1fr));
+	gap: var(--size-4-1) var(--size-4-2);
+	margin-bottom: var(--size-4-2);
+}
+.afm-sub {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px var(--size-4-1) 2px 2px;
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+}
+.afm-sub input[type='text'] {
+	flex: 1;
+	min-width: 0;
+	height: auto;
+	padding: 2px var(--size-4-1);
+	border: 1px solid transparent;
+	background: transparent;
+	font-size: var(--font-ui-small);
+}
+.afm-sub input[type='text']:hover,
+.afm-sub input[type='text']:focus { border-color: var(--background-modifier-border); background: var(--background-modifier-form-field); }
+.afm-sub-count { color: var(--text-faint); font-size: var(--font-ui-smaller); padding: 0 var(--size-4-1); }
+.afm-sub .clickable-icon { padding: 2px; }
+.afm-sub-add { display: flex; align-items: center; gap: var(--size-4-2); margin-bottom: var(--size-4-2); }
+.afm-sub-add input[type='text'] { font-size: var(--font-ui-small); }
+
+/* Section title bar: click to collapse, drag the grip to move. */
+.afm-section-title { cursor: pointer; user-select: none; border-radius: var(--radius-s); }
+.afm-section-title:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: 2px; }
+.afm-section-title .afm-chevron { margin-left: auto; }
+.afm-section:not(.is-collapsed) > .afm-section-title .afm-chevron { transform: rotate(90deg); }
+.afm-section.is-collapsed { padding-bottom: var(--size-4-3); }
+.afm-section.is-collapsed > .afm-section-title { margin-bottom: 0; }
+.afm-grip {
+	display: inline-flex;
+	margin-left: -10px;
+	color: var(--text-faint);
+	cursor: grab;
+	opacity: 0;
+	transition: opacity 120ms ease;
+}
+.afm-grip svg { width: 14px; height: 14px; }
+.afm-section-title:hover .afm-grip, .afm-section-title:focus-visible .afm-grip { opacity: 1; }
+@media (hover: none) { .afm-grip { opacity: 1; } }
+.afm-section.is-dragging { opacity: 0.4; }
+.afm-section.is-drop-before { box-shadow: 0 -3px 0 0 var(--interactive-accent); }
+.afm-section.is-drop-after { box-shadow: 0 3px 0 0 var(--interactive-accent); }
+
+/* Income card: one line per income category. */
+.afm-card-line { display: flex; justify-content: space-between; gap: var(--size-4-2); font-variant-numeric: tabular-nums; }
+
+/* Category and people cards: a responsive grid, each card tinted with its colour. */
+.afm-card-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+	gap: var(--size-4-3);
+	align-items: start;
+}
+.afm-group-card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding: var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-top: 3px solid var(--afm-cat);
+	border-radius: var(--radius-m);
+	background: linear-gradient(170deg, color-mix(in srgb, var(--afm-cat) 8%, var(--background-secondary)), var(--background-secondary) 60%);
+}
+.afm-group-top { display: flex; align-items: flex-start; gap: var(--size-4-2); }
+.afm-group-top .afm-dot-icon { width: 30px; height: 30px; }
+.afm-group-top .afm-dot-icon svg { width: 16px; height: 16px; }
+.afm-group-title { flex: 1; min-width: 0; }
+.afm-group-total {
+	text-align: right;
+	font-size: 1.15em;
+	font-weight: var(--font-semibold);
+	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
+}
+.afm-group-total .afm-flow-in, .afm-group-total .afm-flow-out { font-size: var(--font-ui-small); }
+.afm-flow-out { color: color-mix(in srgb, var(--afm-spend) 70%, var(--text-normal)); }
+.afm-flow-in { color: color-mix(in srgb, var(--afm-income) 70%, var(--text-normal)); }
+.afm-group-card .afm-bar-track { height: 4px; }
+
+/* Subcategories inside a card: a soft fill shows each one's share. */
+.afm-sub-rows { display: flex; flex-direction: column; gap: 2px; }
+.afm-sub-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 6px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-small);
+	background: linear-gradient(to right, color-mix(in srgb, var(--afm-cat) 14%, transparent) var(--afm-share, 0%), transparent var(--afm-share, 0%));
+}
+.afm-sub-row:hover { background-color: var(--background-modifier-hover); }
+.afm-sub-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.afm-sub-row .afm-sub-count { color: var(--text-faint); font-size: var(--font-ui-smaller); }
+.afm-sub-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Transactions inside a card. */
+.afm-items { display: flex; flex-direction: column; margin: 2px 0 6px 20px; border-left: 2px solid color-mix(in srgb, var(--afm-cat) 35%, transparent); }
+.afm-items.afm-hidden { display: none; }
+.afm-item {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	padding: 4px 8px;
+	font-size: var(--font-ui-smaller);
+	cursor: pointer;
+	border-radius: 0 var(--radius-s) var(--radius-s) 0;
+}
+.afm-item:hover { background: var(--background-modifier-hover); }
+.afm-item:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
+.afm-item-main { min-width: 0; }
+.afm-item .afm-name { font-size: var(--font-ui-small); }
+.afm-item-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Line under a card grid with its total. */
+.afm-grid-foot {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: var(--size-4-2);
+	margin-top: var(--size-4-3);
+	padding-top: var(--size-4-2);
+	border-top: 1px solid var(--background-modifier-border);
+	font-variant-numeric: tabular-nums;
+}
+.afm-grid-foot > :last-child { text-align: right; }
+
+/* Settings: picked counterparties as removable chips. */
+.afm-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: var(--size-4-1); }
+.afm-tag.afm-missing { text-decoration: line-through; opacity: 0.6; }

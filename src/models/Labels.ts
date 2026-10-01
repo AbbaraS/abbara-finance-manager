@@ -1,17 +1,18 @@
 import type { Category, Subcategory } from './Category';
 import type { Person } from './people';
-import type { Rule } from './Rule';
+import type { Counterparty } from './Counterparty';
 import type { Subscription, SubscriptionType } from './Subscription';
 
 // What you've set on one transaction. Empty fields are left out.
 export interface Label {
-	category?: string;     // one-off category; beats merchant rules
-	sub?: string;          // subcategory; beats the rule's
-	person?: string;       // under People: who; beats the rule's
+	category?: string;     // one-off category; beats the counterparty's
+	sub?: string;          // subcategory; beats the counterparty's
+	person?: string;       // under People: who; beats the counterparty's
 	subscription?: string; // subscription set by hand, or NO_SUBSCRIPTION; empty = found automatically
 	note?: string;
 	tags?: string[];
 	other?: string;        // transfers: the other account, set by hand
+	counterparty?: string; // picked by hand; empty = found by patterns
 }
 
 // One of your accounts. Accounts in the data appear by themselves; add others so transfers to them aren't "Unknown".
@@ -27,7 +28,7 @@ export interface Labels {
 	subcategories: Subcategory[];
 	people: Person[];
 	accounts: Account[];
-	rules: Rule[];                       // merchant memory, first match wins
+	counterparties: Counterparty[];      // who transactions are with, first match wins
 	types: SubscriptionType[];
 	subscriptions: Subscription[];       // in the order shown
 	transactions: Record<string, Label>; // transaction id -> label
