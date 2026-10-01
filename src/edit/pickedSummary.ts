@@ -5,7 +5,7 @@ import { dayLabel } from '../utils/dates';
 import { formatChange } from '../utils/money';
 
 // Where the category came from, in words.
-const SOURCE_TEXT = { edit: 'one-off edit', rule: 'from its counterparty', pair: 'other side of a transfer', none: '' };
+const SOURCE_TEXT = { edit: 'one-off edit', rule: 'from its counterparty', person: 'found by the person\'s spellings', pair: 'other side of a transfer', none: '' };
 
 // Box at the top of the window describing what's being changed.
 export function pickedSummary(el: HTMLElement, picked: Transaction[], s: FinanceSettings): void {

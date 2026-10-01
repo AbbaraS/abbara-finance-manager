@@ -14,6 +14,17 @@ export function guessPattern(description: string): string {
 	return pattern || description.trim(); // all numbers: keep the whole thing
 }
 
+// A person's spelling from a bank transfer: "Transfer to MARIANA SULEYMAN DALI" -> "MARIANA SULEYMAN DALI",
+// "LUKE BUTTERICK - love BGC" -> "LUKE BUTTERICK", so money both ways is found.
+export function guessPersonPattern(description: string): string {
+	const name = description
+		.replace(/^\s*(faster\s+)?(transfer|payment)s?\s+(to|from)\s+/i, '')
+		.replace(/\s+-\s+.*$/, '')
+		.replace(/\s+BGC\s*$/i, '')
+		.trim();
+	return name || description.trim();
+}
+
 // "UBER *TRIP" -> "Uber Trip": symbols dropped, shouting words capitalised (same as db.py counterparty_name).
 export function guessName(pattern: string): string {
 	const words = pattern.replace(/[^\p{L}\p{N}_&'.-]+/gu, ' ').trim().split(/\s+/).filter(Boolean);

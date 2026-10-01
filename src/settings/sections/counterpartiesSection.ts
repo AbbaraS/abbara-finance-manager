@@ -3,7 +3,9 @@ import { findCategory } from '../../models/categories';
 import { deleteCounterparty, mergeCounterparty, renameCounterparty, uniqueName } from '../../models/counterparties';
 import type { Counterparty, Direction } from '../../models/Counterparty';
 import { cleanPatterns } from '../../models/counterpartyMatches';
+import { tagNames } from '../../models/Labels';
 import { peopleIn } from '../../models/people';
+import { tagInput } from '../../edit/tagInput';
 import { countLabel } from '../../utils/countLabel';
 import { collapsible } from '../collapsible';
 import { confirmDelete } from '../confirmDelete';
@@ -17,7 +19,7 @@ export function counterpartiesSection(el: HTMLElement, ctx: SettingsContext): vo
 	const labels = ctx.plugin.db.labels;
 	new Setting(el)
 		.setName('Counterparties')
-		.setDesc('Who a transaction is with (a shop, service or employer); its name is shown instead of the description. Found by its spellings, one per line, checked top to bottom: the first match wins. With a category, its transactions get it too; one-off edits beat it. Add spellings from the edit window with "Remember for this counterparty".')
+		.setDesc('Who a transaction is with (a shop, service or employer); its name is shown instead of the description. Found by its spellings, one per line, checked top to bottom: the first match wins. With a category, its transactions get it too; one-off edits beat it. Its tags go on every transaction it finds. Add spellings from the edit window with "Remember for this counterparty".')
 		.setHeading();
 
 	// Collapsed list, so it doesn't push the rest of the page down.
@@ -39,11 +41,11 @@ export function counterpartiesSection(el: HTMLElement, ctx: SettingsContext): vo
 	for (const t of ctx.rows) if (t.counterparty) used.set(t.counterparty, (used.get(t.counterparty) ?? 0) + 1);
 	labels.counterparties.forEach((cp, i) => {
 		const row = counterpartyRow(list, cp, i, used.get(cp.name) ?? 0, ctx);
-		rows.push({ el: row, text: `${cp.name} ${cp.patterns.join(' ')} ${cp.category} ${cp.person ?? ''} ${cp.subcategory ?? ''} ${cp.account}`.toLowerCase() });
+		rows.push({ el: row, text: `${cp.name} ${cp.patterns.join(' ')} ${(cp.tags ?? []).join(' ')} ${cp.category} ${cp.person ?? ''} ${cp.subcategory ?? ''} ${cp.account}`.toLowerCase() });
 	});
 }
 
-// One counterparty: name, spellings, category (+ person under People, subcategory), account, direction, then up / down / merge / delete.
+// One counterparty: name, spellings, category (+ person under People, subcategory), account, direction, tags, then up / down / merge / delete.
 function counterpartyRow(el: HTMLElement, cp: Counterparty, i: number, used: number, ctx: SettingsContext): HTMLElement {
 	const labels = ctx.plugin.db.labels;
 	const all = labels.counterparties;
@@ -70,7 +72,7 @@ function counterpartyRow(el: HTMLElement, cp: Counterparty, i: number, used: num
 		})
 		.addDropdown((d) => {
 			d.addOption('', 'No category');
-			for (const c of labels.categories) d.addOption(c.name, c.name);
+			for (const c of labels.categories) if (c.kind !== 'people' || c.name === cp.category) d.addOption(c.name, c.name); // people have their own spellings
 			d.setValue(cp.category).onChange((v) => { Object.assign(cp, { category: v, person: '', subcategory: v ? cp.subcategory : '' }); ctx.saveAndRedraw(); });
 		});
 	if (findCategory(labels, cp.category)?.kind === 'people') {
@@ -94,7 +96,9 @@ function counterpartyRow(el: HTMLElement, cp: Counterparty, i: number, used: num
 			d.setValue(cp.account).onChange((v) => { cp.account = v; ctx.save(); });
 		})
 		.addDropdown((d) => d.addOptions(DIRECTIONS).setValue(cp.direction)
-			.onChange((v) => { cp.direction = v as Direction; ctx.save(); }))
+			.onChange((v) => { cp.direction = v as Direction; ctx.save(); }));
+	tagInput(ctx.app, setting.controlEl, cp.tags ?? [], tagNames(labels), (tags) => { cp.tags = tags; ctx.save(); });
+	setting
 		.addExtraButton((b) => b.setIcon('arrow-up').setTooltip('Move up').setDisabled(i === 0)
 			.onClick(() => move(all, i, -1, ctx)))
 		.addExtraButton((b) => b.setIcon('arrow-down').setTooltip('Move down').setDisabled(i === all.length - 1)

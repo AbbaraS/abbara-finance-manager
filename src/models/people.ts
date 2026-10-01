@@ -5,6 +5,7 @@ export interface Person {
 	id?: number;      // database id, empty until first saved
 	name: string;
 	category: string; // the People category they're under
+	patterns?: string[]; // text in the description that means them, any case; checked before counterparties
 }
 
 // Finding, adding, moving, renaming and deleting people.

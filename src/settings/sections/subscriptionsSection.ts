@@ -4,6 +4,8 @@ import { addSubscription, deleteSubscription, deleteType, renameSubscription, re
 import { countLabel } from '../../utils/countLabel';
 import { formatMoney, parseMoney } from '../../utils/money';
 import { setIconSafe } from '../../views/look/setIconSafe';
+import { tagInput } from '../../edit/tagInput';
+import { tagNames } from '../../models/Labels';
 import { collapsible } from '../collapsible';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
@@ -67,7 +69,7 @@ export function subscriptionsSection(el: HTMLElement, ctx: SettingsContext): voi
 	}
 }
 
-// One subscription: name, type, counterparty, extra text, amount, how often, out of, paid before, status, delete.
+// One subscription: name, type, counterparty, extra text, amount, how often, out of, paid before, status, tags, delete.
 function subscriptionRow(el: HTMLElement, sub: Subscription, ctx: SettingsContext): void {
 	const labels = ctx.plugin.db.labels;
 	const used = ctx.rows.filter((t) => t.subscription === sub.name).length;
@@ -113,6 +115,7 @@ function subscriptionRow(el: HTMLElement, sub: Subscription, ctx: SettingsContex
 			t.inputEl.title = 'Payments made before your statements start';
 		})
 		.addDropdown((d) => d.addOptions(STATUS_LABELS).setValue(sub.status).onChange((v) => { sub.status = v as SubscriptionStatus; ctx.save(); }));
+	tagInput(ctx.app, row.controlEl, sub.tags ?? [], tagNames(labels), (tags) => { sub.tags = tags; ctx.save(); });
 	row.nameEl.setText(sub.name);
 	confirmDelete(row, 'Delete subscription (its payments stay, without a name)', () => {
 		deleteSubscription(labels, sub.name);

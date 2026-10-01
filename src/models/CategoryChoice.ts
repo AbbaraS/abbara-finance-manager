@@ -22,7 +22,8 @@ export interface CategoryChoice {
 	note: string;                 // only offered for one transaction
 	tags: string[];               // one transaction: replaces its tags; several: added to theirs
 	other: string;                // transfers: the other account, '' = find it
-	similar: boolean;             // true: remember for this counterparty (its spellings and category); false: one-off
+	similar: boolean;             // true: remember for this counterparty (or person, under People); false: one-off
+	personPatterns: string[];     // under People with `similar` on: spellings added to the person
 	draft: Counterparty;          // the new counterparty, used when `similar` is on and `addTo` is empty
 	addTo: Counterparty | null;   // add the spellings to this saved counterparty instead; it takes the chosen category
 	counterparty: string;         // with `similar` off: picked by hand, '' = found by spellings, or KEEP_COUNTERPARTY

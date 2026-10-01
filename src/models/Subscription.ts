@@ -23,6 +23,7 @@ export interface Subscription {
 	payments: number | null; // how many in total ("out of 10"); null = ongoing
 	paidBefore: number;      // payments made before your statements start
 	status: SubscriptionStatus;
+	tags?: string[];         // added to each of its payments
 }
 
 // Label value for "not a subscription payment": never matched automatically.

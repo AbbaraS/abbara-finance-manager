@@ -3,15 +3,12 @@ import type { Labels } from '../models/Labels';
 // A new database starts with these: the default categories and income sources, nothing else.
 export const DEFAULT_LABELS: Labels = {
 	categories: [
-		// Spending.
+		// Spending: four containers.
+		{ name: 'Essential', kind: 'spending', color: 'yellow', icon: 'house' },
 		{ name: 'Transport', kind: 'spending', color: 'blue', icon: 'train-front' },
-		{ name: 'Food', kind: 'spending', color: 'green', icon: 'utensils' },
 		{ name: 'Shopping', kind: 'spending', color: 'magenta', icon: 'shopping-bag' },
-		{ name: 'Bills', kind: 'spending', color: 'yellow', icon: 'receipt' },
-		{ name: 'Subscriptions', kind: 'spending', color: 'violet', icon: 'repeat' },
-		{ name: 'Family', kind: 'spending', color: 'orange', icon: 'users' },
-		{ name: 'General Spending', kind: 'spending', color: 'gray', icon: 'circle-dashed' },
-		// People: the subcategory is the person.
+		{ name: 'Lifestyle', kind: 'spending', color: 'violet', icon: 'sparkles' },
+		// People: each person has their own subcategories.
 		{ name: 'People', kind: 'people', color: 'aqua', icon: 'user' },
 		// Income.
 		{ name: 'PhD', kind: 'income', color: 'blue', icon: 'graduation-cap' },
@@ -21,7 +18,13 @@ export const DEFAULT_LABELS: Labels = {
 		{ name: 'Savings', kind: 'saving', color: 'green', icon: 'piggy-bank' },
 		{ name: 'Investment', kind: 'saving', color: 'violet', icon: 'trending-up' },
 	],
-	subcategories: [],
+	// A few subcategories each; anything that cuts across them (Sadaqa, Random...) is a tag.
+	subcategories: [
+		...['Groceries', 'Bills', 'Utilities'].map((name) => ({ name, parent: 'Essential', person: '' })),
+		...['Taxi', 'Bus', 'Train', 'Coach'].map((name) => ({ name, parent: 'Transport', person: '' })),
+		...['Clothes & beauty', 'Online & other'].map((name) => ({ name, parent: 'Shopping', person: '' })),
+		...['Eating out', 'Entertainment', 'Apps & subscriptions', 'Travel', 'Other'].map((name) => ({ name, parent: 'Lifestyle', person: '' })),
+	],
 	people: [],
 	accounts: [],
 	counterparties: [

@@ -12,4 +12,5 @@ export interface Counterparty {
 	person?: string;      // under People: who, e.g. "Mum"
 	account: string;      // '' = any account
 	direction: Direction;
+	tags?: string[];      // added to every transaction it finds
 }

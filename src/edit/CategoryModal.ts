@@ -4,7 +4,8 @@ import { applyCategory } from '../models/applyCategory';
 import { KEEP_COUNTERPARTY, KEEP_SUBSCRIPTION, NEW_SUBSCRIPTION, type CategoryChoice } from '../models/CategoryChoice';
 import { findCounterparty } from '../models/counterparties';
 import { cleanPatterns } from '../models/counterpartyMatches';
-import { guessName, guessPattern } from '../models/guessCounterparty';
+import { guessName, guessPattern, guessPersonPattern } from '../models/guessCounterparty';
+import { findCategory } from '../models/categories';
 import { UNCATEGORISED } from '../models/rowKind';
 import type { Transaction } from '../models/Transaction';
 import { countLabel } from '../utils/countLabel';
@@ -40,6 +41,7 @@ export class CategoryModal extends Modal {
 			tags: one ? first.tags : [],
 			other: one ? first.otherAccount : '',
 			similar,
+			personPatterns: cleanPatterns(picked.map((t) => guessPersonPattern(t.description))),
 			draft: { name: guessName(patterns[0] ?? ''), patterns, category: '', account: '', direction: directionOf(picked) },
 			addTo: shared ? findCounterparty(labels, shared) ?? null : null, // rows that already share one add to it
 			counterparty: one ? labels.transactions[first.id]?.counterparty ?? '' : KEEP_COUNTERPARTY,
@@ -78,19 +80,22 @@ export class CategoryModal extends Modal {
 		const c = this.choice;
 		if (!c.category.trim()) return void new Notice(c.newKind ? 'Name the new category first.' : 'Pick a category first.');
 		const labels = this.plugin.db.labels;
+		const forPerson = c.similar && findCategory(labels, c.category.trim())?.kind === 'people';
+		if (forPerson && !c.person.trim()) return void new Notice('Pick or add the person first.');
+		if (forPerson && cleanPatterns(c.personPatterns).length === 0) return void new Notice('Type some text from the description.');
 		const name = c.draft.name.trim();
-		if (c.similar && !c.addTo && !name) return void new Notice('Name the counterparty first.');
-		if (c.similar && !c.addTo && labels.counterparties.some((x) => x.name.toLowerCase() === name.toLowerCase())) {
+		if (c.similar && !forPerson && !c.addTo && !name) return void new Notice('Name the counterparty first.');
+		if (c.similar && !forPerson && !c.addTo && labels.counterparties.some((x) => x.name.toLowerCase() === name.toLowerCase())) {
 			return void new Notice(`"${name}" already exists. Pick it under Save as.`);
 		}
-		if (c.similar && !c.addTo && cleanPatterns(c.draft.patterns).length === 0) return void new Notice('Type some text from the description.');
+		if (c.similar && !forPerson && !c.addTo && cleanPatterns(c.draft.patterns).length === 0) return void new Notice('Type some text from the description.');
 		const sub = c.newSubscription.name.trim();
 		if (c.subscription === NEW_SUBSCRIPTION && !sub) return void new Notice('Name the new subscription first.');
 		if (c.subscription === NEW_SUBSCRIPTION && labels.subscriptions.some((s) => s.name === sub)) return void new Notice(`"${sub}" already exists.`);
 
 		applyCategory(labels, this.picked, c);
 		void this.plugin.save();
-		new Notice(c.similar ? `Remembered ${c.addTo?.name ?? name} → ${c.category.trim()}` : 'Saved');
+		new Notice(forPerson ? `Remembered ${c.person.trim()}` : c.similar ? `Remembered ${c.addTo?.name ?? name} → ${c.category.trim()}` : 'Saved');
 		this.close();
 	}
 }

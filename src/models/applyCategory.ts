@@ -5,7 +5,7 @@ import type { Counterparty } from './Counterparty';
 import { cleanPatterns, counterpartyMatches } from './counterpartyMatches';
 import { setLabel, type Labels } from './Labels';
 import { addPerson } from './people';
-import { REFUND } from './categorise';
+import { REFUND, whoFor } from './categorise';
 import { addSubscription } from './subscriptions';
 import type { Transaction } from './Transaction';
 
@@ -25,19 +25,25 @@ export function applyCategory(labels: Labels, picked: Transaction[], c: Category
 	if (c.subscription === NEW_SUBSCRIPTION) addSubscription(labels, { ...n, name: n.name.trim(), match: n.match.trim() });
 	const subscription = c.subscription === NEW_SUBSCRIPTION ? n.name.trim() : c.subscription;
 
+	// Under People, "remember" saves the spellings on the person instead of a counterparty.
+	const forPerson = c.similar && kind === 'people';
+	const who = labels.people.find((p) => p.name === person);
+	if (forPerson && who) who.patterns = cleanPatterns([...(who.patterns ?? []), ...c.personPatterns]);
+
 	// Counterparty: it decides a row when it's the first whose spellings find it.
-	const cp = c.similar ? counterpartyFor(labels, c, name, sub, person) : null;
+	const cp = c.similar && !forPerson ? counterpartyFor(labels, c, name, sub, person) : null;
 	const decides = (t: Transaction) => cp !== null && labels.counterparties.find((x) => counterpartyMatches(x, t)) === cp;
-	const handPick = (t: Transaction) => (cp ? (decides(t) ? '' : cp.name) // rows it misses are linked by hand
+	const handPick = (t: Transaction) => (forPerson ? '' : cp ? (decides(t) ? '' : cp.name) // rows it misses are linked by hand
 		: c.counterparty === KEEP_COUNTERPARTY ? labels.transactions[t.id]?.counterparty ?? '' : c.counterparty);
 
 	const one = picked.length === 1;
 	for (const t of picked) {
 		// Where the row lands. A one-off edit saves category, subcategory and person together; none is needed when the
-		// row's counterparty already gives exactly this, and rows already here (not by an edit) are left as they are.
+		// row's counterparty or person already gives exactly this, and rows already here (not by an edit) are left as they are.
 		const linked = handPick(t);
-		const home = (linked ? labels.counterparties.find((x) => x.name === linked) : undefined) ?? labels.counterparties.find((x) => counterpartyMatches(x, t));
-		const given = home?.category === name && (home.subcategory ?? '') === sub && (home.person ?? '') === person;
+		const home = whoFor(labels, t, linked);
+		const given = home.cp ? home.cp.category === name && (home.cp.subcategory ?? '') === sub && (home.cp.person ?? '') === person
+			: home.person ? home.person.category === name && sub === '' && home.person.name === person : false;
 		const here = t.category === name && (t.subcategory === REFUND ? '' : t.subcategory) === sub && t.person === person && t.source !== 'edit';
 		const place = given ? { category: '', sub: '', person: '' } : here ? {} : { category: name, sub, person };
 		const tags = one ? c.tags : [...new Set([...t.tags, ...c.tags])];

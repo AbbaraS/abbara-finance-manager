@@ -781,3 +781,6 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 /* Settings: picked counterparties as removable chips. */
 .afm-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: var(--size-4-1); }
 .afm-tag.afm-missing { text-decoration: line-through; opacity: 0.6; }
+
+/* Tags a row gets from its counterparty or subscription: faded, not editable on the row. */
+.afm-tag.afm-tag-auto { opacity: 0.65; }

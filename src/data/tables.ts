@@ -12,14 +12,14 @@ import { query, sql } from './sqlite';
 
 // Rows as sqlite3 returns them.
 interface CategoryRow { id: number; name: string; kind: CategoryKind; color: string; icon: string; parent: string | null; person: string | null }
-interface NamedRow { id: number; name: string; category?: string }
+interface NamedRow { id: number; name: string; category?: string; patterns?: string }
 interface SubscriptionRow {
 	id: number; name: string; type: string | null; counterparty: string | null; match: string; amount: number | null; period: Period;
-	payments: number | null; paid_before: number; status: SubscriptionStatus;
+	payments: number | null; paid_before: number; status: SubscriptionStatus; tags: string;
 }
 interface CounterpartyRow {
 	id: number; name: string; patterns: string; category: string | null; subcategory: string | null; person: string | null;
-	account: string | null; direction: Direction;
+	account: string | null; direction: Direction; tags: string;
 }
 interface LabelRow {
 	id: string; category: string | null; sub: string | null; person: string | null; subscription: string | null;
@@ -59,14 +59,14 @@ export async function readTables(file: string): Promise<Tables> {
 	const [categories, people, types, subscriptions, accounts, counterparties, labels, rows] = await Promise.all([
 		get<CategoryRow>(`SELECT c.id, c.name, c.kind, c.color, c.icon, p.name AS parent, pe.name AS person FROM Category c
 			LEFT JOIN Category p ON p.id = c.parent_id LEFT JOIN Person pe ON pe.id = c.person_id ORDER BY c.position, c.id`),
-		get<NamedRow>('SELECT pe.id, pe.name, c.name AS category FROM Person pe JOIN Category c ON c.id = pe.category_id ORDER BY pe.name'),
+		get<NamedRow>('SELECT pe.id, pe.name, c.name AS category, pe.patterns FROM Person pe JOIN Category c ON c.id = pe.category_id ORDER BY pe.name'),
 		get<NamedRow>('SELECT id, name FROM Type ORDER BY position, id'),
 		get<SubscriptionRow>(`SELECT s.id, s.name, t.name AS type, k.name AS counterparty, s.match, s.amount, s.period, s.payments,
-			s.paid_before, s.status FROM Subscription s LEFT JOIN Type t ON t.id = s.type_id LEFT JOIN Counterparty k ON k.id = s.counterparty_id
+			s.paid_before, s.status, s.tags FROM Subscription s LEFT JOIN Type t ON t.id = s.type_id LEFT JOIN Counterparty k ON k.id = s.counterparty_id
 			ORDER BY s.position, s.id`),
 		get<Account>("SELECT name, match FROM Account WHERE match <> '' OR bank IS NULL ORDER BY name"),
 		get<CounterpartyRow>(`SELECT k.id, k.name, k.patterns, COALESCE(p.name, c.name) AS category,
-			CASE WHEN c.parent_id IS NULL THEN NULL ELSE c.name END AS subcategory, pe.name AS person, a.name AS account, k.direction
+			CASE WHEN c.parent_id IS NULL THEN NULL ELSE c.name END AS subcategory, pe.name AS person, a.name AS account, k.direction, k.tags
 			FROM Counterparty k LEFT JOIN Category c ON c.id = k.category_id LEFT JOIN Category p ON p.id = c.parent_id
 			LEFT JOIN Person pe ON pe.id = k.person_id LEFT JOIN Account a ON a.id = k.account_id ORDER BY k.position, k.id`),
 		get<LabelRow>(`SELECT l.transaction_id AS id, c.name AS category, l.subcategory AS sub, pe.name AS person, s.name AS subscription,
@@ -84,16 +84,16 @@ export async function readTables(file: string): Promise<Tables> {
 	const result: Labels = {
 		categories: categories.filter((c) => !c.parent).map(({ id, name, kind, color, icon }) => ({ id, name, kind, color, icon })),
 		subcategories: categories.filter((c) => c.parent).map((c) => ({ id: c.id, name: c.name, parent: c.parent ?? '', person: c.person ?? '' })),
-		people: people.map((p) => ({ id: p.id, name: p.name, category: p.category ?? '' })),
+		people: people.map((p) => ({ id: p.id, name: p.name, category: p.category ?? '', patterns: JSON.parse(p.patterns ?? '[]') })),
 		accounts,
 		counterparties: counterparties.map((r) => ({
 			id: r.id, name: r.name, patterns: JSON.parse(r.patterns), category: r.category ?? '', subcategory: r.subcategory ?? '',
-			person: r.person ?? '', account: r.account ?? '', direction: r.direction,
+			person: r.person ?? '', account: r.account ?? '', direction: r.direction, tags: JSON.parse(r.tags),
 		})),
 		types: types.map(({ id, name }) => ({ id, name })),
 		subscriptions: subscriptions.map((s) => ({
 			id: s.id, name: s.name, type: s.type ?? '', counterparty: s.counterparty ?? '', match: s.match, amount: s.amount, period: s.period,
-			payments: s.payments, paidBefore: s.paid_before, status: s.status,
+			payments: s.payments, paidBefore: s.paid_before, status: s.status, tags: JSON.parse(s.tags),
 		})),
 		transactions: {},
 	};
@@ -110,7 +110,7 @@ export async function readTables(file: string): Promise<Tables> {
 		rows: rows.map((t) => ({
 			id: t.id, date: t.date, month: monthOf(t.date), day: Number(t.date.slice(8, 10)), account: t.account,
 			description: t.description, counterparty: '', amount: t.amount, currency: t.currency.toUpperCase(),
-			category: UNCATEGORISED, kind: null, source: 'none', subcategory: '', person: '', note: '', tags: [],
+			category: UNCATEGORISED, kind: null, source: 'none', subcategory: '', person: '', note: '', tags: [], autoTags: [],
 			otherAccount: '', foundAccount: '', partner: null, subscription: '', payment: 0,
 		})),
 		saved: new Map(rows.map((t) => [t.id, [
@@ -122,7 +122,8 @@ export async function readTables(file: string): Promise<Tables> {
 // The parts of a row's worked-out category that are saved: category, subcategory, person, how, subscription, payment, counterparty.
 function resultParts(t: Transaction): [string, string, string, string, string, number, string] {
 	const sub = t.kind && t.subcategory !== REFUND ? t.subcategory : ''; // Refund is only shown, not saved
-	return [t.kind ? t.category : '', sub, t.person, t.source === 'none' ? '' : t.source, t.subscription, t.payment, t.counterparty];
+	const by = t.source === 'none' ? '' : t.source === 'person' ? 'rule' : t.source; // the file knows edit, rule and pair
+	return [t.kind ? t.category : '', sub, t.person, by, t.subscription, t.payment, t.counterparty];
 }
 
 // The saved parts as one string, to spot rows that changed.
@@ -154,13 +155,13 @@ export function labelStatements(labels: Labels): string[] {
 		`DELETE FROM Category WHERE id NOT IN (${ids([...categories, ...subcategories])});`,
 		// Categories, then people (each is under one), then subcategories (some belong to a person).
 		...categories.map((c, i) => upsert('Category', c.id, { name: sql(c.name), kind: sql(c.kind), color: sql(c.color), icon: sql(c.icon), position: sql(i) })),
-		...people.map((p) => upsert('Person', p.id, { name: sql(p.name), category_id: topId(p.category) })),
+		...people.map((p) => upsert('Person', p.id, { name: sql(p.name), category_id: topId(p.category), patterns: sql(JSON.stringify(p.patterns ?? [])) })),
 		...subcategories.map((s) => upsert('Category', s.id, { name: sql(s.name), parent_id: topId(s.parent), person_id: personId(s.person) })),
 		// Types and subscriptions, in order.
 		...types.map((t, i) => upsert('Type', t.id, { name: sql(t.name), position: sql(i) })),
 		...subscriptions.map((s, i) => upsert('Subscription', s.id, {
 			name: sql(s.name), type_id: typeId(s.type), match: sql(s.match), amount: sql(s.amount), period: sql(s.period),
-			payments: sql(s.payments), paid_before: sql(s.paidBefore), status: sql(s.status), position: sql(i),
+			payments: sql(s.payments), paid_before: sql(s.paidBefore), status: sql(s.status), position: sql(i), tags: sql(JSON.stringify(s.tags ?? [])),
 		})),
 		// Accounts: every named one exists, match text as set; ones you removed (no bank, unused) go.
 		...named.map((n) => `INSERT OR IGNORE INTO Account (name) VALUES (${sql(n)});`),
@@ -170,7 +171,7 @@ export function labelStatements(labels: Labels): string[] {
 		// Counterparties in order (kept by id, so transactions stay linked), then labels.
 		...counterparties.map((r, i) => upsert('Counterparty', r.id, {
 			position: sql(i), name: sql(r.name), patterns: sql(JSON.stringify(r.patterns)), category_id: categoryId(r.category, r.subcategory, r.person),
-			person_id: personId(r.person), account_id: accountId(r.account), direction: sql(r.direction),
+			person_id: personId(r.person), account_id: accountId(r.account), direction: sql(r.direction), tags: sql(JSON.stringify(r.tags ?? [])),
 		})),
 		// Subscriptions point at counterparties, which exist only now.
 		...subscriptions.map((s) => `UPDATE Subscription SET counterparty_id = ${counterpartyId(s.counterparty)} WHERE name = ${sql(s.name)};`),

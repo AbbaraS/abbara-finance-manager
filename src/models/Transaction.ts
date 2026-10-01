@@ -1,7 +1,7 @@
 import type { CategoryKind } from './Category';
 
 // Where a transaction's category came from.
-export type CategorySource = 'edit' | 'rule' | 'pair' | 'none'; // rule: the counterparty's category; pair: other side of a transfer
+export type CategorySource = 'edit' | 'rule' | 'person' | 'pair' | 'none'; // rule: the counterparty's category; person: found by a person's spellings; pair: other side of a transfer
 
 // One transaction from the database, with your labels applied (see categorise).
 export interface Transaction {
@@ -22,7 +22,8 @@ export interface Transaction {
 	subscription: string; // subscription name, '' = none (see linkSubscriptions)
 	payment: number;     // which payment of the subscription this is (5 of 10), 0 = not numbered
 	note: string;
-	tags: string[];
+	tags: string[];      // set on this transaction
+	autoTags: string[];  // from its counterparty and subscription (see categorise)
 	otherAccount: string; // transfers: the other account if set by hand, '' = find it
 	foundAccount: string; // transfers: the other account used (by hand or found), '' = not a transfer
 	partner: Transaction | null; // transfers: the matching row in the other account

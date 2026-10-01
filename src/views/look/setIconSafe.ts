@@ -11,6 +11,7 @@ const OLD_NAMES: Record<string, string> = {
 	'hand-coins': 'coins',
 	'heart-pulse': 'heart',
 	'arrow-left-right': 'repeat',
+	'house': 'home',
 };
 
 // setIcon that falls back to an older name, then a plain circle, so an icon never goes missing.

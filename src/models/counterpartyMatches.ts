@@ -6,8 +6,13 @@ export function counterpartyMatches(cp: Counterparty, t: Transaction): boolean {
 	if (cp.account && cp.account !== t.account) return false;
 	if (cp.direction === 'in' && t.amount <= 0) return false;
 	if (cp.direction === 'out' && t.amount >= 0) return false;
-	const text = t.description.toLowerCase();
-	return cp.patterns.some((p) => p.trim() !== '' && text.includes(p.trim().toLowerCase()));
+	return textMatches(cp.patterns, t.description);
+}
+
+// True when any of the patterns is in the text, any case.
+export function textMatches(patterns: string[], text: string): boolean {
+	const lower = text.toLowerCase();
+	return patterns.some((p) => p.trim() !== '' && lower.includes(p.trim().toLowerCase()));
 }
 
 // Cleans a pattern list: trimmed, no blanks, no repeats (any case).

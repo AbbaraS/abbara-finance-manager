@@ -5,13 +5,15 @@ import type { DashboardContext } from '../DashboardContext';
 import { setIconSafe } from '../look/setIconSafe';
 
 // A transaction's tags and note under it, with a "+ tag" button (shown on hover) that opens a tag box.
+// Tags from its counterparty or subscription show faded first; change those in settings.
 export function noteLine(parent: HTMLElement, t: Transaction, ctx: DashboardContext): void {
 	const key = `tags:${t.id}`; // open tag boxes stay open across redraws
 	const open = ctx.expanded.has(key);
 	const line = parent.createDiv({ cls: 'afm-note-line' });
 	line.addEventListener('click', (e) => e.stopPropagation()); // typing tags doesn't open the row
 
-	// Tags: plain, or the tag box while editing.
+	// Tags: inherited ones, then its own (plain, or the tag box while editing).
+	for (const tag of t.autoTags) line.createSpan({ cls: 'afm-tag afm-tag-auto', text: `#${tag}`, attr: { title: 'From its counterparty or subscription' } });
 	if (open) {
 		const input = tagInput(ctx.app, line, t.tags, tagNames(ctx.labels), (tags) => ctx.saveLabel(t, { tags }));
 		window.setTimeout(() => input.focus(), 0);

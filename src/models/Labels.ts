@@ -45,8 +45,9 @@ export function setLabel(labels: Labels, id: string, patch: Label): void {
 	else labels.transactions[id] = l;
 }
 
-// Every tag used so far, A-Z (for suggestions).
+// Every tag used so far on transactions, counterparties and subscriptions, A-Z (for suggestions).
 export function tagNames(labels: Labels): string[] {
-	const tags = new Set(Object.values(labels.transactions).flatMap((l) => l.tags ?? []));
+	const lists = [...Object.values(labels.transactions), ...labels.counterparties, ...labels.subscriptions].map((x) => x.tags ?? []);
+	const tags = new Set(lists.flat());
 	return [...tags].sort((a, b) => a.localeCompare(b));
 }
