@@ -2,8 +2,7 @@ import type { FinanceSettings } from '../models/FinanceSettings';
 
 // First-run settings; copied before use so edits never touch this object.
 export const DEFAULT_SETTINGS: FinanceSettings = {
-	dataFolder: 'Finance/combined',
-	labelsFile: 'Finance/labels.json',
+	dbFile: '',
 	currency: 'GBP',
 	locale: 'en-GB',
 	hiddenSections: [],

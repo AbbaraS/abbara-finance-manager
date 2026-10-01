@@ -8,6 +8,7 @@ export interface SettingsContext {
 	plugin: FinancePlugin;
 	save: () => void;           // debounced, for typing
 	saveAndRedraw: () => void;  // for changes that add, remove or move items
+	redraw: () => void;         // rebuilds the tab without saving
 	rows: Transaction[];        // categorised rows, for counts
 	accounts: string[];         // accounts in the data + ones you added
 }

@@ -9,7 +9,7 @@ import type { SettingsContext } from '../context';
 // One-off categories (made with "Remember for this merchant" off), with undo per edit or all at once.
 export function editsSection(el: HTMLElement, ctx: SettingsContext): void {
 	const s = ctx.plugin.settings;
-	const labels = ctx.plugin.labels.data;
+	const labels = ctx.plugin.db.labels;
 	const byKey = new Map(ctx.rows.map((t) => [t.id, t]));
 	const date = (id: string) => byKey.get(id)?.date ?? '';
 	const keys = Object.keys(labels.transactions).filter((k) => labels.transactions[k].category)

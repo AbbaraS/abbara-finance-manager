@@ -1,5 +1,5 @@
 import type { Rule } from '../models/Rule';
-import { ruleMatches } from '../models/ruleMatches';
+import { cleanPatterns, ruleMatches } from '../models/ruleMatches';
 import { rulePreview } from '../models/rulePreview';
 import type { Transaction } from '../models/Transaction';
 import { countLabel } from '../utils/countLabel';
@@ -11,7 +11,7 @@ const EXAMPLES = 4;
 export function rulePreviewText(el: HTMLElement, rule: Rule, rows: Transaction[], picked: Transaction[]): void {
 	el.empty();
 	el.addClass('afm-rule-preview');
-	if (!rule.pattern.trim()) return void el.createDiv({ text: 'Type some text from the description.' });
+	if (cleanPatterns(rule.patterns).length === 0) return void el.createDiv({ text: 'Type some text from the description.' });
 
 	const p = rulePreview(rule, rows, picked);
 	const months = countLabel(p.months, 'month');

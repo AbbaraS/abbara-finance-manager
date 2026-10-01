@@ -41,7 +41,7 @@ export function moneyInList(el: HTMLElement, ctx: DashboardContext): void {
 		const cell = tr.createEl('td');
 		cell.createDiv({ text: t.description });
 		cell.createDiv({ cls: 'afm-muted', text: `${dayLabel(t.date, s.locale)} · ${t.account}` });
-		noteLine(cell, t);
+		noteLine(cell, t, ctx);
 		categoryButton(tr.createEl('td', { cls: 'afm-chip-cell' }), t, ctx);
 		tr.createEl('td', { cls: 'afm-muted afm-narrow-hide', text: COUNTS_AS[kind] });
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(t.amount, s) });

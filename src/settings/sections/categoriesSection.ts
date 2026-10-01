@@ -9,7 +9,7 @@ import type { SettingsContext } from '../context';
 
 // Your categories, grouped by kind: rename, colour, kind, delete; add new ones at the end.
 export function categoriesSection(el: HTMLElement, ctx: SettingsContext): void {
-	const labels = ctx.plugin.labels.data;
+	const labels = ctx.plugin.db.labels;
 	new Setting(el)
 		.setName('Categories')
 		.setDesc('Spending: money out is spent, money in is a refund. People: money out is spent, money in is from people (not income). Income: money in is income. Transfers and Savings: not counted. Subcategories are made in the edit window.')

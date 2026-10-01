@@ -354,6 +354,8 @@
 
 /* Tags under a transaction. */
 .afm-tag {
+	display: inline-flex;
+	align-items: center;
 	font-style: normal;
 	font-size: var(--font-ui-smaller);
 	color: var(--tag-color);
@@ -504,3 +506,48 @@ body {
 .afm-flows td.is-selected { font-weight: var(--font-semibold); }
 .afm-flows .afm-detail td:first-child { padding-left: calc(var(--size-4-2) + 14px + 6px); }
 .afm-strong { font-weight: var(--font-semibold); }
+
+/* Tag box: chips and a text box with suggestions. */
+.afm-tag-input {
+	display: inline-flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px;
+	min-width: 12em;
+}
+.afm-tag-chips { display: contents; }
+.afm-tag-input input { flex: 1 1 8em; min-width: 8em; height: auto; padding: 2px 6px; font-size: var(--font-ui-smaller); }
+.afm-tag-remove { display: inline-flex; margin-left: 2px; cursor: pointer; opacity: 0.6; vertical-align: middle; }
+.afm-tag-remove:hover { opacity: 1; }
+.afm-tag-remove svg { width: 10px; height: 10px; }
+
+/* "+ tag" under a transaction: faint until the row is hovered (always shown on touch screens). */
+button.afm-tag-button {
+	height: auto;
+	padding: 0 var(--size-4-1);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-faint);
+	background: none;
+	box-shadow: none;
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: var(--tag-radius);
+	cursor: pointer;
+}
+button.afm-tag-button.is-open { color: var(--text-accent); border-style: solid; }
+@media (hover: hover) {
+	tr:not(:hover) button.afm-tag-button:not(.is-open) { opacity: 0; }
+}
+
+/* Uncategorised: tick boxes and the bulk bar. */
+.afm-table .afm-check { width: 1%; padding-right: 0; }
+.afm-pickable tbody tr { cursor: pointer; }
+.afm-bulk {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: var(--size-4-2);
+	margin: var(--size-4-2) 0;
+}
+
+/* Settings: a merchant's spellings, one per line. */
+.afm-wrap textarea { min-width: 14em; font-size: var(--font-ui-small); }

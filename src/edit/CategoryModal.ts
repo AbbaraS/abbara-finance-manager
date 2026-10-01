@@ -4,6 +4,7 @@ import { applyCategory } from '../models/applyCategory';
 import type { CategoryChoice } from '../models/CategoryChoice';
 import { UNCATEGORISED } from '../models/rowKind';
 import { rulePattern } from '../models/rulePattern';
+import { cleanPatterns } from '../models/ruleMatches';
 import type { Transaction } from '../models/Transaction';
 import { countLabel } from '../utils/countLabel';
 import { categoryField } from './categoryField';
@@ -29,7 +30,8 @@ export class CategoryModal extends Modal {
 			tags: one ? first.tags : [],
 			other: one ? first.otherAccount : '',
 			similar,
-			rule: { pattern: rulePattern(first.description), category: '', account: '', direction: directionOf(picked) },
+			rule: { patterns: cleanPatterns(picked.map((t) => rulePattern(t.description))), category: '', account: '', direction: directionOf(picked) },
+			addTo: null,
 		};
 	}
 
@@ -50,9 +52,9 @@ export class CategoryModal extends Modal {
 		const redraw = () => this.draw();
 
 		pickedSummary(el, this.picked, this.plugin.settings);
-		categoryField(el, this.choice, this.plugin.labels.data, redraw);
-		detailsFields(el, this.choice, this.plugin.labels.data, this.rows, this.picked, redraw);
-		similarFields(el, this.choice, this.picked, this.rows, redraw);
+		categoryField(el, this.choice, this.plugin.db.labels, redraw);
+		detailsFields(this.app, el, this.choice, this.plugin.db.labels, this.rows, this.picked, redraw);
+		similarFields(el, this.choice, this.plugin.db.labels, this.picked, this.rows, redraw);
 
 		new Setting(el)
 			.addButton((b) => b.setButtonText('Cancel').onClick(() => this.close()))
@@ -63,11 +65,11 @@ export class CategoryModal extends Modal {
 	private save() {
 		const c = this.choice;
 		if (!c.category.trim()) return void new Notice(c.newKind ? 'Name the new category first.' : 'Pick a category first.');
-		if (c.similar && !c.rule.pattern.trim()) return void new Notice('Type some text from the description for the rule.');
+		if (c.similar && cleanPatterns(c.rule.patterns).length === 0) return void new Notice('Type some text from the description for the rule.');
 
-		applyCategory(this.plugin.labels.data, this.picked, c);
+		applyCategory(this.plugin.db.labels, this.picked, c);
 		void this.plugin.save();
-		new Notice(c.similar ? `Remembered: "${c.rule.pattern.trim()}" → ${c.category.trim()}` : 'Saved');
+		new Notice(c.similar ? `Remembered: ${cleanPatterns(c.rule.patterns).map((x) => `"${x}"`).join(', ')} → ${c.category.trim()}` : 'Saved');
 		this.close();
 	}
 }

@@ -1,11 +1,7 @@
 import type { Labels } from '../models/Labels';
 
-// Labels file version. A file with another version isn't loaded or overwritten.
-export const LABELS_VERSION = 2;
-
-// A new labels file: the default categories and income sources, nothing else.
+// A new database starts with these: the default categories and income sources, nothing else.
 export const DEFAULT_LABELS: Labels = {
-	version: LABELS_VERSION,
 	categories: [
 		// Spending.
 		{ name: 'Transport', kind: 'spending', color: 'blue', icon: 'train-front' },
@@ -27,8 +23,8 @@ export const DEFAULT_LABELS: Labels = {
 	],
 	accounts: [],
 	rules: [
-		{ pattern: 'UNIV OF MANCHESTER', category: 'PhD', subcategory: '', account: '', direction: 'in' },
-		{ pattern: 'MAN UNI STUDENTS U BGC', category: 'UMSU', subcategory: '', account: '', direction: 'in' },
+		{ patterns: ['UNIV OF MANCHESTER'], category: 'PhD', subcategory: '', account: '', direction: 'in' },
+		{ patterns: ['MAN UNI STUDENTS U BGC'], category: 'UMSU', subcategory: '', account: '', direction: 'in' },
 	],
 	transactions: {},
 };

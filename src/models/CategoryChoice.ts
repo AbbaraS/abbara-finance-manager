@@ -12,4 +12,5 @@ export interface CategoryChoice {
 	other: string;                // transfers: the other account, '' = find it
 	similar: boolean;             // true: remember for this merchant (a rule); false: one-off
 	rule: Rule;                   // used when `similar` is on
+	addTo: Rule | null;           // add the patterns to this saved merchant instead of making a new one
 }

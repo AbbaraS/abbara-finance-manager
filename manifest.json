@@ -2,9 +2,9 @@
 	"id": "abbara-finance-manager",
 	"name": "Abbara Finance Manager",
 	"version": "0.1.0",
-	"minAppVersion": "1.4.0",
-	"description": "Monthly dashboard for the CSVs made by myFinances: totals, categories, accounts and trends.",
+	"minAppVersion": "1.4.10",
+	"description": "Monthly dashboard for the finance database made by myFinances: totals, categories, accounts and trends.",
 	"author": "AbbaraS",
 	"authorUrl": "https://github.com/AbbaraS",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }

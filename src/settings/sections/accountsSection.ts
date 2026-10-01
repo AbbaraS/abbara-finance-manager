@@ -4,7 +4,7 @@ import type { SettingsContext } from '../context';
 
 // Your accounts: the ones in the data plus ones you add (no statements yet), each with optional match text.
 export function accountsSection(el: HTMLElement, ctx: SettingsContext): void {
-	const labels = ctx.plugin.labels.data;
+	const labels = ctx.plugin.db.labels;
 	new Setting(el)
 		.setName('Accounts')
 		.setDesc('Match text: words in a transfer\'s description that mean this account (e.g. a sort code), so it isn\'t "Unknown account". Name added accounts the way myFinances will, so their statements link up later.')

@@ -15,7 +15,7 @@ export function transactionRows(tbody: HTMLElement, rows: Transaction[], ctx: Da
 		const meta = cell.createDiv({ cls: 'afm-meta' });
 		meta.createSpan({ cls: 'afm-muted', text: `${dayLabel(t.date, s.locale)} · ${t.account}` });
 		categoryButton(meta, t, ctx);
-		noteLine(cell, t);
+		noteLine(cell, t, ctx);
 		tr.createEl('td', { cls: 'afm-bar-cell' });
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(-t.amount, s) }); // spend shows positive, refunds negative
 		tr.createEl('td');

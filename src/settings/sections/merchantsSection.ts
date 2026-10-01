@@ -1,6 +1,7 @@
 import { Setting } from 'obsidian';
 import type { Direction, Rule } from '../../models/Rule';
 import { ruleHits } from '../../models/ruleHits';
+import { cleanPatterns } from '../../models/ruleMatches';
 import { countLabel } from '../../utils/countLabel';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
@@ -10,10 +11,10 @@ const DIRECTIONS: Record<Direction, string> = { '': 'In or out', in: 'Money in',
 
 // Merchant memory: the rules saved by "Remember for this merchant", collapsed, with a filter and edit fields.
 export function merchantsSection(el: HTMLElement, ctx: SettingsContext): void {
-	const labels = ctx.plugin.labels.data;
+	const labels = ctx.plugin.db.labels;
 	new Setting(el)
 		.setName('Merchants')
-		.setDesc('Saved from the edit window. Checked top to bottom; the first match sets the category. One-off edits beat these.')
+		.setDesc('Saved from the edit window. Each merchant can have several spellings, one per line. Checked top to bottom; the first match sets the category. One-off edits beat these.')
 		.setHeading();
 
 	// Collapsed list, so it doesn't push the rest of the page down.
@@ -28,29 +29,32 @@ export function merchantsSection(el: HTMLElement, ctx: SettingsContext): void {
 			rows.forEach((r) => r.el.toggleClass('afm-hidden', !r.text.includes(f)));
 		}))
 		.addButton((b) => b.setButtonText('Add').onClick(() => {
-			labels.rules.unshift({ pattern: '', category: labels.categories[0]?.name ?? '', subcategory: '', account: '', direction: '' });
+			labels.rules.unshift({ patterns: [], category: labels.categories[0]?.name ?? '', subcategory: '', account: '', direction: '' });
 			ctx.saveAndRedraw();
 		}));
 
 	const hits = ruleHits(ctx.rows, labels);
 	labels.rules.forEach((rule, i) => {
 		const row = ruleRow(list, rule, i, hits[i], ctx);
-		rows.push({ el: row, text: `${rule.pattern} ${rule.category} ${rule.subcategory ?? ''} ${rule.account}`.toLowerCase() });
+		rows.push({ el: row, text: `${rule.patterns.join(' ')} ${rule.category} ${rule.subcategory ?? ''} ${rule.account}`.toLowerCase() });
 	});
 }
 
-// One rule: pattern, category, subcategory, account, direction, then up / down / delete.
+// One rule: patterns (one per line), category, subcategory, account, direction, then up / down / delete.
 function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: SettingsContext): HTMLElement {
-	const rules = ctx.plugin.labels.data.rules;
+	const rules = ctx.plugin.db.labels.rules;
 	const accounts = [...new Set([...ctx.accounts, rule.account])].filter(Boolean);
 	const setting = new Setting(el)
 		.setClass('afm-wrap')
 		.setName(`${i + 1}.`)
-		.setDesc(rule.pattern.trim() ? `Used for ${countLabel(hits)}` : 'Empty: matches nothing')
-		.addText((t) => t.setPlaceholder('Description contains').setValue(rule.pattern)
-			.onChange((v) => { rule.pattern = v; ctx.save(); }))
+		.setDesc(rule.patterns.some((p) => p.trim()) ? `Used for ${countLabel(hits)}` : 'Empty: matches nothing')
+		.addTextArea((t) => {
+			t.setPlaceholder('Description contains\n(one per line)').setValue(rule.patterns.join('\n'))
+				.onChange((v) => { rule.patterns = cleanPatterns(v.split('\n')); ctx.save(); });
+			t.inputEl.rows = Math.min(Math.max(rule.patterns.length, 1), 5);
+		})
 		.addDropdown((d) => {
-			for (const c of ctx.plugin.labels.data.categories) d.addOption(c.name, c.name);
+			for (const c of ctx.plugin.db.labels.categories) d.addOption(c.name, c.name);
 			d.setValue(rule.category).onChange((v) => { rule.category = v; ctx.save(); });
 		})
 		.addText((t) => t.setPlaceholder('Subcategory').setValue(rule.subcategory ?? '')

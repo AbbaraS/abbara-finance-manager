@@ -16,10 +16,9 @@ export interface Account {
 	match: string; // text in a transfer's description that means this account, '' = none
 }
 
-// Your own data, saved as JSON in the vault (setting: labelsFile).
-// Keyed by the ids myFinances writes, so the file can be copied to another vault.
+// Your own data, saved in the database (see data/Database.ts).
+// Keyed by the ids myFinances writes, so labels survive re-imports.
 export interface Labels {
-	version: number;
 	categories: Category[];
 	accounts: Account[];
 	rules: Rule[];                       // merchant memory, first match wins
@@ -35,4 +34,10 @@ export function setLabel(labels: Labels, id: string, patch: Label): void {
 	}
 	if (Object.keys(l).length === 0) delete labels.transactions[id];
 	else labels.transactions[id] = l;
+}
+
+// Every tag used so far, A-Z (for suggestions).
+export function tagNames(labels: Labels): string[] {
+	const tags = new Set(Object.values(labels.transactions).flatMap((l) => l.tags ?? []));
+	return [...tags].sort((a, b) => a.localeCompare(b));
 }

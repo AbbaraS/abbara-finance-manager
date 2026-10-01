@@ -22,7 +22,7 @@ export function header(el: HTMLElement, ctx: DashboardContext): void {
 	select.addEventListener('change', () => ctx.selectMonth(select.value));
 
 	iconButton(controls, 'chevron-right', 'Next month', i < ctx.months.length - 1, () => ctx.selectMonth(ctx.months[i + 1]));
-	iconButton(controls, 'refresh-cw', 'Reload CSVs', true, ctx.reload);
+	iconButton(controls, 'refresh-cw', 'Reload', true, ctx.reload);
 }
 
 // A small icon button.

@@ -3,7 +3,7 @@ export type Direction = '' | 'in' | 'out';
 
 // Puts matching transactions in a category. First match wins.
 export interface Rule {
-	pattern: string;      // text in the description, any case
+	patterns: string[];   // text in the description, any case; any one matches (e.g. "UBER", "UBR")
 	category: string;
 	subcategory?: string; // optional, e.g. "Gold" under Investment
 	account: string;      // '' = any account

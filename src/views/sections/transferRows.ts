@@ -35,7 +35,7 @@ export function transferRows(tbody: HTMLElement, rows: Transaction[], span: numb
 		select.addEventListener('click', (e) => e.stopPropagation()); // don't toggle the row
 		select.addEventListener('change', () => ctx.saveLabel(t, { other: select.value }));
 
-		noteLine(cell, t);
+		noteLine(cell, t, ctx);
 		return tr;
 	});
 }

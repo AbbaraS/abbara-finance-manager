@@ -1,14 +1,13 @@
 # Abbara Finance Manager
 
-Obsidian dashboard for the monthly CSVs made by [myFinances](../../myFinances).
+Obsidian dashboard for the finance database made by [myFinances](../../myFinances).
 Idea inspired by [LBerts/personal-finance](https://github.com/LBerts/personal-finance); code written from scratch.
 
 ## Setup
 
 ```bash
-# 1. Link the data into your vault (once)
-mkdir -p "<vault>/Finance"
-ln -s ~/source/myFinances/data/combined "<vault>/Finance/combined"
+# 1. Make the database (once, then after each new statement)
+cd ~/source/myFinances && make
 
 # 2. Link the plugin into the vault (once)
 ln -s ~/source/obsidian-plugins/abbara-finance-manager "<vault>/.obsidian/plugins/abbara-finance-manager"
@@ -18,12 +17,14 @@ npm install
 npm run dev     # rebuilds on save
 ```
 
-Enable **Finance Manager** in Community plugins, then click the wallet icon.
+Enable **Finance Manager** in Community plugins, set **Database file** in its settings
+(e.g. `~/source/myFinances/data/finance.db`), then click the wallet icon.
 Run `make` in myFinances and the dashboard reloads (or press the reload button).
+Desktop only: it reads the database with the `sqlite3` program that comes with macOS.
 
 ## Categories
 
-Your categories live in the labels file. A new file starts with these:
+Your categories live in the database. A new database starts with these:
 
 | Kind | Categories | Counts as |
 |---|---|---|
@@ -55,15 +56,23 @@ The other side of a transfer is found from, in order:
 
 ## Where your data lives
 
-| What | Where |
-|---|---|
-| Transactions | monthly CSVs from myFinances (`Finance/combined/<year>/<year>-<month>.csv`); other CSVs there are ignored |
-| Your categories, accounts, merchants and labels | `Finance/labels.json` in the vault (setting: *Labels file*) |
-| Plugin settings | `data.json` in the plugin folder |
+Everything is in one SQLite file, `myFinances/data/finance.db` (setting: *Database file*).
+The tables are made by `myFinances/src/finances/db.py`.
 
-Labels are saved against the `id` column that myFinances writes (a hash of account, date, amount and description).
-Moving files or changing categories doesn't change ids, so the labels file can be copied to another vault.
-A labels file from another version isn't loaded or overwritten: rename or delete it to start fresh.
+| Table | Written by | Holds |
+|---|---|---|
+| `transactions` | myFinances (`make`) | one row per bank transaction; the plugin also fills in the worked-out `category_id`, `subcategory` and `category_by` (`edit`, `rule`, `pair`) |
+| `accounts` | both | accounts from statements (bank set) and ones you add here, with match text |
+| `categories` | plugin | your categories, in order |
+| `rules` | plugin | merchants, in order (first match wins) |
+| `labels` | plugin | what you set by hand per transaction: one-off category, subcategory, note, tags, other account |
+| Plugin settings | `data.json` in the plugin folder | |
+
+Labels are saved against the transaction `id` that myFinances makes (a hash of account, date, amount and description),
+in their own table, so re-running `make` never loses them.
+Python and the plugin both use SQLite's file locking, so either can write at any time.
+The dashboard reloads by itself when the file changes.
+A database from another version isn't loaded or written to.
 
 ## How totals work
 
@@ -82,7 +91,7 @@ All of this is in `src/models/rowKind.ts`.
 src/
   main.ts            wiring only
   models/            data types + pure calculations (no DOM)
-  data/              reading CSVs and the labels file from the vault
+  data/              Database.ts (load/save the SQLite file) + sqlite.ts (runs sqlite3)
   defaults/          default categories and settings
   views/             DashboardView + one file per section
   edit/              edit-transaction window

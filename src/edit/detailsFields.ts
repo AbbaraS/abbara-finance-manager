@@ -1,16 +1,17 @@
-import { Setting } from 'obsidian';
+import { Setting, type App } from 'obsidian';
 import { accountNames } from '../models/accountNames';
 import { findCategory } from '../models/categories';
 import type { CategoryChoice } from '../models/CategoryChoice';
-import type { Labels } from '../models/Labels';
+import { tagNames, type Labels } from '../models/Labels';
 import { subcategoryNames } from '../models/subcategoryNames';
 import type { Transaction } from '../models/Transaction';
+import { tagInput } from './tagInput';
 
 // Dropdown value that switches to "new subcategory" mode.
 const NEW = '__new__';
 
 // Subcategory (pick one or make one; the person under People), note, tags, and the other account for transfers.
-export function detailsFields(el: HTMLElement, c: CategoryChoice, labels: Labels, rows: Transaction[], picked: Transaction[], redraw: () => void): void {
+export function detailsFields(app: App, el: HTMLElement, c: CategoryChoice, labels: Labels, rows: Transaction[], picked: Transaction[], redraw: () => void): void {
 	const kind = c.newKind ?? findCategory(labels, c.category)?.kind ?? null;
 	const person = kind === 'people';
 
@@ -41,12 +42,12 @@ export function detailsFields(el: HTMLElement, c: CategoryChoice, labels: Labels
 				.onChange((v) => (c.note = v)));
 	}
 
-	// Tags, e.g. "syria-trip, gift".
-	new Setting(el)
+	// Tags: pick ones you've used or type a new one.
+	const tags = new Setting(el)
 		.setName('Tags')
-		.setDesc(picked.length === 1 ? 'Separate with commas.' : 'Added to every picked transaction. Separate with commas.')
-		.addText((t) => t.setPlaceholder('None').setValue(c.tags.join(', '))
-			.onChange((v) => (c.tags = v.split(',').map((x) => x.trim().replace(/^#/, '')).filter(Boolean))));
+		.setDesc(picked.length === 1 ? 'Pick one you\'ve used or type a new one.' : 'Added to every picked transaction.');
+	tags.settingEl.addClass('afm-wrap');
+	tagInput(app, tags.controlEl, c.tags, tagNames(labels), (v) => (c.tags = v));
 
 	// Other account: only for transfers.
 	if (kind !== 'transfer') return;

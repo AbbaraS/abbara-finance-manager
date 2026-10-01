@@ -3,7 +3,7 @@ import type { CategoryKind } from './Category';
 // Where a transaction's category came from.
 export type CategorySource = 'edit' | 'rule' | 'pair' | 'none'; // pair: other side of a transfer
 
-// One row from a myFinances monthly CSV, with your labels applied (see categorise).
+// One transaction from the database, with your labels applied (see categorise).
 export interface Transaction {
 	id: string;          // made by myFinances; your labels are saved against it
 	date: string;        // YYYY-MM-DD

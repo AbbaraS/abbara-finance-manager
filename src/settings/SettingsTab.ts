@@ -26,12 +26,13 @@ export class FinanceSettingTab extends PluginSettingTab {
 	// Rebuilds every section, keeping the scroll position.
 	private async draw() {
 		const { containerEl: el, plugin } = this;
-		const raw = await plugin.cache.get(plugin.settings.dataFolder);
+		const raw = plugin.db.rows;
 		const ctx: SettingsContext = {
 			app: this.app, plugin, save: this.save,
 			saveAndRedraw: () => { void plugin.save(); this.display(); },
-			rows: categorise(raw, plugin.labels.data),
-			accounts: accountNames(raw, plugin.labels.data.accounts),
+			redraw: () => this.display(),
+			rows: categorise(raw, plugin.db.labels),
+			accounts: accountNames(raw, plugin.db.labels.accounts),
 		};
 
 		const scroll = el.scrollTop;

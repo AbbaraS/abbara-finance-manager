@@ -1,27 +1,22 @@
 import { Setting } from 'obsidian';
 import type { SettingsContext } from '../context';
 
-// Where the CSVs are and how money is shown.
+// Where the database is and how money is shown.
 export function dataSection(el: HTMLElement, ctx: SettingsContext): void {
 	const s = ctx.plugin.settings;
 	new Setting(el).setName('Data').setHeading();
 
 	new Setting(el)
-		.setName('Data folder')
-		.setDesc('Vault folder with the monthly CSVs (the symlinked myFinances/data/combined).')
-		.addText((t) => t.setPlaceholder('Finance/combined').setValue(s.dataFolder)
-			.onChange((v) => { s.dataFolder = v.trim().replace(/\/+$/, ''); ctx.save(); }));
-
-	new Setting(el)
-		.setName('Labels file')
-		.setDesc('Vault JSON file with your categories per transaction, notes and merchants. Back it up with your vault.')
+		.setName('Database file')
+		.setDesc('The finance.db made by myFinances (transactions, categories, merchants and your labels): a full path, ~/... or a path inside the vault.')
 		.addText((t) => {
-			t.setPlaceholder('Finance/labels.json').setValue(s.labelsFile);
-			// Only on Enter / leaving the field, so half-typed paths never get a file.
+			t.setPlaceholder('~/source/myFinances/data/finance.db').setValue(s.dbFile);
+			// Only on Enter / leaving the field, so half-typed paths aren't opened.
 			t.inputEl.addEventListener('change', async () => {
-				s.labelsFile = t.getValue().trim() || 'Finance/labels.json';
-				await ctx.plugin.labels.switchFile();
-				ctx.saveAndRedraw();
+				s.dbFile = t.getValue().trim();
+				await ctx.plugin.saveData(s);
+				await ctx.plugin.openDatabase();
+				ctx.redraw();
 			});
 		});
 
