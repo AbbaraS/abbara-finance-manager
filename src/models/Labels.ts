@@ -1,13 +1,17 @@
-import type { Category } from './Category';
+import type { Category, Subcategory } from './Category';
+import type { Person } from './people';
 import type { Rule } from './Rule';
+import type { Subscription, SubscriptionType } from './Subscription';
 
 // What you've set on one transaction. Empty fields are left out.
 export interface Label {
-	category?: string; // one-off category; beats merchant rules
-	sub?: string;      // subcategory (the person, under People); beats the rule's
+	category?: string;     // one-off category; beats merchant rules
+	sub?: string;          // subcategory; beats the rule's
+	person?: string;       // under People: who; beats the rule's
+	subscription?: string; // subscription set by hand, or NO_SUBSCRIPTION; empty = found automatically
 	note?: string;
 	tags?: string[];
-	other?: string;    // transfers: the other account, set by hand
+	other?: string;        // transfers: the other account, set by hand
 }
 
 // One of your accounts. Accounts in the data appear by themselves; add others so transfers to them aren't "Unknown".
@@ -20,8 +24,12 @@ export interface Account {
 // Keyed by the ids myFinances writes, so labels survive re-imports.
 export interface Labels {
 	categories: Category[];
+	subcategories: Subcategory[];
+	people: Person[];
 	accounts: Account[];
 	rules: Rule[];                       // merchant memory, first match wins
+	types: SubscriptionType[];
+	subscriptions: Subscription[];       // in the order shown
 	transactions: Record<string, Label>; // transaction id -> label
 }
 

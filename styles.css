@@ -494,7 +494,9 @@ body {
 /* Rows with a chevron and / or an icon dot. */
 .afm-indent { padding-left: calc(14px + 22px + 12px); }
 .afm-indent-dot { padding-left: calc(22px + 6px); }
-.afm-detail td:first-child { padding-left: calc(var(--size-4-2) + 14px + 22px + 12px); }
+/* Rows inside a category: --afm-depth 1 lines up with the category name, each level 20px further in. */
+.afm-detail td:first-child,
+.afm-group td:first-child { padding-left: calc(var(--size-4-2) + 28px + var(--afm-depth, 1) * 20px); }
 
 /* Transfers table. */
 .afm-scroll { overflow-x: auto; }
@@ -551,3 +553,84 @@ button.afm-tag-button.is-open { color: var(--text-accent); border-style: solid; 
 
 /* Settings: a merchant's spellings, one per line. */
 .afm-wrap textarea { min-width: 14em; font-size: var(--font-ui-small); }
+
+/* Spending by category: subcategory (and person) rows with their totals. */
+.afm-group td {
+	background: var(--background-primary-alt);
+	font-size: var(--font-ui-small);
+}
+.afm-group .afm-row-title { gap: var(--size-4-2); }
+
+/* Subscription chip next to a payment's category. */
+button.afm-sub-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: auto;
+	padding: 1px var(--size-4-2) 1px 6px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	box-shadow: none;
+	cursor: pointer;
+	white-space: nowrap;
+}
+button.afm-sub-chip:hover { color: var(--text-normal); }
+.afm-sub-chip-icon { display: inline-flex; }
+.afm-sub-chip-icon svg { width: 12px; height: 12px; }
+.afm-sub-chip-count { font-variant-numeric: tabular-nums; font-weight: var(--font-semibold); }
+
+/* "Cancel!" and "Cancelled" pills. */
+.afm-status {
+	padding: 0 6px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	line-height: 1.6;
+	white-space: nowrap;
+}
+.afm-status.is-cancel {
+	color: color-mix(in srgb, var(--afm-c-red) 60%, var(--text-normal));
+	background-color: color-mix(in srgb, var(--afm-c-red) 16%, transparent);
+}
+.afm-status.is-cancelled { color: var(--text-muted); background-color: var(--background-modifier-hover); }
+
+/* Status dropdown in the Subscriptions section, coloured like the pills. */
+.afm-view select.afm-status-select {
+	height: auto;
+	padding: 0 22px 0 6px;
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	box-shadow: none;
+}
+.afm-view select.afm-status-select.is-active { color: var(--text-faint); background-color: transparent; }
+.afm-view select.afm-status-select.is-cancel {
+	color: color-mix(in srgb, var(--afm-c-red) 60%, var(--text-normal));
+	background-color: color-mix(in srgb, var(--afm-c-red) 16%, transparent);
+}
+.afm-view select.afm-status-select.is-cancelled { color: var(--text-muted); }
+@media (hover: hover) {
+	tr:not(:hover) select.afm-status-select.is-active { opacity: 0; }
+}
+.afm-indent-chevron { padding-left: calc(14px + 6px); }
+
+/* Subscriptions: spending that looks like one but has no name. */
+.afm-subhead {
+	margin: var(--size-4-4) 0 var(--size-4-1);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+}
+.afm-repeat {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	padding: var(--size-4-1) 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Settings: subcategory lists sit under their category or person. */
+.afm-subs { margin: 0 0 var(--size-4-2) var(--size-4-6); }

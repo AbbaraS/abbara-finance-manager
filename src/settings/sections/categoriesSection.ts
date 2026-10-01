@@ -6,13 +6,14 @@ import { countLabel } from '../../utils/countLabel';
 import { badge } from '../../views/look/badge';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
+import { subcategoryList } from './subcategoryList';
 
 // Your categories, grouped by kind: rename, colour, kind, delete; add new ones at the end.
 export function categoriesSection(el: HTMLElement, ctx: SettingsContext): void {
 	const labels = ctx.plugin.db.labels;
 	new Setting(el)
 		.setName('Categories')
-		.setDesc('Spending: money out is spent, money in is a refund. People: money out is spent, money in is from people (not income). Income: money in is income. Transfers and Savings: not counted. Subcategories are made in the edit window.')
+		.setDesc('Spending: money out is spent, money in is a refund. People: money out is spent, money in is from people (not income). Income: money in is income. Transfers and Savings: not counted. Subcategories can also be made in the edit window; under People, each person has their own (see People).')
 		.setHeading();
 
 	const kinds = Object.keys(KIND_LABELS) as CategoryKind[];
@@ -38,10 +39,11 @@ export function categoriesSection(el: HTMLElement, ctx: SettingsContext): void {
 			})
 			.addDropdown((d) => d.addOptions(KIND_LABELS).setValue(c.kind)
 				.onChange((v) => { c.kind = v as CategoryKind; ctx.saveAndRedraw(); }));
-		confirmDelete(row, 'Delete category, its merchants and one-off edits', () => {
+		confirmDelete(row, 'Delete category, its subcategories, people, merchants and one-off edits', () => {
 			deleteCategory(labels, c.name);
 			ctx.saveAndRedraw();
 		});
+		if (c.kind !== 'people') subcategoryList(el, ctx, c.name);
 	}
 
 	// Add.

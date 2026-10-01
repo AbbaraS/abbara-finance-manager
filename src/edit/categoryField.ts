@@ -21,8 +21,10 @@ export function categoryField(el: HTMLElement, c: CategoryChoice, labels: Labels
 		d.onChange((v) => {
 			c.newKind = v === NEW ? 'spending' : null;
 			c.category = v === NEW ? '' : v;
-			c.subcategory = ''; // subcategories belong to one category
+			c.subcategory = ''; // subcategories and people belong to one category
 			c.newSub = false;
+			c.person = '';
+			c.newPerson = false;
 			redraw();
 		});
 	});

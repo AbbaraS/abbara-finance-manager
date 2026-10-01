@@ -17,6 +17,9 @@ export interface Transaction {
 	kind: CategoryKind | null; // the category's kind, null = uncategorised
 	source: CategorySource;
 	subcategory: string; // '' = none; money in under Spending shows "Refund"
+	person: string;      // under People: who, '' = none
+	subscription: string; // subscription name, '' = none (see linkSubscriptions)
+	payment: number;     // which payment of the subscription this is (5 of 10), 0 = not numbered
 	note: string;
 	tags: string[];
 	otherAccount: string; // transfers: the other account if set by hand, '' = find it

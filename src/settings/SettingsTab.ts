@@ -8,11 +8,14 @@ import { categoriesSection } from './sections/categoriesSection';
 import { dataSection } from './sections/dataSection';
 import { editsSection } from './sections/editsSection';
 import { merchantsSection } from './sections/merchantsSection';
+import { peopleSection } from './sections/peopleSection';
 import { sectionsSection } from './sections/sectionsSection';
+import { subscriptionsSection } from './sections/subscriptionsSection';
 
 // Settings tab shell: loads the rows for counts, then lays out the sections.
 export class FinanceSettingTab extends PluginSettingTab {
 	private save: () => void;
+	private open = new Set<string>(); // open collapsible boxes
 
 	constructor(app: App, private plugin: FinancePlugin) {
 		super(app, plugin);
@@ -31,6 +34,7 @@ export class FinanceSettingTab extends PluginSettingTab {
 			app: this.app, plugin, save: this.save,
 			saveAndRedraw: () => { void plugin.save(); this.display(); },
 			redraw: () => this.display(),
+			open: this.open,
 			rows: categorise(raw, plugin.db.labels),
 			accounts: accountNames(raw, plugin.db.labels.accounts),
 		};
@@ -40,6 +44,8 @@ export class FinanceSettingTab extends PluginSettingTab {
 		dataSection(el, ctx);
 		sectionsSection(el, ctx);
 		categoriesSection(el, ctx);
+		peopleSection(el, ctx);
+		subscriptionsSection(el, ctx);
 		accountsSection(el, ctx);
 		merchantsSection(el, ctx);
 		editsSection(el, ctx);

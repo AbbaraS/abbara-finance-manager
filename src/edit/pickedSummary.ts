@@ -19,5 +19,6 @@ export function pickedSummary(el: HTMLElement, picked: Transaction[], s: Finance
 	box.createDiv({ cls: 'afm-muted', text: `${when} · ${accounts} · ${formatChange(total, s)}` });
 
 	const source = SOURCE_TEXT[first.source];
-	box.createDiv({ cls: 'afm-muted', text: `Now: ${first.category}${source ? ` (${source})` : ''}` });
+	const now = [first.category, first.person, first.subcategory].filter(Boolean).join(' › ');
+	box.createDiv({ cls: 'afm-muted', text: `Now: ${now}${source ? ` (${source})` : ''}` });
 }

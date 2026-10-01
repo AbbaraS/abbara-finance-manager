@@ -47,7 +47,8 @@ export class DashboardView extends ItemView {
 			selectMonth: (m) => { this.month = m; this.render(); },
 			reload: () => void this.plugin.openDatabase(),
 			redraw: () => this.render(),
-			editCategory: (picked, similar) => new CategoryModal(this.app, this.plugin, rows, picked, similar).open(),
+			editCategory: (picked, similar, newSub) => new CategoryModal(this.app, this.plugin, rows, picked, similar, newSub).open(),
+			save: () => void this.plugin.save(),
 			saveLabel: (t, patch) => { setLabel(labels, t.id, patch); void this.plugin.save(); },
 		};
 

@@ -10,6 +10,14 @@ export interface Category {
 	icon: string;  // Lucide icon id
 }
 
+// A subcategory. Under a People category each person has their own.
+export interface Subcategory {
+	id?: number;    // database id, empty until first saved
+	name: string;
+	parent: string; // category name
+	person: string; // '' = for the whole category
+}
+
 // Kind names, in list order.
 export const KIND_LABELS: Record<CategoryKind, string> = {
 	spending: 'Spending',

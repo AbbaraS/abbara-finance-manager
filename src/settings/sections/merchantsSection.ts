@@ -1,8 +1,11 @@
 import { Setting } from 'obsidian';
+import { findCategory } from '../../models/categories';
+import { peopleIn } from '../../models/people';
 import type { Direction, Rule } from '../../models/Rule';
 import { ruleHits } from '../../models/ruleHits';
 import { cleanPatterns } from '../../models/ruleMatches';
 import { countLabel } from '../../utils/countLabel';
+import { collapsible } from '../collapsible';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
 
@@ -18,8 +21,7 @@ export function merchantsSection(el: HTMLElement, ctx: SettingsContext): void {
 		.setHeading();
 
 	// Collapsed list, so it doesn't push the rest of the page down.
-	const list = el.createEl('details', { cls: 'afm-edits' });
-	list.createEl('summary', { text: `Show ${countLabel(labels.rules.length, 'merchant')}` });
+	const list = collapsible(el, ctx, 'merchants', `Show ${countLabel(labels.rules.length, 'merchant')}`);
 
 	// Filter + add.
 	const rows: { el: HTMLElement; text: string }[] = [];
@@ -36,11 +38,11 @@ export function merchantsSection(el: HTMLElement, ctx: SettingsContext): void {
 	const hits = ruleHits(ctx.rows, labels);
 	labels.rules.forEach((rule, i) => {
 		const row = ruleRow(list, rule, i, hits[i], ctx);
-		rows.push({ el: row, text: `${rule.patterns.join(' ')} ${rule.category} ${rule.subcategory ?? ''} ${rule.account}`.toLowerCase() });
+		rows.push({ el: row, text: `${rule.patterns.join(' ')} ${rule.category} ${rule.person ?? ''} ${rule.subcategory ?? ''} ${rule.account}`.toLowerCase() });
 	});
 }
 
-// One rule: patterns (one per line), category, subcategory, account, direction, then up / down / delete.
+// One rule: patterns (one per line), category, person (People only), subcategory, account, direction, then up / down / delete.
 function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: SettingsContext): HTMLElement {
 	const rules = ctx.plugin.db.labels.rules;
 	const accounts = [...new Set([...ctx.accounts, rule.account])].filter(Boolean);
@@ -55,10 +57,21 @@ function ruleRow(el: HTMLElement, rule: Rule, i: number, hits: number, ctx: Sett
 		})
 		.addDropdown((d) => {
 			for (const c of ctx.plugin.db.labels.categories) d.addOption(c.name, c.name);
-			d.setValue(rule.category).onChange((v) => { rule.category = v; ctx.save(); });
+			d.setValue(rule.category).onChange((v) => { rule.category = v; rule.person = ''; ctx.saveAndRedraw(); });
+		});
+	if (findCategory(ctx.plugin.db.labels, rule.category)?.kind === 'people') {
+		setting.addDropdown((d) => {
+			d.addOption('', 'No person');
+			for (const p of new Set([...peopleIn(ctx.plugin.db.labels, rule.category), rule.person ?? ''])) if (p) d.addOption(p, p);
+			d.setValue(rule.person ?? '').onChange((v) => { rule.person = v; ctx.save(); });
+		});
+	}
+	setting
+		.addText((t) => {
+			t.setPlaceholder('Subcategory').setValue(rule.subcategory ?? '');
+			// On Enter / leaving the field, so half-typed names don't become subcategories.
+			t.inputEl.addEventListener('change', () => { rule.subcategory = t.getValue().trim(); ctx.save(); });
 		})
-		.addText((t) => t.setPlaceholder('Subcategory').setValue(rule.subcategory ?? '')
-			.onChange((v) => { rule.subcategory = v.trim(); ctx.save(); }))
 		.addDropdown((d) => {
 			d.addOption('', 'Any account');
 			for (const a of accounts) d.addOption(a, a);

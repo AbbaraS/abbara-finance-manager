@@ -15,6 +15,12 @@ export function formatChange(value: number, s: FinanceSettings): string {
 	return sign + formatMoney(Math.abs(value), s);
 }
 
+// Money typed by you ("£2.99", "2.99") as a number; null when empty or not a number.
+export function parseMoney(text: string): number | null {
+	const n = parseFloat(text.replace(/[^\d.]/g, ''));
+	return isNaN(n) ? null : n;
+}
+
 // Short money for axis labels: 2500 -> "£2.5K".
 export function formatCompact(value: number, s: FinanceSettings): string {
 	try {

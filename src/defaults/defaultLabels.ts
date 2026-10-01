@@ -21,11 +21,15 @@ export const DEFAULT_LABELS: Labels = {
 		{ name: 'Savings', kind: 'saving', color: 'green', icon: 'piggy-bank' },
 		{ name: 'Investment', kind: 'saving', color: 'violet', icon: 'trending-up' },
 	],
+	subcategories: [],
+	people: [],
 	accounts: [],
 	rules: [
 		{ patterns: ['UNIV OF MANCHESTER'], category: 'PhD', subcategory: '', account: '', direction: 'in' },
 		{ patterns: ['MAN UNI STUDENTS U BGC'], category: 'UMSU', subcategory: '', account: '', direction: 'in' },
 	],
+	types: [{ name: 'Subscription' }, { name: 'Instalments' }],
+	subscriptions: [],
 	transactions: {},
 };
 

@@ -1,4 +1,5 @@
 import { Setting } from 'obsidian';
+import { findCategory } from '../models/categories';
 import type { CategoryChoice } from '../models/CategoryChoice';
 import type { Labels } from '../models/Labels';
 import type { Rule } from '../models/Rule';
@@ -15,9 +16,10 @@ export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels
 		.addToggle((t) => t.setValue(c.similar).onChange((v) => { c.similar = v; redraw(); }));
 	if (!c.similar) return;
 
-	// Saved merchants with the same category and subcategory: the patterns can be added to one of them.
+	// Saved merchants with the same category, subcategory and person: the patterns can be added to one of them.
 	const sub = c.subcategory.trim();
-	const same = labels.rules.filter((r) => r.category === c.category.trim() && (r.subcategory ?? '') === sub);
+	const person = findCategory(labels, c.category.trim())?.kind === 'people' ? c.person.trim() : '';
+	const same = labels.rules.filter((r) => r.category === c.category.trim() && (r.subcategory ?? '') === sub && (r.person ?? '') === person);
 	if (c.addTo && !same.includes(c.addTo)) c.addTo = null;
 	if (same.length > 0) {
 		new Setting(el)

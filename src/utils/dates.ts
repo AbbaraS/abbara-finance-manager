@@ -33,6 +33,16 @@ export function dayLabel(date: string, locale: string): string {
 	return new Date(y, m - 1, d).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
 }
 
+// Whole days from one "YYYY-MM-DD" to another.
+export function daysBetween(from: string, to: string): number {
+	return Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
+}
+
+// A "YYYY-MM-DD" date plus some days.
+export function addDays(date: string, days: number): string {
+	return new Date(Date.parse(date) + Math.round(days) * 86400000).toISOString().slice(0, 10);
+}
+
 // True when `month` is this calendar month (so it isn't finished yet).
 export function isCurrentMonth(month: string): boolean {
 	const now = new Date();

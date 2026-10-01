@@ -16,6 +16,7 @@ export interface DashboardContext {
 	selectMonth: (month: string) => void; // switch month and redraw
 	reload: () => void;                   // re-read the database
 	redraw: () => void;                   // redraw without saving
-	editCategory: (picked: Transaction[], similar: boolean) => void; // opens the edit window
+	editCategory: (picked: Transaction[], similar: boolean, newSubscription?: boolean) => void; // opens the edit window
+	save: () => void;                                                // saves your labels and redraws
 	saveLabel: (t: Transaction, patch: Label) => void;               // changes one label, saves and redraws
 }

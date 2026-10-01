@@ -1,10 +1,12 @@
+import { REFUND } from './categorise';
 import type { Labels } from './Labels';
 import type { Transaction } from './Transaction';
 
-// Subcategories already used in a category (by rows or merchant rules), A-Z.
-export function subcategoryNames(category: string, labels: Labels, rows: Transaction[]): string[] {
+// A category's subcategories (a person's own under People): saved ones plus any used by rows or merchants, A-Z.
+export function subcategoryNames(category: string, person: string, labels: Labels, rows: Transaction[]): string[] {
 	const names = new Set<string>();
-	for (const t of rows) if (t.category === category && t.subcategory) names.add(t.subcategory);
-	for (const r of labels.rules) if (r.category === category && r.subcategory) names.add(r.subcategory);
+	for (const s of labels.subcategories) if (s.parent === category && s.person === person) names.add(s.name);
+	for (const r of labels.rules) if (r.category === category && (r.person ?? '') === person && r.subcategory) names.add(r.subcategory);
+	for (const t of rows) if (t.category === category && t.person === person && t.subcategory && t.subcategory !== REFUND) names.add(t.subcategory);
 	return [...names].sort((a, b) => a.localeCompare(b));
 }

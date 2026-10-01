@@ -5,6 +5,7 @@ export const SECTIONS = [
 	{ id: 'daily', name: 'Running net' },
 	{ id: 'moneyIn', name: 'Money in' },
 	{ id: 'category', name: 'Spending by category' },
+	{ id: 'subscriptions', name: 'Subscriptions' },
 	{ id: 'account', name: 'Spending by account' },
 	{ id: 'transfers', name: 'Transfers between accounts' },
 	{ id: 'comparison', name: 'Compared with last month' },

@@ -1,6 +1,7 @@
 import type { Labels } from './Labels';
 import { UNCATEGORISED } from './rowKind';
 import { ruleMatches } from './ruleMatches';
+import { linkSubscriptions } from './subscriptions';
 import { linkTransfers } from './transferFlows';
 import type { Transaction } from './Transaction';
 
@@ -8,7 +9,7 @@ import type { Transaction } from './Transaction';
 export const REFUND = 'Refund';
 
 // Copies the rows with your labels: one-off category first, then the first matching merchant rule.
-// Then pairs up transfers (see linkTransfers).
+// Then pairs up transfers (see linkTransfers) and finds subscription payments (see linkSubscriptions).
 export function categorise(rows: Transaction[], labels: Labels): Transaction[] {
 	const kinds = new Map(labels.categories.map((c) => [c.name, c.kind]));
 	const rules = labels.rules.filter((r) => kinds.has(r.category)); // skip rules for deleted categories
@@ -20,16 +21,20 @@ export function categorise(rows: Transaction[], labels: Labels): Transaction[] {
 		const category = edit || rule?.category || UNCATEGORISED;
 		const kind = kinds.get(category) ?? null;
 		const sub = l.sub ?? rule?.subcategory ?? '';
+		const person = kind === 'people' ? l.person ?? rule?.person ?? '' : '';
 		return {
 			...t,
 			category,
 			kind,
 			source: edit ? 'edit' : rule ? 'rule' : 'none',
 			subcategory: sub || (kind === 'spending' && t.amount > 0 ? REFUND : ''), // money back goes into its category
+			person,
 			note: l.note ?? '',
 			tags: l.tags ?? [],
 			otherAccount: l.other ?? '',
 		};
 	});
-	return linkTransfers(done, labels.accounts);
+	const linked = linkTransfers(done, labels.accounts);
+	linkSubscriptions(linked, labels);
+	return linked;
 }

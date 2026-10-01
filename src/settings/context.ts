@@ -9,6 +9,7 @@ export interface SettingsContext {
 	save: () => void;           // debounced, for typing
 	saveAndRedraw: () => void;  // for changes that add, remove or move items
 	redraw: () => void;         // rebuilds the tab without saving
+	open: Set<string>;          // open collapsible boxes, kept across redraws
 	rows: Transaction[];        // categorised rows, for counts
 	accounts: string[];         // accounts in the data + ones you added
 }
