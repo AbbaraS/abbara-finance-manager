@@ -1,5 +1,6 @@
 import { ItemView, type WorkspaceLeaf } from 'obsidian';
 import { CategoryModal } from '../edit/CategoryModal';
+import { DebtModal } from '../edit/DebtModal';
 import type FinancePlugin from '../main';
 import { accountNames } from '../models/accountNames';
 import { categorise } from '../models/categorise';
@@ -49,6 +50,7 @@ export class DashboardView extends ItemView {
 			reload: () => void this.plugin.openDatabase(),
 			redraw: () => this.render(),
 			editCategory: (picked, similar, newSub) => new CategoryModal(this.app, this.plugin, rows, picked, similar, newSub).open(),
+			editDebt: (debt, person) => new DebtModal(this.app, this.plugin, debt, person).open(),
 			save: () => void this.plugin.save(),
 			saveSettings: () => void this.plugin.saveSettings(),
 			saveLabel: (t, patch) => { setLabel(labels, t.id, patch); void this.plugin.save(); },

@@ -1,7 +1,9 @@
 import type { CategoryKind } from './Category';
+import type { Debt } from './debts';
+import { fullyRefunded } from './linkRefunds';
 
 // Where a transaction's category came from.
-export type CategorySource = 'edit' | 'rule' | 'person' | 'pair' | 'none'; // rule: the counterparty's category; person: found by a person's spellings; pair: other side of a transfer
+export type CategorySource = 'edit' | 'rule' | 'person' | 'pair' | 'refund' | 'none'; // rule: the counterparty's category; person: found by a person's spellings; pair: other side of a transfer; refund: its purchase's category
 
 // One transaction from the database, with your labels applied (see categorise).
 export interface Transaction {
@@ -27,4 +29,14 @@ export interface Transaction {
 	otherAccount: string; // transfers: the other account if set by hand, '' = find it
 	foundAccount: string; // transfers: the other account used (by hand or found), '' = not a transfer
 	partner: Transaction | null; // transfers: the matching row in the other account
+	refundOf: Transaction | null; // money back: the purchase it refunds (see linkRefunds)
+	refunds: Transaction[];       // purchases: the refunds found for it
+	debt: Debt | null;            // its entry in what you owe a person, when marked as a debt
+}
+
+// Newest first, fully refunded purchases last. Rows on the same day: latest in the statement first.
+export function newestFirst(rows: Transaction[]): Transaction[] {
+	return rows.map((t, i) => ({ t, i }))
+		.sort((a, b) => Number(fullyRefunded(a.t)) - Number(fullyRefunded(b.t)) || b.t.date.localeCompare(a.t.date) || b.i - a.i)
+		.map((x) => x.t);
 }

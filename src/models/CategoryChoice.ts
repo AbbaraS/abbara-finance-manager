@@ -22,6 +22,10 @@ export interface CategoryChoice {
 	note: string;                 // only offered for one transaction
 	tags: string[];               // one transaction: replaces its tags; several: added to theirs
 	other: string;                // transfers: the other account, '' = find it
+	debt: boolean | null;         // under People: counts towards what you owe the person; null = leave as it is
+	debtAmount: number | null;    // one transaction: how much of it counts (positive); null = worked out (debtShare)
+	debtReason: string | null;    // one transaction: which debt it goes towards; null = worked out (defaultReason)
+	newDebtReason: boolean;       // true while typing a new debt reason
 	similar: boolean;             // true: remember for this counterparty (or person, under People); false: one-off
 	personPatterns: string[];     // under People with `similar` on: spellings added to the person
 	draft: Counterparty;          // the new counterparty, used when `similar` is on and `addTo` is empty

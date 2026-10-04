@@ -5,7 +5,7 @@ import { dayLabel } from '../utils/dates';
 import { formatChange } from '../utils/money';
 
 // Where the category came from, in words.
-const SOURCE_TEXT = { edit: 'one-off edit', rule: 'from its counterparty', person: 'found by the person\'s spellings', pair: 'other side of a transfer', none: '' };
+const SOURCE_TEXT = { edit: 'one-off edit', rule: 'from its counterparty', person: 'found by the person\'s spellings', pair: 'other side of a transfer', refund: 'same as the purchase it refunds', none: '' };
 
 // Box at the top of the window describing what's being changed.
 export function pickedSummary(el: HTMLElement, picked: Transaction[], s: FinanceSettings): void {
@@ -22,4 +22,10 @@ export function pickedSummary(el: HTMLElement, picked: Transaction[], s: Finance
 	const source = SOURCE_TEXT[first.source];
 	const now = [first.category, first.person, first.subcategory].filter(Boolean).join(' › ');
 	box.createDiv({ cls: 'afm-muted', text: `Now: ${now}${source ? ` (${source})` : ''}` });
+
+	// Refund links (one transaction only).
+	if (picked.length !== 1) return;
+	const line = (t: Transaction) => `${dayLabel(t.date, s.locale)} · ${formatChange(t.amount, s)}`;
+	if (first.refundOf) box.createDiv({ cls: 'afm-muted', text: `Refund of: ${first.refundOf.description} · ${line(first.refundOf)}` });
+	for (const r of first.refunds) box.createDiv({ cls: 'afm-muted', text: `Refunded: ${line(r)}` });
 }

@@ -6,7 +6,7 @@ import type { DashboardContext } from '../DashboardContext';
 import { badge } from '../look/badge';
 
 // Hover text for where the category came from.
-const SOURCE_TIP = { edit: 'One-off edit', rule: 'From its counterparty', person: 'Found by the person\'s spellings', pair: 'Other side of a transfer', none: 'No counterparty or person found' };
+const SOURCE_TIP = { edit: 'One-off edit', rule: 'From its counterparty', person: 'Found by the person\'s spellings', pair: 'Other side of a transfer', refund: 'Refund of a purchase in this category', none: 'No counterparty or person found' };
 
 // A transaction's category badge; click to edit the transaction.
 export function categoryButton(parent: HTMLElement, t: Transaction, ctx: DashboardContext): void {

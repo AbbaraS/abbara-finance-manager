@@ -25,6 +25,7 @@ interface LabelRow {
 	id: string; category: string | null; sub: string | null; person: string | null; subscription: string | null;
 	no_subscription: number; note: string | null; tags: string | null; other: string | null; counterparty: string | null;
 }
+interface DebtRow { id: number; person: string; date: string; amount: number; note: string; reason: string; transaction_id: string | null }
 interface TransactionRow {
 	id: string; date: string; account: string; description: string; amount: number; currency: string;
 	category: string | null; sub: string | null; person: string | null; category_by: string | null; // as last worked out
@@ -56,7 +57,7 @@ export async function readVersion(file: string): Promise<number> {
 // Reads every table.
 export async function readTables(file: string): Promise<Tables> {
 	const get = <T>(text: string) => query<T>(file, text);
-	const [categories, people, types, subscriptions, accounts, counterparties, labels, rows] = await Promise.all([
+	const [categories, people, types, subscriptions, accounts, counterparties, labels, debts, rows] = await Promise.all([
 		get<CategoryRow>(`SELECT c.id, c.name, c.kind, c.color, c.icon, p.name AS parent, pe.name AS person FROM Category c
 			LEFT JOIN Category p ON p.id = c.parent_id LEFT JOIN Person pe ON pe.id = c.person_id ORDER BY c.position, c.id`),
 		get<NamedRow>('SELECT pe.id, pe.name, c.name AS category, pe.patterns FROM Person pe JOIN Category c ON c.id = pe.category_id ORDER BY pe.name'),
@@ -73,6 +74,7 @@ export async function readTables(file: string): Promise<Tables> {
 			l.no_subscription, l.note, l.tags, a.name AS other, k.name AS counterparty FROM Label l LEFT JOIN Category c ON c.id = l.category_id
 			LEFT JOIN Person pe ON pe.id = l.person_id LEFT JOIN Subscription s ON s.id = l.subscription_id
 			LEFT JOIN Account a ON a.id = l.other_account_id LEFT JOIN Counterparty k ON k.id = l.counterparty_id`),
+		get<DebtRow>('SELECT d.id, pe.name AS person, d.date, d.amount, d.note, d.reason, d.transaction_id FROM Debt d JOIN Person pe ON pe.id = d.person_id ORDER BY d.date, d.id'),
 		get<TransactionRow>(`SELECT t.id, t.date, a.name AS account, t.description, t.amount, t.currency,
 			COALESCE(p.name, c.name) AS category, CASE WHEN c.parent_id IS NULL THEN NULL ELSE c.name END AS sub,
 			pe.name AS person, t.category_by, s.name AS subscription, t.payment, k.name AS counterparty FROM Trans t
@@ -96,6 +98,7 @@ export async function readTables(file: string): Promise<Tables> {
 			payments: s.payments, paidBefore: s.paid_before, status: s.status, tags: JSON.parse(s.tags),
 		})),
 		transactions: {},
+		debts: debts.map((d) => ({ id: d.id, person: d.person, date: d.date, amount: d.amount, note: d.note, reason: d.reason, transaction: d.transaction_id ?? '' })),
 	};
 	for (const l of labels) {
 		setLabel(result, l.id, {
@@ -111,7 +114,7 @@ export async function readTables(file: string): Promise<Tables> {
 			id: t.id, date: t.date, month: monthOf(t.date), day: Number(t.date.slice(8, 10)), account: t.account,
 			description: t.description, counterparty: '', amount: t.amount, currency: t.currency.toUpperCase(),
 			category: UNCATEGORISED, kind: null, source: 'none', subcategory: '', person: '', note: '', tags: [], autoTags: [],
-			otherAccount: '', foundAccount: '', partner: null, subscription: '', payment: 0,
+			otherAccount: '', foundAccount: '', partner: null, refundOf: null, refunds: [], subscription: '', payment: 0, debt: null,
 		})),
 		saved: new Map(rows.map((t) => [t.id, [
 			t.category ?? '', t.sub ?? '', t.person ?? '', t.category_by ?? '', t.subscription ?? '', t.payment ?? 0, t.counterparty ?? '',
@@ -122,7 +125,7 @@ export async function readTables(file: string): Promise<Tables> {
 // The parts of a row's worked-out category that are saved: category, subcategory, person, how, subscription, payment, counterparty.
 function resultParts(t: Transaction): [string, string, string, string, string, number, string] {
 	const sub = t.kind && t.subcategory !== REFUND ? t.subcategory : ''; // Refund is only shown, not saved
-	const by = t.source === 'none' ? '' : t.source === 'person' ? 'rule' : t.source; // the file knows edit, rule and pair
+	const by = t.source === 'none' ? '' : t.source === 'person' ? 'rule' : t.source === 'refund' ? 'pair' : t.source; // the file knows edit, rule and pair
 	return [t.kind ? t.category : '', sub, t.person, by, t.subscription, t.payment, t.counterparty];
 }
 
@@ -141,7 +144,7 @@ export function resultStatement(t: Transaction): string {
 
 // SQL that writes everything in your labels over what's in the file.
 export function labelStatements(labels: Labels): string[] {
-	const { categories, subcategories, people, accounts, counterparties, types, subscriptions, transactions } = labels;
+	const { categories, subcategories, people, accounts, counterparties, types, subscriptions, transactions, debts } = labels;
 	const ids = (list: { id?: number }[]) => list.flatMap((x) => (x.id ? [x.id] : [])).join(', ');
 	const listed = accounts.map((a) => a.name);
 	const named = [...new Set([...listed, ...counterparties.map((r) => r.account), ...Object.values(transactions).map((l) => l.other ?? '')])].filter(Boolean);
@@ -175,6 +178,11 @@ export function labelStatements(labels: Labels): string[] {
 		})),
 		// Subscriptions point at counterparties, which exist only now.
 		...subscriptions.map((s) => `UPDATE Subscription SET counterparty_id = ${counterpartyId(s.counterparty)} WHERE name = ${sql(s.name)};`),
+		// Debts (people exist now): removed ones go, the rest are kept by id.
+		`DELETE FROM Debt WHERE id NOT IN (${ids(debts)});`,
+		...debts.map((d) => upsert('Debt', d.id, {
+			person_id: personId(d.person), date: sql(d.date), amount: sql(d.amount), note: sql(d.note), reason: sql(d.reason), transaction_id: sql(d.transaction || null),
+		})),
 		'DELETE FROM Label;',
 		...Object.entries(transactions).map(([id, l]) => `INSERT INTO Label
 			(transaction_id, category_id, subcategory, person_id, subscription_id, no_subscription, note, tags, other_account_id, counterparty_id)
@@ -191,17 +199,18 @@ function upsert(table: string, id: number | undefined, values: Record<string, st
 		ON CONFLICT (id) DO UPDATE SET ${cols.map((c) => `${c} = excluded.${c}`).join(', ')};`;
 }
 
-// Gives new categories, subcategories, people, types, subscriptions and counterparties the ids the file gave them.
+// Gives new categories, subcategories, people, types, subscriptions, counterparties and debts the ids the file gave them.
 export async function readIds(file: string, labels: Labels): Promise<void> {
-	const lists = [labels.categories, labels.subcategories, labels.people, labels.types, labels.subscriptions, labels.counterparties];
+	const lists = [labels.categories, labels.subcategories, labels.people, labels.types, labels.subscriptions, labels.counterparties, labels.debts];
 	if (lists.every((list) => list.every((x) => x.id))) return;
-	const [categories, people, types, subscriptions, counterparties] = await Promise.all([
+	const [categories, people, types, subscriptions, counterparties, debts] = await Promise.all([
 		query<CategoryRow>(file, `SELECT c.id, c.name, p.name AS parent, pe.name AS person FROM Category c
 			LEFT JOIN Category p ON p.id = c.parent_id LEFT JOIN Person pe ON pe.id = c.person_id`),
 		query<NamedRow>(file, 'SELECT id, name FROM Person'),
 		query<NamedRow>(file, 'SELECT id, name FROM Type'),
 		query<NamedRow>(file, 'SELECT id, name FROM Subscription'),
 		query<NamedRow>(file, 'SELECT id, name FROM Counterparty'),
+		query<DebtRow>(file, 'SELECT d.id, pe.name AS person, d.date, d.amount, d.note, d.reason, d.transaction_id FROM Debt d JOIN Person pe ON pe.id = d.person_id'),
 	]);
 	const fill = (list: { id?: number; name: string }[], rows: NamedRow[]) => {
 		for (const x of list) x.id ??= rows.find((r) => r.name === x.name)?.id;
@@ -212,4 +221,12 @@ export async function readIds(file: string, labels: Labels): Promise<void> {
 	fill(labels.types, types);
 	fill(labels.subscriptions, subscriptions);
 	fill(labels.counterparties, counterparties);
+	// Debts have no name: a new one takes the first unclaimed row with the same values.
+	const taken = new Set(labels.debts.map((d) => d.id));
+	for (const d of labels.debts) {
+		if (d.id) continue;
+		d.id = debts.find((r) => !taken.has(r.id) && r.person === d.person && r.date === d.date && r.amount === d.amount
+			&& r.note === d.note && r.reason === d.reason && (r.transaction_id ?? '') === d.transaction)?.id;
+		taken.add(d.id);
+	}
 }

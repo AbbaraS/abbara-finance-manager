@@ -4,13 +4,14 @@ import { uniqueName } from './counterparties';
 import type { Counterparty } from './Counterparty';
 import { cleanPatterns, counterpartyMatches } from './counterpartyMatches';
 import { setLabel, type Labels } from './Labels';
+import { debtShare, defaultReason, markDebt } from './debts';
 import { addPerson } from './people';
 import { REFUND, whoFor } from './categorise';
 import { addSubscription } from './subscriptions';
 import type { Transaction } from './Transaction';
 
 // Saves a choice into your labels: a new category, person, subcategory or subscription if needed, a counterparty
-// (new, or added to a saved one) or one-off categories, then subcategory, person, counterparty, subscription, note and tags.
+// (new, or added to a saved one) or one-off categories, then subcategory, person, counterparty, subscription, note, tags and debt.
 export function applyCategory(labels: Labels, picked: Transaction[], c: CategoryChoice): void {
 	const name = c.category.trim();
 	const sub = c.subcategory.trim() === REFUND ? '' : c.subcategory.trim(); // Refund is only shown
@@ -55,6 +56,11 @@ export function applyCategory(labels: Labels, picked: Transaction[], c: Category
 			...(subscription === KEEP_SUBSCRIPTION ? {} : { subscription }),
 			...(one ? { note: c.note } : {}),
 		});
+		// Debt: only with a person; a row that loses its person loses its debt entry. Part of it can count (the rest stays in its subcategory).
+		// Which debt: picked, else its saved one or the oldest still owed.
+		const reason = one && c.debtReason !== null ? c.debtReason.trim() : defaultReason(labels, t, person);
+		const share = one && c.debtAmount !== null ? Math.sign(t.amount) * c.debtAmount : debtShare(labels, t, person, reason);
+		if (c.debt !== null || !person) markDebt(labels, t, (c.debt ?? !!t.debt) && person ? person : '', share, reason);
 	}
 }
 

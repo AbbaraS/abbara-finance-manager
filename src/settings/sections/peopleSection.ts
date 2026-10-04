@@ -39,7 +39,7 @@ export function peopleSection(el: HTMLElement, ctx: SettingsContext): void {
 					.onChange((v) => { p.patterns = cleanPatterns(v.split('\n')); ctx.save(); });
 				t.inputEl.rows = Math.min(Math.max(p.patterns?.length ?? 1, 1), 4);
 			});
-		confirmDelete(row, 'Delete person and their subcategories (transactions keep the category)', () => {
+		confirmDelete(row, 'Delete person, their subcategories and debts (transactions keep the category)', () => {
 			deletePerson(labels, p.name);
 			ctx.saveAndRedraw();
 		});

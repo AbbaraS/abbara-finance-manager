@@ -11,7 +11,7 @@ import { run } from './sqlite';
 import { labelStatements, readIds, readTables, readVersion, resultKey, resultStatement } from './tables';
 
 // Database version this plugin understands (PRAGMA user_version, set by myFinances db.py).
-export const DB_VERSION = 7;
+export const DB_VERSION = 9;
 
 // Your finance database (SQLite, made by myFinances): transactions come from Python, your labels from here.
 export class Database {

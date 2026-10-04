@@ -1,6 +1,7 @@
 import type { Category, Subcategory } from './Category';
 import type { Person } from './people';
 import type { Counterparty } from './Counterparty';
+import type { Debt } from './debts';
 import type { Subscription, SubscriptionType } from './Subscription';
 
 // What you've set on one transaction. Empty fields are left out.
@@ -32,6 +33,7 @@ export interface Labels {
 	types: SubscriptionType[];
 	subscriptions: Subscription[];       // in the order shown
 	transactions: Record<string, Label>; // transaction id -> label
+	debts: Debt[];                       // what you owe people, added by hand or marked on transactions
 }
 
 // Merges changes into one transaction's label; empty values are removed, and so is an empty label.

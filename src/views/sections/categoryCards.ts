@@ -43,7 +43,9 @@ function categoryCard(grid: HTMLElement, g: SpendGroup, ctx: DashboardContext): 
 	iconDot(top, look.icon, look.color);
 	const title = top.createDiv({ cls: 'afm-group-title' });
 	title.createDiv({ cls: 'afm-strong', text: g.key });
-	title.createDiv({ cls: 'afm-muted', text: `${countLabel(g.rows.length)} · ${formatPercent(g.share)}` });
+	const ids = new Set(g.rows.map((t) => t.id));
+	const shown = g.rows.filter((t) => !(t.refundOf && ids.has(t.refundOf.id))).length; // refunds listed under their purchase don't count again
+	title.createDiv({ cls: 'afm-muted', text: `${countLabel(shown)} · ${formatPercent(g.share)}` });
 	top.createDiv({ cls: 'afm-group-total', text: formatMoney(g.total, s) });
 	shareBar(card, g.share, look.color);
 

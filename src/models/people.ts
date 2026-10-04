@@ -34,12 +34,14 @@ export function renamePerson(labels: Labels, from: string, to: string): void {
 	for (const s of labels.subcategories) if (s.person === from) s.person = to;
 	for (const r of labels.counterparties) if (r.person === from) r.person = to;
 	for (const l of Object.values(labels.transactions)) if (l.person === from) l.person = to;
+	for (const d of labels.debts) if (d.person === from) d.person = to;
 }
 
-// Deletes a person and their subcategories; their counterparties and labels keep the category but lose the person.
+// Deletes a person, their subcategories and debts; their counterparties and labels keep the category but lose the person.
 export function deletePerson(labels: Labels, name: string): void {
 	labels.people = labels.people.filter((p) => p.name !== name);
 	labels.subcategories = labels.subcategories.filter((s) => s.person !== name);
+	labels.debts = labels.debts.filter((d) => d.person !== name);
 	for (const r of labels.counterparties) if (r.person === name) Object.assign(r, { person: '', subcategory: '' });
 	for (const [id, l] of Object.entries(labels.transactions)) if (l.person === name) setLabel(labels, id, { person: '', sub: '' });
 }

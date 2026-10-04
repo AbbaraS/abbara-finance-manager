@@ -7,6 +7,7 @@ import { setIconSafe } from '../../views/look/setIconSafe';
 import { tagInput } from '../../edit/tagInput';
 import { tagNames } from '../../models/Labels';
 import { collapsible } from '../collapsible';
+import { captions } from '../caption';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
 
@@ -116,6 +117,7 @@ function subscriptionRow(el: HTMLElement, sub: Subscription, ctx: SettingsContex
 		})
 		.addDropdown((d) => d.addOptions(STATUS_LABELS).setValue(sub.status).onChange((v) => { sub.status = v as SubscriptionStatus; ctx.save(); }));
 	tagInput(ctx.app, row.controlEl, sub.tags ?? [], tagNames(labels), (tags) => { sub.tags = tags; ctx.save(); });
+	captions(row, ['Name', 'Type', 'Counterparty', sub.counterparty ? 'Also contains' : 'Description contains', 'Price', 'Every', 'Payments in total', 'Paid before statements', 'Status', 'Tags']);
 	row.nameEl.setText(sub.name);
 	confirmDelete(row, 'Delete subscription (its payments stay, without a name)', () => {
 		deleteSubscription(labels, sub.name);

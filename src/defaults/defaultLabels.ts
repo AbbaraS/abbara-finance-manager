@@ -34,6 +34,7 @@ export const DEFAULT_LABELS: Labels = {
 	types: [{ name: 'Subscription' }, { name: 'Instalments' }],
 	subscriptions: [],
 	transactions: {},
+	debts: [],
 };
 
 // A fresh copy of the defaults.

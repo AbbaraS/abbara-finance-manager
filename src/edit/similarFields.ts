@@ -31,14 +31,19 @@ export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels
 				if (picked.length > 1) d.addOption(KEEP_COUNTERPARTY, 'Leave as it is');
 				d.addOption('', found ? `Found by spellings: ${found}` : 'None (found by spellings)');
 				for (const n of names) d.addOption(n, n);
-				d.setValue(c.counterparty).onChange((v) => (c.counterparty = v));
+				d.setValue(c.counterparty).onChange((v) => {
+					const cp = findCounterparty(labels, v);
+					if (!useItsCategory(c, cp ?? null)) return void (c.counterparty = v);
+					c.counterparty = v;
+					redraw(); // show the category it brought
+				});
 			});
 		return;
 	}
 
 	// On: a new counterparty, or add the spellings to a saved one.
 	if (c.addTo && !labels.counterparties.includes(c.addTo)) c.addTo = null;
-	const moves = c.addTo?.category && c.addTo.category !== c.category.trim();
+	const moves = c.addTo?.category && c.category.trim() && c.addTo.category !== c.category.trim();
 	new Setting(el)
 		.setName('Save as')
 		.setDesc(moves ? `${c.addTo!.name} is in ${c.addTo!.category} now; it moves to ${c.category.trim() || 'the category above'}.`
@@ -47,7 +52,11 @@ export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels
 			d.addOption('', 'New counterparty');
 			for (const n of names) d.addOption(n, `Add to ${n}`);
 			d.setValue(c.addTo?.name ?? '');
-			d.onChange((v) => { c.addTo = v ? findCounterparty(labels, v) ?? null : null; redraw(); });
+			d.onChange((v) => {
+				c.addTo = v ? findCounterparty(labels, v) ?? null : null;
+				useItsCategory(c, c.addTo);
+				redraw();
+			});
 		});
 	if (!c.addTo) {
 		new Setting(el).setName('Name').setDesc('Shown instead of the description.')
@@ -107,4 +116,11 @@ function personFields(el: HTMLElement, c: CategoryChoice, labels: Labels, rows: 
 		});
 	el.appendChild(preview);
 	update();
+}
+
+// With no category picked yet, takes the counterparty's category, subcategory and person. True when it did.
+export function useItsCategory(c: CategoryChoice, cp: Counterparty | null): boolean {
+	if (c.category.trim() || c.newKind || !cp?.category) return false;
+	Object.assign(c, { category: cp.category, subcategory: cp.subcategory ?? '', newSub: false, person: cp.person ?? '', newPerson: false });
+	return true;
 }

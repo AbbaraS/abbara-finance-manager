@@ -1,19 +1,20 @@
 import { setTooltip } from 'obsidian';
-import { transferFlows } from '../../models/transferFlows';
+import { transferFlows, type FlowMonth } from '../../models/transferFlows';
 import { countLabel } from '../../utils/countLabel';
 import { monthLabel } from '../../utils/dates';
-import { formatMoney } from '../../utils/money';
+import { formatMoney, formatTidy } from '../../utils/money';
 import { monthWindow } from '../../utils/monthWindow';
 import type { DashboardContext } from '../DashboardContext';
+import { accountName } from './accountName';
 import { expandable } from './expandable';
-import { flowName } from './flowName';
 import { tableHead } from './tableHead';
 import { transferRows } from './transferRows';
 
 // How many months the table shows.
 const MONTHS = 6;
 
-// Money moved between your own accounts, one row per direction, one column per month.
+// Money moved between your own accounts: one row per pair of accounts (one above the other), with arrows in each month
+// showing which way the money went. Fits the pane: on narrow panes the months furthest from the chosen one are hidden.
 export function transfersTable(body: HTMLElement, ctx: DashboardContext): void {
 	// Data: flows with money in the months shown.
 	const s = ctx.settings;
@@ -23,37 +24,72 @@ export function transfersTable(body: HTMLElement, ctx: DashboardContext): void {
 		body.createDiv({ cls: 'afm-muted', text: 'No transfers in these months. Put transfers in a Transfers category.' });
 		return;
 	}
-	body.createDiv({ cls: 'afm-note', text: 'Each transfer is paired with the same amount going the other way in your other account, and counted once. Accounts without statements are found by their match text (settings). Click a row to see this month\'s transfers and move one.' });
+	body.createDiv({ cls: 'afm-note', text: 'Money moved between your own accounts, each transfer counted once. ↓ is money from the top account to the one under it, ↑ the other way. Open a row to see this month\'s transfers.' });
 
-	// Table (scrolls sideways on narrow panes).
-	const table = body.createDiv({ cls: 'afm-scroll' }).createEl('table', { cls: 'afm-table afm-flows' });
+	// Months closest to the chosen one hide last (rank 0 = the chosen month; ties keep the newer month).
+	const chosen = months.indexOf(ctx.month);
+	const order = months.map((_, i) => i).sort((a, b) => Math.abs(a - chosen) - Math.abs(b - chosen) || b - a);
+	const monthCls = (i: number) => `afm-num afm-rank-${order.indexOf(i)}${i === chosen ? ' is-selected' : ''}`;
+
+	// Table.
+	const table = body.createDiv({ cls: 'afm-flows-wrap' }).createEl('table', { cls: 'afm-table afm-flows' });
 	tableHead(table, [
-		{ text: 'From → to' },
-		...months.map((m) => ({ text: monthLabel(m, s.locale, true), cls: `afm-num${m === ctx.month ? ' is-selected' : ''}` })),
-		{ text: 'Total', cls: 'afm-num' },
+		{ text: 'Accounts' },
+		...months.map((m, i) => ({ text: monthLabel(m, s.locale, true), cls: monthCls(i) })),
+		{ text: `${months.length} months`, cls: 'afm-num afm-flow-total' },
 	]);
+	setTooltip(table.querySelector('th.afm-flow-total') as HTMLElement, `Total of all ${months.length} months, also ones hidden on a narrow pane`);
 
 	// Cells are tinted by size, relative to the biggest cell.
-	const max = Math.max(...flows.flatMap((f) => months.map((m) => f.months.get(m)?.amount ?? 0)));
+	const max = Math.max(...flows.flatMap((f) => months.map((m) => moved(f.months.get(m)))));
 	const tbody = table.createEl('tbody');
 	for (const f of flows) {
 		const tr = tbody.createEl('tr');
-		const name = tr.createEl('td').createDiv({ cls: 'afm-row-title' });
-		const icon = name.createSpan({ cls: 'afm-chevron' });
-		flowName(name, f.from, f.to);
+		const first = tr.createEl('td').createDiv({ cls: 'afm-row-title' });
+		const icon = first.createSpan({ cls: 'afm-chevron' });
+		const pair = first.createDiv({ cls: 'afm-flow-pair' });
+		accountName(pair, f.left);
+		accountName(pair, f.right);
 
-		let total = 0;
-		for (const m of months) {
+		// Months shown, then the total.
+		const shown: FlowMonth = { there: 0, back: 0, rows: [] };
+		months.forEach((m, i) => {
 			const cell = f.months.get(m);
-			total += cell?.amount ?? 0;
-			const td = tr.createEl('td', { cls: `afm-num afm-heat${m === ctx.month ? ' is-selected' : ''}`, text: cell ? formatMoney(cell.amount, s) : '–' });
-			if (!cell) continue;
-			td.setCssProps({ '--afm-heat': `${Math.round(8 + (cell.amount / max) * 40)}%` });
-			setTooltip(td, `${monthLabel(m, s.locale)} · ${countLabel(cell.rows.length, 'transfer')}`);
-		}
-		tr.createEl('td', { cls: 'afm-num afm-strong', text: formatMoney(total, s) });
+			const td = tr.createEl('td', { cls: `${monthCls(i)} afm-heat` });
+			if (!cell) return void td.setText('–');
+			shown.there += cell.there;
+			shown.back += cell.back;
+			arrows(td, cell, ctx);
+			td.setCssProps({ '--afm-heat': `${Math.round(8 + (moved(cell) / max) * 40)}%` });
+			setTooltip(td, `${monthLabel(m, s.locale)} · ${countLabel(cell.rows.length, 'transfer')}${netText(cell, f.left, f.right, ctx)}`);
+		});
+		const total = tr.createEl('td', { cls: 'afm-num afm-strong afm-flow-total' });
+		arrows(total, shown, ctx);
+		if (shown.there && shown.back) total.createDiv({ cls: 'afm-flow-net', text: `net ${shown.there >= shown.back ? '↓' : '↑'} ${formatTidy(Math.abs(shown.there - shown.back), ctx.settings)}` });
 
-		const details = transferRows(tbody, f.months.get(ctx.month)?.rows ?? [], months.length + 2, ctx);
-		expandable(tr, icon, details, `flow:${f.from}→${f.to}`, ctx.expanded);
+		const details = transferRows(tbody, f, f.months.get(ctx.month)?.rows ?? [], months.length + 2, ctx);
+		expandable(tr, icon, details, `flow:${f.left}⇄${f.right}`, ctx.expanded);
 	}
+}
+
+// Both directions in one cell: "↓ £500" over "↑ £400"; one line when money only went one way.
+function arrows(td: HTMLElement, cell: FlowMonth, ctx: DashboardContext): void {
+	for (const [amount, arrow] of [[cell.there, '↓'], [cell.back, '↑']] as const) {
+		if (!amount) continue;
+		const line = td.createDiv({ cls: 'afm-flow-amount' });
+		line.createSpan({ cls: 'afm-flow-arrow', text: arrow });
+		line.createSpan({ text: formatTidy(amount, ctx.settings) });
+	}
+}
+
+// Total moved either way.
+function moved(cell: FlowMonth | undefined): number {
+	return (cell?.there ?? 0) + (cell?.back ?? 0);
+}
+
+// " · net £100 to barclays - saving" when money went both ways.
+function netText(cell: FlowMonth, left: string, right: string, ctx: DashboardContext): string {
+	if (!cell.there || !cell.back) return '';
+	const net = cell.there - cell.back;
+	return ` · net ${formatMoney(Math.abs(net), ctx.settings)} to ${net >= 0 ? right : left}`;
 }

@@ -17,14 +17,14 @@ export function uncategorisedList(body: HTMLElement, ctx: DashboardContext): voi
 		body.createDiv({ cls: 'afm-muted', text: 'Everything is categorised this month.' });
 		return;
 	}
-	body.createDiv({ cls: 'afm-note', text: 'Pick a category; it\'s remembered for that merchant in every month. Tick several to give them one category and subcategory at once.' });
+	body.createDiv({ cls: 'afm-note', text: 'Pick a category for one. Tick several to give them one category and subcategory at once, as one-off edits (no counterparty made). Turn on "Remember" in the window for places you go back to.' });
 
 	// Bulk bar: how many are ticked, and a button to edit them together.
 	const picked = new Set<UncategorisedGroup>();
 	const bar = body.createDiv({ cls: 'afm-bulk' });
 	const count = bar.createSpan({ cls: 'afm-muted' });
 	const edit = bar.createEl('button', { cls: 'mod-cta', text: 'Edit selected' });
-	edit.addEventListener('click', () => ctx.editCategory([...picked].flatMap((g) => g.rows), true));
+	edit.addEventListener('click', () => ctx.editCategory([...picked].flatMap((g) => g.rows), remembers([...picked])));
 
 	// Table.
 	const table = body.createEl('table', { cls: 'afm-table afm-pickable' });
@@ -70,12 +70,17 @@ export function uncategorisedList(body: HTMLElement, ctx: DashboardContext): voi
 	showMore(body, rows, LIMIT);
 }
 
-// Icon button that opens the category picker for the whole group, with "remember" on.
+// "Remember for this counterparty" starts on only for one place seen more than once; mixed or one-off picks are one-off edits.
+function remembers(groups: UncategorisedGroup[]): boolean {
+	return groups.length === 1 && groups[0].rows.length > 1;
+}
+
+// Icon button that opens the category picker for the whole group ("remember" on when it's a repeat).
 function pickButton(parent: HTMLElement, g: UncategorisedGroup, ctx: DashboardContext): void {
 	const btn = parent.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': `Pick a category for "${g.description}"` } });
 	setIcon(btn, 'tag');
 	btn.addEventListener('click', (e) => {
 		e.stopPropagation(); // don't tick the row
-		ctx.editCategory(g.rows, true);
+		ctx.editCategory(g.rows, remembers([g]));
 	});
 }

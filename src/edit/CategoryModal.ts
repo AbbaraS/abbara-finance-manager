@@ -13,7 +13,7 @@ import { categoryField } from './categoryField';
 import { detailsFields } from './detailsFields';
 import { directionOf } from './directionOf';
 import { pickedSummary } from './pickedSummary';
-import { similarFields } from './similarFields';
+import { similarFields, useItsCategory } from './similarFields';
 import { draftSubscription, subscriptionFields } from './subscriptionFields';
 
 // Window for editing one or more transactions: category (once or remembered for the counterparty), person, subcategory,
@@ -40,6 +40,10 @@ export class CategoryModal extends Modal {
 			note: one ? first.note : '',
 			tags: one ? first.tags : [],
 			other: one ? first.otherAccount : '',
+			debt: picked.every((t) => t.debt) ? true : picked.some((t) => t.debt) ? null : false,
+			debtAmount: null,
+			debtReason: null,
+			newDebtReason: false,
 			similar,
 			personPatterns: cleanPatterns(picked.map((t) => guessPersonPattern(t.description))),
 			draft: { name: guessName(patterns[0] ?? ''), patterns, category: '', account: '', direction: directionOf(picked) },
@@ -66,7 +70,7 @@ export class CategoryModal extends Modal {
 
 		pickedSummary(el, this.picked, this.plugin.settings);
 		categoryField(el, this.choice, this.plugin.db.labels, redraw);
-		detailsFields(this.app, el, this.choice, this.plugin.db.labels, this.rows, this.picked, redraw);
+		detailsFields(this.app, el, this.choice, this.plugin.db.labels, this.rows, this.picked, this.plugin.settings, redraw);
 		similarFields(el, this.choice, this.plugin.db.labels, this.picked, this.rows, redraw);
 		subscriptionFields(el, this.choice, this.plugin.db.labels, this.picked, redraw);
 
@@ -78,8 +82,9 @@ export class CategoryModal extends Modal {
 	// Checks the form, writes to your labels and closes.
 	private save() {
 		const c = this.choice;
-		if (!c.category.trim()) return void new Notice(c.newKind ? 'Name the new category first.' : 'Pick a category first.');
 		const labels = this.plugin.db.labels;
+		useItsCategory(c, c.similar ? c.addTo : findCounterparty(labels, c.counterparty) ?? null); // no category picked: the counterparty's
+		if (!c.category.trim()) return void new Notice(c.newKind ? 'Name the new category first.' : 'Pick a category first.');
 		const forPerson = c.similar && findCategory(labels, c.category.trim())?.kind === 'people';
 		if (forPerson && !c.person.trim()) return void new Notice('Pick or add the person first.');
 		if (forPerson && cleanPatterns(c.personPatterns).length === 0) return void new Notice('Type some text from the description.');
@@ -89,6 +94,10 @@ export class CategoryModal extends Modal {
 			return void new Notice(`"${name}" already exists. Pick it under Save as.`);
 		}
 		if (c.similar && !forPerson && !c.addTo && cleanPatterns(c.draft.patterns).length === 0) return void new Notice('Type some text from the description.');
+		const most = Math.abs(this.picked[0].amount);
+		if (c.debt && c.debtAmount !== null && (c.debtAmount <= 0 || c.debtAmount > most + 0.005)) {
+			return void new Notice('The debt part has to be more than 0 and no more than the transaction.');
+		}
 		const sub = c.newSubscription.name.trim();
 		if (c.subscription === NEW_SUBSCRIPTION && !sub) return void new Notice('Name the new subscription first.');
 		if (c.subscription === NEW_SUBSCRIPTION && labels.subscriptions.some((s) => s.name === sub)) return void new Notice(`"${sub}" already exists.`);

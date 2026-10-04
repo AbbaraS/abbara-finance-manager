@@ -368,9 +368,6 @@
 	padding: 0 var(--size-4-1);
 }
 
-/* "Sent to" dropdown in the transfers table. */
-.afm-move { display: inline-flex; align-items: center; gap: 4px; font-size: var(--font-ui-smaller); }
-.afm-move select { font-size: var(--font-ui-smaller); height: auto; padding-top: 0; padding-bottom: 0; }
 
 /* Clickable badge: undo Obsidian's button look. */
 button.afm-badge {
@@ -502,11 +499,35 @@ body {
 .afm-detail td:first-child,
 .afm-group td:first-child { padding-left: calc(var(--size-4-2) + 28px + var(--afm-depth, 1) * 20px); }
 
-/* Transfers table. */
-.afm-scroll { overflow-x: auto; }
-.afm-flow { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-.afm-flow-arrow { display: inline-flex; color: var(--text-faint); }
-.afm-flow-arrow svg { width: 14px; height: 14px; }
+/* Transfers table: fits its pane. The two accounts sit one above the other; months furthest from the chosen one hide first. */
+.afm-flows-wrap { container-type: inline-size; }
+.afm-flows th, .afm-flows td { padding-left: 6px; padding-right: 6px; }
+.afm-flow-pair { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.afm-flows .afm-row-title { align-items: center; }
+@container (max-width: 775px) { .afm-flows .afm-rank-5 { display: none; } }
+@container (max-width: 690px) { .afm-flows .afm-rank-4 { display: none; } }
+@container (max-width: 600px) { .afm-flows .afm-rank-3 { display: none; } }
+@container (max-width: 515px) { .afm-flows .afm-rank-2 { display: none; } }
+@container (max-width: 430px) { .afm-flows .afm-rank-1 { display: none; } .afm-flows .afm-account { white-space: normal; } }
+@container (max-width: 340px) { .afm-flows .afm-flow-total { display: none; } }
+.afm-flow-amount { display: flex; justify-content: flex-end; align-items: baseline; gap: 4px; }
+.afm-flow-arrow { color: var(--text-muted); font-weight: var(--font-normal); }
+.afm-flows .afm-account { font-size: var(--font-ui-smaller); white-space: nowrap; }
+.afm-flows td.afm-heat, .afm-flows td.afm-strong { font-size: var(--font-ui-smaller); }
+.afm-flows .afm-transfer td { padding-top: var(--size-4-1); padding-bottom: var(--size-4-1); }
+.afm-flow-net { font-size: var(--font-ui-smaller); font-weight: var(--font-normal); color: var(--text-muted); }
+/* One transfer: left side · amount with arrow · right side. */
+.afm-transfer-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--size-4-4); }
+.afm-transfer-side { min-width: 0; font-size: var(--font-ui-smaller); }
+.afm-transfer-side.is-right { text-align: right; }
+.afm-transfer-mid { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.afm-transfer-amount { font-weight: var(--font-semibold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.afm-transfer .afm-note-line { justify-content: center; }
+.afm-warning { color: var(--text-warning); }
+/* Button that sends a transfer to another account. */
+button.afm-move { height: auto; padding: 2px; color: var(--text-faint); }
+button.afm-move.is-set { color: var(--interactive-accent); }
+button.afm-move svg { width: 14px; height: 14px; }
 .afm-heat { background-color: color-mix(in srgb, var(--afm-c-blue) var(--afm-heat, 0%), transparent); }
 .afm-flows th.is-selected { color: var(--text-normal); font-weight: var(--font-semibold); }
 .afm-flows td.is-selected { font-weight: var(--font-semibold); }
@@ -558,6 +579,10 @@ button.afm-tag-button.is-open { color: var(--text-accent); border-style: solid; 
 
 /* Settings: a merchant's spellings, one per line. */
 .afm-wrap textarea { min-width: 14em; font-size: var(--font-ui-small); }
+/* Settings: a caption above each field. */
+.afm-field { display: flex; flex-direction: column; gap: 2px; }
+.afm-field-label { font-size: var(--font-ui-smaller); color: var(--text-faint); padding-left: 2px; }
+.afm-wrap .setting-item-control { align-items: flex-end; }
 
 /* Spending by category: subcategory (and person) rows with their totals. */
 .afm-group td {
@@ -751,19 +776,47 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 .afm-items.afm-hidden { display: none; }
 .afm-item {
 	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: var(--size-4-2);
-	padding: 4px 8px;
+	flex-direction: column;
+	gap: 2px;
+	padding: 5px 8px;
 	font-size: var(--font-ui-smaller);
 	cursor: pointer;
 	border-radius: 0 var(--radius-s) var(--radius-s) 0;
 }
+.afm-item + .afm-item { border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 60%, transparent); }
 .afm-item:hover { background: var(--background-modifier-hover); }
 .afm-item:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
-.afm-item-main { min-width: 0; }
-.afm-item .afm-name { font-size: var(--font-ui-small); }
-.afm-item-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.afm-item-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--size-4-2); }
+.afm-item .afm-name { min-width: 0; font-size: var(--font-ui-small); }
+.afm-item-amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.afm-item-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; color: var(--text-muted); }
+.afm-item-meta button.afm-sub-chip { padding: 0 6px 0 4px; }
+.afm-item-note { display: inline-flex; align-items: center; gap: 3px; font-style: italic; }
+.afm-item-kept { font-size: var(--font-ui-smaller); color: var(--text-normal); }
+
+/* Refunds: the purchase struck through, a small badge, and the money back under it.
+   A fully refunded purchase is one faded, smaller line; clicking it shows its details. */
+.afm-struck { text-decoration: line-through; color: var(--text-muted); }
+.afm-item-name { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.afm-item.is-refunded { padding-top: 2px; padding-bottom: 2px; opacity: 0.55; }
+.afm-item.is-refunded:hover, .afm-item.is-refunded:focus-visible { opacity: 0.9; }
+.afm-item.is-refunded .afm-name { text-decoration: line-through; color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.afm-item.is-refunded .afm-item-amount { font-size: var(--font-ui-smaller); }
+.afm-detail.is-refunded { opacity: 0.55; }
+.afm-detail.is-refunded:hover { opacity: 0.9; }
+.afm-detail.is-refunded td { padding-top: 2px; padding-bottom: 2px; font-size: var(--font-ui-smaller); }
+.afm-detail.is-refunded .afm-name { text-decoration: line-through; }
+.afm-view button.afm-item-edit { height: auto; padding: 0 8px; font-size: var(--font-ui-smaller); }
+.afm-refund-badge {
+	padding: 0 6px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+	white-space: nowrap;
+}
+.afm-refund-badge.is-full { color: color-mix(in srgb, var(--afm-c-aqua) 75%, var(--text-normal)); background: color-mix(in srgb, var(--afm-c-aqua) 14%, transparent); }
+.afm-refund-line { display: flex; align-items: center; gap: 4px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 
 /* Line under a card grid with its total. */
 .afm-grid-foot {
@@ -784,3 +837,25 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 
 /* Tags a row gets from its counterparty or subscription: faded, not editable on the row. */
 .afm-tag.afm-tag-auto { opacity: 0.65; }
+
+/* Debts: what you owe a person (all time) on their card, entries under it, and a chip on marked transactions. */
+.afm-debt-row { --afm-share: 0%; }
+.afm-debt-head { cursor: default; }
+.afm-debt-head:hover { background-color: transparent; }
+.afm-debt-row:not(.afm-debt-head) { margin-left: 14px; }
+.afm-debt-row.is-settled { opacity: 0.6; }
+.afm-debt-sums { padding: 4px 8px; font-size: var(--font-ui-smaller); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.afm-debt-owed { color: color-mix(in srgb, var(--afm-spend) 70%, var(--text-normal)); }
+.afm-debt-owed.is-theirs { color: color-mix(in srgb, var(--afm-income) 70%, var(--text-normal)); }
+.afm-view button.afm-debt-add { height: auto; padding: 1px; color: var(--text-faint); }
+.afm-view button.afm-debt-add svg { width: 14px; height: 14px; }
+.afm-debt-chip {
+	padding: 0 6px;
+	border-radius: var(--radius-s);
+	font-size: var(--font-ui-smaller);
+	white-space: nowrap;
+	color: color-mix(in srgb, var(--afm-c-orange) 75%, var(--text-normal));
+	background: color-mix(in srgb, var(--afm-c-orange) 14%, transparent);
+}
+.afm-debt-chip.is-paid { color: color-mix(in srgb, var(--afm-c-green) 75%, var(--text-normal)); background: color-mix(in srgb, var(--afm-c-green) 14%, transparent); }
+.afm-view button.afm-add-debt { margin-top: var(--size-4-2); }

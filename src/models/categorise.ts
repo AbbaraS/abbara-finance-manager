@@ -3,6 +3,7 @@ import type { Labels } from './Labels';
 import type { Person } from './people';
 import { UNCATEGORISED } from './rowKind';
 import { counterpartyMatches, textMatches } from './counterpartyMatches';
+import { linkRefunds } from './linkRefunds';
 import { linkSubscriptions } from './subscriptions';
 import { linkTransfers } from './transferFlows';
 import type { Transaction } from './Transaction';
@@ -20,10 +21,11 @@ export function whoFor(labels: Labels, t: Transaction, picked = labels.transacti
 
 // Copies the rows with your labels; who each is with comes from whoFor.
 // Category, subcategory and person: one-off edit first (all three together), then the counterparty's or the person's.
-// Then pairs up transfers (see linkTransfers) and finds subscription payments (see linkSubscriptions).
+// Then pairs up transfers (see linkTransfers), refunds with their purchases (see linkRefunds) and finds subscription payments (see linkSubscriptions).
 // Tags: the row's own, plus its counterparty's and subscription's (autoTags).
 export function categorise(rows: Transaction[], labels: Labels): Transaction[] {
 	const kinds = new Map(labels.categories.map((c) => [c.name, c.kind]));
+	const debts = new Map(labels.debts.filter((d) => d.transaction).map((d) => [d.transaction, d]));
 
 	const done = rows.map((t): Transaction => {
 		const l = labels.transactions[t.id] ?? {};
@@ -48,9 +50,13 @@ export function categorise(rows: Transaction[], labels: Labels): Transaction[] {
 			tags: l.tags ?? [],
 			autoTags: cp?.tags ?? [],
 			otherAccount: l.other ?? '',
+			debt: debts.get(t.id) ?? null,
 		};
 	});
 	const linked = linkTransfers(done, labels.accounts);
+	// Refunds: who a row is with, ignoring a counterparty's "money out only" (its refunds come in).
+	const anyWay = labels.counterparties.map((x) => ({ ...x, direction: '' as const }));
+	linkRefunds(linked, (t) => t.counterparty || anyWay.find((x) => counterpartyMatches(x, t))?.name || '');
 	linkSubscriptions(linked, labels);
 
 	// Tags from the subscription too; tags the row already has itself aren't repeated.

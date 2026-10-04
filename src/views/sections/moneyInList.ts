@@ -1,5 +1,6 @@
 import { sum } from '../../models/monthSummary';
 import { rowKind } from '../../models/rowKind';
+import { newestFirst } from '../../models/Transaction';
 import { dayLabel } from '../../utils/dates';
 import { formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
@@ -13,7 +14,7 @@ import { tableHead } from './tableHead';
 export function moneyInList(body: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const s = ctx.settings;
-	const rows = ctx.rows.filter((t) => t.month === ctx.month && rowKind(t, s) === 'income').sort((a, b) => b.amount - a.amount);
+	const rows = ctx.rows.filter((t) => t.month === ctx.month && rowKind(t, s) === 'income');
 	if (rows.length === 0) {
 		body.createDiv({ cls: 'afm-muted', text: 'No income this month.' });
 		return;
@@ -29,7 +30,7 @@ export function moneyInList(body: HTMLElement, ctx: DashboardContext): void {
 
 	// One row per payment; click it to open it.
 	const tbody = table.createEl('tbody');
-	for (const t of rows) {
+	for (const t of newestFirst(rows)) {
 		const tr = tbody.createEl('tr', { cls: 'afm-clickable' });
 		const cell = tr.createEl('td');
 		rowName(cell, t);

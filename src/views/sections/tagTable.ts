@@ -1,6 +1,6 @@
 import { sum } from '../../models/monthSummary';
 import { rowKind, spendOf } from '../../models/rowKind';
-import type { Transaction } from '../../models/Transaction';
+import { newestFirst, type Transaction } from '../../models/Transaction';
 import { countLabel } from '../../utils/countLabel';
 import { formatMoney } from '../../utils/money';
 import { formatPercent } from '../../utils/percent';
@@ -45,7 +45,7 @@ export function tagTable(body: HTMLElement, ctx: DashboardContext): void {
 		shareBar(tr.createEl('td', { cls: 'afm-bar-cell' }), share);
 		tr.createEl('td', { cls: 'afm-num', text: formatMoney(g.total, s) });
 		tr.createEl('td', { cls: 'afm-num afm-muted', text: formatPercent(share) });
-		const rows = [...g.rows].sort((a, b) => a.amount - b.amount);
+		const rows = newestFirst(g.rows);
 		expandable(tr, icon, transactionRows(tbody, rows, ctx, 0), `tag:${g.tag}`, ctx.expanded);
 	}
 }

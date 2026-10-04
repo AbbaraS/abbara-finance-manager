@@ -1,18 +1,23 @@
 import { App, FuzzySuggestModal, Notice, Setting } from 'obsidian';
-import { findCategory } from '../../models/categories';
+import { addSubcategory, findCategory } from '../../models/categories';
 import { deleteCounterparty, mergeCounterparty, renameCounterparty, uniqueName } from '../../models/counterparties';
 import type { Counterparty, Direction } from '../../models/Counterparty';
 import { cleanPatterns } from '../../models/counterpartyMatches';
 import { tagNames } from '../../models/Labels';
 import { peopleIn } from '../../models/people';
+import { subcategoryNames } from '../../models/subcategoryNames';
 import { tagInput } from '../../edit/tagInput';
 import { countLabel } from '../../utils/countLabel';
+import { caption } from '../caption';
 import { collapsible } from '../collapsible';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
 
 // Labels for the direction dropdown.
 const DIRECTIONS: Record<Direction, string> = { '': 'In or out', in: 'Money in', out: 'Money out' };
+
+// Dropdown value that asks for a new subcategory's name.
+const NEW_SUB = '\u0000new';
 
 // Counterparties: who transactions are with, collapsed, with a filter and edit fields.
 export function counterpartiesSection(el: HTMLElement, ctx: SettingsContext): void {
@@ -64,40 +69,47 @@ function counterpartyRow(el: HTMLElement, cp: Counterparty, i: number, used: num
 				renameCounterparty(labels, cp, to);
 				ctx.saveAndRedraw();
 			});
-		})
+		});
+	caption(setting, 'Name (shown on transactions)');
+	setting
 		.addTextArea((t) => {
 			t.setPlaceholder('Description contains\n(one per line)').setValue(cp.patterns.join('\n'))
 				.onChange((v) => { cp.patterns = cleanPatterns(v.split('\n')); ctx.save(); });
 			t.inputEl.rows = Math.min(Math.max(cp.patterns.length, 1), 5);
-		})
+		});
+	caption(setting, 'Spellings (description contains)');
+	setting
 		.addDropdown((d) => {
 			d.addOption('', 'No category');
 			for (const c of labels.categories) if (c.kind !== 'people' || c.name === cp.category) d.addOption(c.name, c.name); // people have their own spellings
-			d.setValue(cp.category).onChange((v) => { Object.assign(cp, { category: v, person: '', subcategory: v ? cp.subcategory : '' }); ctx.saveAndRedraw(); });
+			// A new category has other subcategories, so the old one goes.
+			d.setValue(cp.category).onChange((v) => { Object.assign(cp, { category: v, person: '', subcategory: '' }); ctx.saveAndRedraw(); });
 		});
-	if (findCategory(labels, cp.category)?.kind === 'people') {
+	caption(setting, 'Category');
+	const isPeople = findCategory(labels, cp.category)?.kind === 'people';
+	if (isPeople) {
 		setting.addDropdown((d) => {
 			d.addOption('', 'No person');
 			for (const p of new Set([...peopleIn(labels, cp.category), cp.person ?? ''])) if (p) d.addOption(p, p);
-			d.setValue(cp.person ?? '').onChange((v) => { cp.person = v; ctx.save(); });
+			d.setValue(cp.person ?? '').onChange((v) => { Object.assign(cp, { person: v, subcategory: '' }); ctx.saveAndRedraw(); }); // each person has their own
 		});
+		caption(setting, 'Person');
 	}
 	if (cp.category) {
-		setting.addText((t) => {
-			t.setPlaceholder('Subcategory').setValue(cp.subcategory ?? '');
-			// On Enter / leaving the field, so half-typed names don't become subcategories.
-			t.inputEl.addEventListener('change', () => { cp.subcategory = t.getValue().trim(); ctx.save(); });
-		});
+		setting.addDropdown((d) => subcategoryDropdown(d.selectEl, cp, isPeople ? cp.person ?? '' : '', ctx));
+		caption(setting, 'Subcategory');
 	}
-	setting
-		.addDropdown((d) => {
-			d.addOption('', 'Any account');
-			for (const a of accounts) d.addOption(a, a);
-			d.setValue(cp.account).onChange((v) => { cp.account = v; ctx.save(); });
-		})
-		.addDropdown((d) => d.addOptions(DIRECTIONS).setValue(cp.direction)
-			.onChange((v) => { cp.direction = v as Direction; ctx.save(); }));
+	setting.addDropdown((d) => {
+		d.addOption('', 'Any account');
+		for (const a of accounts) d.addOption(a, a);
+		d.setValue(cp.account).onChange((v) => { cp.account = v; ctx.save(); });
+	});
+	caption(setting, 'Only in account');
+	setting.addDropdown((d) => d.addOptions(DIRECTIONS).setValue(cp.direction)
+		.onChange((v) => { cp.direction = v as Direction; ctx.save(); }));
+	caption(setting, 'Money');
 	tagInput(ctx.app, setting.controlEl, cp.tags ?? [], tagNames(labels), (tags) => { cp.tags = tags; ctx.save(); });
+	caption(setting, 'Tags');
 	setting
 		.addExtraButton((b) => b.setIcon('arrow-up').setTooltip('Move up').setDisabled(i === 0)
 			.onClick(() => move(all, i, -1, ctx)))
@@ -111,6 +123,36 @@ function counterpartyRow(el: HTMLElement, cp: Counterparty, i: number, used: num
 		ctx.saveAndRedraw();
 	});
 	return setting.settingEl;
+}
+
+// The category's subcategories (the person's own under People), plus "+ New subcategory…", which swaps in a text box for the name.
+function subcategoryDropdown(select: HTMLSelectElement, cp: Counterparty, person: string, ctx: SettingsContext): void {
+	const labels = ctx.plugin.db.labels;
+	const names = new Set([...subcategoryNames(cp.category, person, labels, ctx.rows), cp.subcategory ?? '']);
+	select.createEl('option', { value: '', text: 'No subcategory' });
+	for (const n of names) if (n) select.createEl('option', { value: n, text: n });
+	select.createEl('option', { value: NEW_SUB, text: '+ New subcategory…' });
+	select.value = cp.subcategory ?? '';
+
+	select.addEventListener('change', () => {
+		if (select.value !== NEW_SUB) {
+			cp.subcategory = select.value;
+			return ctx.save();
+		}
+		select.addClass('afm-hidden');
+		const input = select.parentElement!.createEl('input', { type: 'text', attr: { placeholder: 'New subcategory name' } });
+		input.focus();
+		// Enter or leaving the box: add it (empty = keep the old one).
+		input.addEventListener('blur', () => {
+			const name = input.value.trim();
+			if (name) {
+				addSubcategory(labels, cp.category, name, person);
+				cp.subcategory = name;
+			}
+			ctx.saveAndRedraw();
+		});
+		input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+	});
 }
 
 // Swaps a counterparty with its neighbour.

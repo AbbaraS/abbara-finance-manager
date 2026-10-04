@@ -9,6 +9,11 @@ export function formatMoney(value: number, s: FinanceSettings): string {
 	}
 }
 
+// Like formatMoney but without ".00" on whole amounts, for tight tables: "£500", "£500.59".
+export function formatTidy(value: number, s: FinanceSettings): string {
+	return formatMoney(value, s).replace(/[.,]00$/, '');
+}
+
 // Like formatMoney but always shows + or −, for changes.
 export function formatChange(value: number, s: FinanceSettings): string {
 	const sign = value > 0 ? '+' : value < 0 ? '−' : '';
