@@ -426,6 +426,11 @@ button.afm-badge.is-edited { border-style: dashed; } /* one-off edit */
 	background: var(--background-secondary);
 }
 .afm-picked-title { font-weight: var(--font-semibold); }
+/* Refund links in the edit window, each with Unlink / Link again. */
+.afm-refund-links { display: flex; flex-direction: column; gap: 4px; margin-top: var(--size-4-2); padding-top: var(--size-4-2); border-top: 1px solid var(--background-modifier-border); }
+.afm-refund-link { display: flex; align-items: center; justify-content: space-between; gap: var(--size-4-2); }
+.afm-refund-link-text { min-width: 0; overflow-wrap: anywhere; }
+.afm-refund-link.is-unlinked .afm-refund-link-text { opacity: 0.6; }
 .afm-rule-preview {
 	display: flex;
 	flex-direction: column;

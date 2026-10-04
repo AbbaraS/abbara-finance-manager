@@ -23,7 +23,7 @@ interface CounterpartyRow {
 }
 interface LabelRow {
 	id: string; category: string | null; sub: string | null; person: string | null; subscription: string | null;
-	no_subscription: number; note: string | null; tags: string | null; other: string | null; counterparty: string | null;
+	no_subscription: number; note: string | null; tags: string | null; other: string | null; counterparty: string | null; not_refund_of: string | null;
 }
 interface DebtRow { id: number; person: string; date: string; amount: number; note: string; reason: string; transaction_id: string | null }
 interface TransactionRow {
@@ -71,7 +71,7 @@ export async function readTables(file: string): Promise<Tables> {
 			FROM Counterparty k LEFT JOIN Category c ON c.id = k.category_id LEFT JOIN Category p ON p.id = c.parent_id
 			LEFT JOIN Person pe ON pe.id = k.person_id LEFT JOIN Account a ON a.id = k.account_id ORDER BY k.position, k.id`),
 		get<LabelRow>(`SELECT l.transaction_id AS id, c.name AS category, l.subcategory AS sub, pe.name AS person, s.name AS subscription,
-			l.no_subscription, l.note, l.tags, a.name AS other, k.name AS counterparty FROM Label l LEFT JOIN Category c ON c.id = l.category_id
+			l.no_subscription, l.note, l.tags, a.name AS other, k.name AS counterparty, l.not_refund_of FROM Label l LEFT JOIN Category c ON c.id = l.category_id
 			LEFT JOIN Person pe ON pe.id = l.person_id LEFT JOIN Subscription s ON s.id = l.subscription_id
 			LEFT JOIN Account a ON a.id = l.other_account_id LEFT JOIN Counterparty k ON k.id = l.counterparty_id`),
 		get<DebtRow>('SELECT d.id, pe.name AS person, d.date, d.amount, d.note, d.reason, d.transaction_id FROM Debt d JOIN Person pe ON pe.id = d.person_id ORDER BY d.date, d.id'),
@@ -104,7 +104,7 @@ export async function readTables(file: string): Promise<Tables> {
 		setLabel(result, l.id, {
 			category: l.category ?? '', sub: l.sub ?? '', person: l.person ?? '', note: l.note ?? '', other: l.other ?? '',
 			subscription: l.no_subscription ? NO_SUBSCRIPTION : l.subscription ?? '', tags: l.tags ? JSON.parse(l.tags) : [],
-			counterparty: l.counterparty ?? '',
+			counterparty: l.counterparty ?? '', notRefundOf: l.not_refund_of ? JSON.parse(l.not_refund_of) : [],
 		});
 	}
 
@@ -185,10 +185,10 @@ export function labelStatements(labels: Labels): string[] {
 		})),
 		'DELETE FROM Label;',
 		...Object.entries(transactions).map(([id, l]) => `INSERT INTO Label
-			(transaction_id, category_id, subcategory, person_id, subscription_id, no_subscription, note, tags, other_account_id, counterparty_id)
+			(transaction_id, category_id, subcategory, person_id, subscription_id, no_subscription, note, tags, other_account_id, counterparty_id, not_refund_of)
 			VALUES (${sql(id)}, ${topId(l.category)}, ${sql(l.sub || null)}, ${personId(l.person)}, ${subscriptionId(noSub(l) ? '' : l.subscription)},
 			${noSub(l) ? 1 : 0}, ${sql(l.note || null)}, ${sql(l.tags?.length ? JSON.stringify(l.tags) : null)}, ${accountId(l.other)},
-			${counterpartyId(l.counterparty)});`),
+			${counterpartyId(l.counterparty)}, ${sql(l.notRefundOf?.length ? JSON.stringify(l.notRefundOf) : null)});`),
 	];
 }
 

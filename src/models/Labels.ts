@@ -14,6 +14,7 @@ export interface Label {
 	tags?: string[];
 	other?: string;        // transfers: the other account, set by hand
 	counterparty?: string; // picked by hand; empty = found by patterns
+	notRefundOf?: string[]; // money in: ids of purchases it was unlinked from, so it isn't paired with them again
 }
 
 // One of your accounts. Accounts in the data appear by themselves; add others so transfers to them aren't "Unknown".

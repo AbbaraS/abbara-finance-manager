@@ -12,8 +12,9 @@ const MAX_DAYS = 90;
 // as long as they add up to no more than it cost. Best first: same description (e.g. the same Amazon order),
 // same amount, the purchase left closest to the refund, nearest date.
 // An uncategorised refund takes its purchase's category; a refund in the same category takes its subcategory.
-// A refund without a counterparty takes its purchase's.
-export function linkRefunds(rows: Transaction[], who: (t: Transaction) => string = (t) => t.counterparty): void {
+// A refund without a counterparty takes its purchase's. `unlinked` gives the purchases a refund was unlinked from by hand.
+export function linkRefunds(rows: Transaction[], who: (t: Transaction) => string = (t) => t.counterparty,
+	unlinked: (t: Transaction) => string[] = () => []): void {
 	for (const t of rows) {
 		t.refundOf = null;
 		t.refunds = [];
@@ -29,9 +30,10 @@ export function linkRefunds(rows: Transaction[], who: (t: Transaction) => string
 	const refunds = rows.filter((t) => t.amount > 0 && shop(t)).sort((a, b) => a.date.localeCompare(b.date));
 	for (const r of refunds) {
 		const day = dayNumber(r.date);
+		const not = unlinked(r);
 		const options = (purchases.get(keyOf(r)) ?? []).filter((p) => {
 			const gap = day - dayNumber(p.date);
-			return gap >= 0 && gap <= MAX_DAYS && r.amount <= (left.get(p.id) ?? -p.amount) + 0.005;
+			return !not.includes(p.id) && gap >= 0 && gap <= MAX_DAYS && r.amount <= (left.get(p.id) ?? -p.amount) + 0.005;
 		});
 		const rank = (p: Transaction) => [
 			Number(p.description !== r.description),

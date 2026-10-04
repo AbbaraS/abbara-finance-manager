@@ -56,7 +56,7 @@ export function categorise(rows: Transaction[], labels: Labels): Transaction[] {
 	const linked = linkTransfers(done, labels.accounts);
 	// Refunds: who a row is with, ignoring a counterparty's "money out only" (its refunds come in).
 	const anyWay = labels.counterparties.map((x) => ({ ...x, direction: '' as const }));
-	linkRefunds(linked, (t) => t.counterparty || anyWay.find((x) => counterpartyMatches(x, t))?.name || '');
+	linkRefunds(linked, (t) => t.counterparty || anyWay.find((x) => counterpartyMatches(x, t))?.name || '', (t) => labels.transactions[t.id]?.notRefundOf ?? []);
 	linkSubscriptions(linked, labels);
 
 	// Tags from the subscription too; tags the row already has itself aren't repeated.
