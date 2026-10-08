@@ -7,7 +7,7 @@ import type { CategoryKind } from '../models/Category';
 import type { Labels } from '../models/Labels';
 import { REFUND } from '../models/categorise';
 import { UNCATEGORISED } from '../models/rowKind';
-import type { Period, SubscriptionStatus } from '../models/Subscription';
+import type { Period } from '../models/Subscription';
 import type { CategorySource, Transaction } from '../models/Transaction';
 import { UNKNOWN_ACCOUNT } from '../models/transferFlows';
 import { monthOf } from '../utils/dates';
@@ -25,8 +25,8 @@ interface TransRow {
 interface CategoryRow { name: string; kind: CategoryKind | null; color: string; icon: string; parent: string | null }
 interface RecipientRow { name: string; category: string | null; sub: string | null }
 interface SubscriptionRow {
-	id: number; name: string; kind: string; recipient: string | null; amount: number | null; period: Period;
-	payments: number | null; paid_before: number; status: string;
+	id: number; name: string; recipient: string | null; amount: number | null; period: Period;
+	instalments_no: number | null; paid_before: number; last_date: string | null;
 }
 interface DebtRow { id: number; person: string; date: string; amount: number; note: string; reason: string; transaction_id: string | null }
 type Pair = { a: string; b: string };
@@ -94,8 +94,8 @@ export class DevDatabase {
 			})),
 			types: [{ name: 'Subscription' }, { name: 'Instalments' }],
 			subscriptions: t.subscriptions.map((s) => ({
-				id: s.id, name: s.name, type: s.kind === 'instalments' ? 'Instalments' : 'Subscription', counterparty: s.recipient ?? '', match: '', amount: s.amount,
-				period: s.period, payments: s.payments, paidBefore: s.paid_before, status: (s.status === 'active' ? '' : s.status) as SubscriptionStatus,
+				id: s.id, name: s.name, type: s.instalments_no === null ? 'Subscription' : 'Instalments', counterparty: s.recipient ?? '', match: '', amount: s.amount,
+				period: s.period, payments: s.instalments_no, paidBefore: s.paid_before, status: s.last_date ? 'cancelled' : '', // no last date = active
 				tags: subscriptionTags.get(s.name) ?? [],
 			})),
 			transactions: {},
@@ -176,7 +176,7 @@ async function readAll(file: string) {
 		get<{ name: string }>('SELECT name FROM Account ORDER BY position, id'),
 		get<RecipientRow>(`SELECT r.name, ${CATEGORY('c', 'p')} FROM Recipient r LEFT JOIN Category c ON c.id = r.category_id LEFT JOIN Category p ON p.id = c.parent_id ORDER BY r.name`),
 		get<Named>('SELECT p.text AS name, r.name AS owner FROM Pattern p JOIN Recipient r ON r.id = p.recipient_id ORDER BY p.id'),
-		get<SubscriptionRow>(`SELECT s.id, s.name, s.kind, r.name AS recipient, s.amount, s.period, s.payments, s.paid_before, s.status
+		get<SubscriptionRow>(`SELECT s.id, s.name, r.name AS recipient, s.amount, s.period, s.instalments_no, s.paid_before, s.last_date
 			FROM Subscription s LEFT JOIN Recipient r ON r.id = s.recipient_id ORDER BY s.name`),
 		get<Named>(`SELECT tg.name, COALESCE('r:' || r.name, 's:' || s.name) AS owner FROM AutoTag at JOIN Tag tg ON tg.id = at.tag_id
 			LEFT JOIN Recipient r ON r.id = at.recipient_id LEFT JOIN Subscription s ON s.id = at.subscription_id`),
