@@ -21,6 +21,18 @@ export function dataSection(el: HTMLElement, ctx: SettingsContext): void {
 		});
 
 	new Setting(el)
+		.setName('Dev database file')
+		.setDesc('The dev-finance.db made by make dev (the new structure). Opened read only by the "Open dev dashboard" command, to compare with the one above.')
+		.addText((t) => {
+			t.setPlaceholder('~/source/myFinances/data/dev-finance.db').setValue(s.devDbFile);
+			t.inputEl.addEventListener('change', async () => {
+				s.devDbFile = t.getValue().trim();
+				await ctx.plugin.saveData(s);
+				await ctx.plugin.openDevDatabase();
+			});
+		});
+
+	new Setting(el)
 		.setName('Currency')
 		.setDesc('Only rows in this currency are counted (ISO code, e.g. GBP).')
 		.addText((t) => t.setValue(s.currency)

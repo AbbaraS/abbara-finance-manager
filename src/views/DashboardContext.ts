@@ -7,6 +7,7 @@ import type { Transaction } from '../models/Transaction';
 // Everything a dashboard section needs to draw itself.
 export interface DashboardContext {
 	app: App;
+	title: string;                // shown in the header
 	rows: Transaction[];          // all rows, every month, categorised
 	months: string[];             // months with data, oldest first
 	month: string;                // the month being shown, "YYYY-MM"

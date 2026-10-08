@@ -18,6 +18,40 @@
 .afm-title { display: flex; align-items: center; gap: var(--size-4-2); margin: 0; font-size: var(--h2-size); }
 .afm-controls { display: flex; align-items: center; gap: var(--size-4-1); }
 
+/* Year tabs and the chosen year's months, under the title. */
+.afm-period {
+	container-type: inline-size;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2) var(--size-4-3);
+	margin: calc(-1 * var(--size-4-2)) 0 var(--size-4-4);
+}
+.afm-years, .afm-months {
+	display: flex;
+	gap: 2px;
+	padding: 2px;
+	border-radius: var(--radius-m);
+	background: var(--background-modifier-hover);
+}
+.afm-months { flex: 1 1 360px; display: grid; grid-template-columns: repeat(12, 1fr); }
+.afm-view .afm-tab {
+	height: auto;
+	padding: var(--size-4-1) var(--size-4-2);
+	border: none;
+	border-radius: var(--radius-s);
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+}
+.afm-view .afm-tab:hover:not(:disabled):not(.is-active) { background: var(--background-modifier-hover); color: var(--text-normal); }
+.afm-view .afm-tab.is-active { background: var(--interactive-accent); color: var(--text-on-accent); font-weight: var(--font-semibold); cursor: default; }
+.afm-view .afm-tab:disabled { color: var(--text-faint); opacity: 0.45; cursor: default; }
+@container (max-width: 460px) { .afm-months { grid-template-columns: repeat(6, 1fr); } }
+
 /* Summary cards. */
 .afm-cards {
 	display: grid;

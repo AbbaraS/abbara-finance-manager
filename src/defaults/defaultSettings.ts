@@ -3,6 +3,7 @@ import type { FinanceSettings } from '../models/FinanceSettings';
 // First-run settings; copied before use so edits never touch this object.
 export const DEFAULT_SETTINGS: FinanceSettings = {
 	dbFile: '',
+	devDbFile: '',
 	currency: 'GBP',
 	locale: 'en-GB',
 	hiddenSections: [],
