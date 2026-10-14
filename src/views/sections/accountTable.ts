@@ -32,7 +32,7 @@ export function accountTable(body: HTMLElement, ctx: DashboardContext): void {
 		const tr = tbody.createEl('tr');
 		const name = tr.createEl('td');
 		const title = name.createDiv({ cls: 'afm-row-title' });
-		const look = accountLook(g.key);
+		const look = accountLook(g.key, ctx.labels.accounts);
 		iconDot(title, look.icon, look.color);
 		title.createSpan({ text: g.key });
 		name.createDiv({ cls: 'afm-muted afm-indent-dot', text: countLabel(g.rows.length) });

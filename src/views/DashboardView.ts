@@ -61,10 +61,15 @@ export class DashboardView extends ItemView {
 			save: () => this.dev ? readOnly() : void this.plugin.save(),
 			saveSettings: () => void this.plugin.saveSettings(),
 			saveLabel: (t, patch) => { if (this.dev) return void readOnly(); setLabel(labels, t.id, patch); void this.plugin.save(); },
+			transfers: this.dev ? {
+				links: devDb.links,
+				edit: (action, out, into) => devDb.editTransfer(action, out, into).then(() => this.plugin.refreshViews())
+					.catch((e: Error) => new Notice(`Couldn't ${action} the transfer: ${e.message}. Run make dev once (new database layout), then try again.`)),
+			} : null,
 		};
 
 		header(el, ctx);
-		const shown = orderedSections(s.sectionOrder).filter((x) => !s.hiddenSections.includes(x.id));
+		const shown = orderedSections(s.sectionOrder).filter((x) => !s.hiddenSections.includes(x.id) && (this.dev || !('dev' in x)));
 		if (shown.length === 0) el.createDiv({ cls: 'afm-note', text: 'All sections are hidden. Turn them on in settings.' });
 		for (const x of shown) {
 			const body = section(el, x, ctx);

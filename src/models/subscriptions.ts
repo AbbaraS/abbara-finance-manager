@@ -1,7 +1,6 @@
 import { addDays, daysBetween } from '../utils/dates';
 import type { FinanceSettings } from './FinanceSettings';
 import { setLabel, type Labels } from './Labels';
-import { guessPattern } from './guessCounterparty';
 import { NO_SUBSCRIPTION, PERIOD_DAYS, type Period, type Subscription } from './Subscription';
 import type { Transaction } from './Transaction';
 
@@ -55,57 +54,40 @@ export interface SubscriptionSummary {
 	total: number;       // spent so far, refunds taken off
 	month: number;       // spent in the shown month
 	paid: number;        // payments made, counting ones before your statements
+	ended: boolean;      // cancelled by then: no payments after the shown month (Overall: cancelled)
 	last: string;        // date of the latest payment, '' = none yet
 	next: string;        // when the next one is due, '' = not expected (cancelled or all paid)
 }
 
-// Every subscription with its payments, in your order.
-export function subscriptionSummaries(rows: Transaction[], labels: Labels, month: string, s: FinanceSettings): SubscriptionSummary[] {
-	return labels.subscriptions.map((sub) => {
-		const mine = rows.filter((t) => t.subscription === sub.name && t.currency === s.currency);
+// Every subscription with its payments, in your order. upTo: only payments up to the shown month, and only
+// subscriptions started by then; one cancelled later counts as running then.
+export function subscriptionSummaries(rows: Transaction[], labels: Labels, month: string, s: FinanceSettings, upTo: boolean): SubscriptionSummary[] {
+	return labels.subscriptions.flatMap((sub) => {
+		const all = rows.filter((t) => t.subscription === sub.name && t.currency === s.currency);
+		const mine = upTo ? all.filter((t) => t.month <= month) : all;
+		if (upTo && mine.length === 0) return [];
 		const payments = mine.filter((t) => t.amount < 0);
 		const latest = payments[payments.length - 1];
 		const paid = Math.max(sub.paidBefore, ...payments.map((t) => t.payment));
-		const done = sub.status === 'cancelled' || (sub.payments !== null && paid >= sub.payments);
-		return {
+		const ended = sub.status === 'cancelled' && mine.length === all.length;
+		const done = ended || (sub.payments !== null && paid >= sub.payments);
+		return [{
 			sub,
 			rows: [...mine].reverse(),
 			price: sub.amount ?? (latest ? -latest.amount : 0),
 			total: -mine.reduce((a, t) => a + t.amount, 0),
 			month: -mine.filter((t) => t.month === month).reduce((a, t) => a + t.amount, 0),
 			paid,
+			ended,
 			last: latest?.date ?? '',
 			next: latest && !done ? addDays(latest.date, PERIOD_DAYS[sub.period]) : '',
-		};
+		}];
 	});
 }
 
 // Roughly what the subscriptions still running cost a month.
 export function monthlyCost(list: SubscriptionSummary[]): number {
 	return list.filter((x) => x.next).reduce((a, x) => a + (x.price * PERIOD_DAYS.month) / PERIOD_DAYS[x.sub.period], 0);
-}
-
-// Spending that looks like a subscription without a name yet: the same merchant and amount in 3 or more months.
-export interface Repeat {
-	key: string;         // "TEXT|amount", what "Not a subscription" remembers
-	description: string; // the merchant part of the description
-	amount: number;      // cost of one payment
-	months: number;
-	rows: Transaction[];
-}
-
-// Unnamed repeats, most months first, except ones you hid.
-export function unnamedRepeats(rows: Transaction[], s: FinanceSettings): Repeat[] {
-	const groups = new Map<string, Transaction[]>();
-	for (const t of rows) {
-		if (t.subscription || t.amount >= 0 || t.kind !== 'spending' || t.currency !== s.currency) continue;
-		const key = `${guessPattern(t.description)}|${t.amount.toFixed(2)}`;
-		groups.set(key, [...(groups.get(key) ?? []), t]);
-	}
-	return [...groups]
-		.map(([key, list]) => ({ key, description: guessPattern(list[0].description), amount: -list[0].amount, months: new Set(list.map((t) => t.month)).size, rows: list }))
-		.filter((g) => g.months >= 3 && !s.hiddenRepeats.includes(g.key))
-		.sort((a, b) => b.months - a.months || b.amount - a.amount);
 }
 
 // Guesses how often payments repeat from the average gap between them.

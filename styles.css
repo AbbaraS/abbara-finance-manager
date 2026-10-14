@@ -34,6 +34,7 @@
 	border-radius: var(--radius-m);
 	background: var(--background-modifier-hover);
 }
+.afm-sub-view { display: inline-flex; margin-bottom: var(--size-4-3); }
 .afm-months { flex: 1 1 360px; display: grid; grid-template-columns: repeat(12, 1fr); }
 .afm-view .afm-tab {
 	height: auto;
@@ -692,15 +693,6 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 	font-weight: var(--font-semibold);
 	color: var(--text-muted);
 }
-.afm-repeat-buttons { display: flex; gap: var(--size-4-1); flex: none; }
-.afm-repeat {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--size-4-2);
-	padding: var(--size-4-1) 0;
-	border-bottom: 1px solid var(--background-modifier-border);
-}
 
 /* Settings: subcategory lists sit under their category or person. */
 .afm-subs { margin: 0 0 var(--size-4-2) var(--size-4-6); }
@@ -898,3 +890,54 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 }
 .afm-debt-chip.is-paid { color: color-mix(in srgb, var(--afm-c-green) 75%, var(--text-normal)); background: color-mix(in srgb, var(--afm-c-green) 14%, transparent); }
 .afm-view button.afm-add-debt { margin-top: var(--size-4-2); }
+
+/* Transfer links (dev): accounts in their own colours (--afm-acc), one box per account the money went into. */
+.afm-tl-bar { display: flex; gap: 2px; height: 10px; margin: var(--size-4-2) 0 var(--size-4-1); border-radius: var(--radius-s); overflow: hidden; }
+.afm-tl-bar > span { min-width: 4px; background: var(--afm-acc); }
+.afm-tl-legend { display: flex; flex-wrap: wrap; gap: var(--size-4-1) var(--size-4-3); margin-bottom: var(--size-4-3); font-size: var(--font-ui-smaller); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.afm-tl-legend > span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 5px; border-radius: 50%; background: var(--afm-acc); }
+.afm-tl-group {
+	position: relative;
+	margin-bottom: var(--size-4-3);
+	padding: var(--size-4-2) var(--size-4-3);
+	border-left: 3px solid var(--afm-acc);
+	border-radius: var(--radius-s);
+	background: color-mix(in srgb, var(--afm-acc) 6%, transparent);
+}
+.afm-tl-group.is-unlinked { opacity: 0.6; }
+.afm-tl-head { display: flex; align-items: center; gap: var(--size-4-2); margin-bottom: var(--size-4-1); }
+.afm-tl-head .afm-dot-icon { width: 28px; height: 28px; }
+.afm-tl-head .afm-dot-icon svg { width: 15px; height: 15px; }
+.afm-tl-total {
+	position: absolute;
+	top: var(--size-4-2);
+	right: var(--size-4-3);
+	font-size: var(--font-ui-medium);
+	font-weight: var(--font-semibold);
+	font-variant-numeric: tabular-nums;
+	color: color-mix(in srgb, var(--afm-acc) 70%, var(--text-normal));
+}
+.afm-tl-row {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto auto;
+	align-items: center;
+	gap: var(--size-4-1) var(--size-4-2);
+	padding: var(--size-4-2) 0;
+	border-top: 1px solid var(--background-modifier-border);
+}
+.afm-tl-row.afm-hidden { display: none; }
+.afm-tl-text .afm-muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--font-ui-smaller); }
+.afm-tl-name { font-weight: var(--font-semibold); color: color-mix(in srgb, var(--afm-from) 70%, var(--text-normal)); }
+.afm-tl-arrow { margin: 0 6px; color: var(--text-muted); }
+.afm-tl-other { color: color-mix(in srgb, var(--afm-acc) 70%, var(--text-normal)); }
+.afm-tl-amount { text-align: right; font-variant-numeric: tabular-nums; }
+.afm-tl-badge {
+	display: inline-block;
+	margin-top: 2px;
+	padding: 0 6px;
+	border-radius: 999px;
+	font-size: var(--font-ui-smaller);
+	color: color-mix(in srgb, var(--afm-acc) 70%, var(--text-normal));
+	background: color-mix(in srgb, var(--afm-acc) 16%, transparent);
+}
+.afm-view .afm-tl-btn { font-size: var(--font-ui-smaller); }

@@ -21,6 +21,8 @@ export interface Label {
 export interface Account {
 	name: string;  // use the name myFinances will give it, so its statements link up later
 	match: string; // text in a transfer's description that means this account, '' = none
+	color?: string; // dev database: named colour or "#hex", '' = guessed from the name
+	icon?: string;  // dev database: Lucide icon name, '' = guessed from the name
 }
 
 // Your own data, saved in the database (see data/Database.ts).

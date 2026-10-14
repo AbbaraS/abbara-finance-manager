@@ -11,6 +11,7 @@ import { peopleCards } from './sections/peopleCards';
 import { subscriptionTable } from './sections/subscriptionTable';
 import { summaryCards } from './sections/summaryCards';
 import { tagTable } from './sections/tagTable';
+import { transferLinks } from './sections/transferLinks';
 import { transfersTable } from './sections/transfersTable';
 import { uncategorisedList } from './sections/uncategorisedList';
 
@@ -27,6 +28,7 @@ export const SECTION_DRAWERS: Record<SectionId, (el: HTMLElement, ctx: Dashboard
 	subscriptions: subscriptionTable,
 	account: accountTable,
 	transfers: transfersTable,
+	transferLinks,
 	comparison,
 	uncategorised: uncategorisedList,
 };

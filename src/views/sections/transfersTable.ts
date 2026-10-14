@@ -48,8 +48,8 @@ export function transfersTable(body: HTMLElement, ctx: DashboardContext): void {
 		const first = tr.createEl('td').createDiv({ cls: 'afm-row-title' });
 		const icon = first.createSpan({ cls: 'afm-chevron' });
 		const pair = first.createDiv({ cls: 'afm-flow-pair' });
-		accountName(pair, f.left);
-		accountName(pair, f.right);
+		accountName(pair, f.left, ctx.labels.accounts);
+		accountName(pair, f.right, ctx.labels.accounts);
 
 		// Months shown, then the total.
 		const shown: FlowMonth = { there: 0, back: 0, rows: [] };

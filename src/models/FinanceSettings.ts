@@ -8,5 +8,5 @@ export interface FinanceSettings {
 	sectionOrder: string[];       // dashboard section ids in page order, [] = default
 	collapsedSections: string[];  // dashboard section ids showing only their title
 	shownCounterparties: string[]; // counterparty names in "Spending by counterparty"
-	hiddenRepeats: string[];      // "Look like subscriptions" you said aren't, as "TEXT|amount"
+	subscriptionsOverall: boolean; // Subscriptions section: every payment (true) or up to the shown month
 }

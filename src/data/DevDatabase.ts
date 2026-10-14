@@ -1,6 +1,6 @@
-import { existsSync, watch, type FSWatcher } from 'fs';
+import { appendFileSync, existsSync, watch, type FSWatcher } from 'fs';
 import { homedir } from 'os';
-import { basename, dirname, resolve } from 'path';
+import { basename, dirname, join, resolve } from 'path';
 import { debounce, FileSystemAdapter, Notice, type App } from 'obsidian';
 import { copyDefaultLabels } from '../defaults/defaultLabels';
 import type { CategoryKind } from '../models/Category';
@@ -11,7 +11,7 @@ import type { Period } from '../models/Subscription';
 import type { CategorySource, Transaction } from '../models/Transaction';
 import { UNKNOWN_ACCOUNT } from '../models/transferFlows';
 import { monthOf } from '../utils/dates';
-import { query } from './sqlite';
+import { query, run, sql } from './sqlite';
 
 // The dev database (dev-finance.db, rebuilt by `make dev` in myFinances), read only.
 // Python has already worked out every row (Result, Transfer, Refund, SubscriptionPayment), so nothing is categorised here.
@@ -26,11 +26,16 @@ interface CategoryRow { name: string; kind: CategoryKind | null; color: string; 
 interface RecipientRow { name: string; category: string | null; sub: string | null }
 interface SubscriptionRow {
 	id: number; name: string; recipient: string | null; amount: number | null; period: Period;
-	instalments_no: number | null; paid_before: number; last_date: string | null;
+	instalments_no: number | null; last_date: string | null;
 }
 interface DebtRow { id: number; person: string; date: string; amount: number; note: string; reason: string; transaction_id: string | null }
 type Pair = { a: string; b: string };
+type TransferRow = Pair & { status: TransferStatus };
 type Named = { name: string; owner: string };
+
+// A transfer pair: found by Python, linked by you ('confirmed') or unlinked by you ('rejected').
+export type TransferStatus = 'found' | 'confirmed' | 'rejected';
+export interface TransferLink { out: Transaction; into: Transaction; status: TransferStatus }
 
 // Result.why -> where the category came from, in the plugin's words.
 const SOURCES: Record<string, CategorySource> = {
@@ -43,6 +48,7 @@ const CATEGORY = (c: string, p: string) => `COALESCE(${p}.name, ${c}.name) AS ca
 export class DevDatabase {
 	labels: Labels = copyDefaultLabels();
 	rows: Transaction[] = []; // already worked out, oldest first
+	links: TransferLink[] = []; // every transfer pair in the loaded months, also ones you unlinked
 	error = '';               // why the file can't be used
 	private watcher: FSWatcher | null = null;
 
@@ -69,7 +75,31 @@ export class DevDatabase {
 			this.error = error;
 			this.labels = copyDefaultLabels();
 			this.rows = [];
+			this.links = [];
 		}
+	}
+
+	// Links two rows as one transfer, or unlinks them: changed in the database now, and added to dev-edits.sql
+	// next to it, so make dev does the same next time.
+	async editTransfer(action: 'link' | 'unlink', out: Transaction, into: Transaction): Promise<void> {
+		const file = this.file;
+		const [o, i] = [sql(out.id), sql(into.id)];
+		const transfers = "(SELECT id FROM Category WHERE kind = 'transfer' AND parent_id IS NULL ORDER BY position LIMIT 1)";
+		await run(file, action === 'link' ? [
+			`DELETE FROM Transfer WHERE status <> 'rejected' AND (out_id IN (${o}, ${i}) OR in_id IN (${o}, ${i}));`, // their old pairs
+			`INSERT INTO Transfer (out_id, in_id, status) VALUES (${o}, ${i}, 'confirmed') ON CONFLICT (out_id, in_id) DO UPDATE SET status = 'confirmed';`,
+			`UPDATE Result SET account_id = (SELECT account_id FROM Trans WHERE id = ${i}) WHERE transaction_id = ${o} AND why <> 'override';`,
+			`UPDATE Result SET account_id = (SELECT account_id FROM Trans WHERE id = ${o}) WHERE transaction_id = ${i} AND why <> 'override';`,
+			`UPDATE Result SET category_id = ${transfers}, person_id = NULL, recipient_id = NULL, why = 'transfer' WHERE transaction_id IN (${o}, ${i}) AND why NOT IN ('override', 'account');`,
+		] : [
+			`UPDATE Transfer SET status = 'rejected' WHERE out_id = ${o} AND in_id = ${i};`,
+			`UPDATE Result SET category_id = NULL, account_id = NULL, why = 'none' WHERE transaction_id IN (${o}, ${i}) AND why = 'transfer';`,
+		]);
+		const edits = join(dirname(file), 'dev-edits.sql');
+		const head = existsSync(edits) ? '' : '-- Your fixes from the dev dashboard. make dev replays them in this order (a later one wins); delete a line to undo it.\n';
+		const note = `${new Date().toISOString().slice(0, 10)}: ${out.account} ${out.amount} ${out.description} -> ${into.account} ${into.amount} ${into.description}`;
+		appendFileSync(edits, `${head}INSERT INTO EditTransfer VALUES ('${action}', ${o}, ${i}); -- ${note.replace(/\s+/g, ' ')}\n`);
+		await this.load();
 	}
 
 	// Turns the tables into your lists (Labels) and finished rows.
@@ -88,14 +118,14 @@ export class DevDatabase {
 			categories: tops.map((c) => ({ name: c.name, kind: c.kind as CategoryKind, color: c.color, icon: c.icon })),
 			subcategories: t.categories.filter((c) => c.parent).map((c) => ({ name: c.name, parent: c.parent ?? '', person: '' })),
 			people: t.people.map((p) => ({ name: p.name, category: people })),
-			accounts: t.accounts.map((a) => ({ name: a.name, match: '' })),
+			accounts: t.accounts.map((a) => ({ name: a.name, match: '', color: a.color, icon: a.icon })),
 			counterparties: t.recipients.map((r) => ({
 				name: r.name, patterns: patterns.get(r.name) ?? [], category: r.category ?? '', subcategory: r.sub ?? '', account: '', direction: '', tags: recipientTags.get(r.name) ?? [],
 			})),
 			types: [{ name: 'Subscription' }, { name: 'Instalments' }],
 			subscriptions: t.subscriptions.map((s) => ({
 				id: s.id, name: s.name, type: s.instalments_no === null ? 'Subscription' : 'Instalments', counterparty: s.recipient ?? '', match: '', amount: s.amount,
-				period: s.period, payments: s.instalments_no, paidBefore: s.paid_before, status: s.last_date ? 'cancelled' : '', // no last date = active
+				period: s.period, payments: s.instalments_no, paidBefore: 0, status: s.last_date ? 'cancelled' : '', // no last date = active
 				tags: subscriptionTags.get(s.name) ?? [],
 			})),
 			transactions: {},
@@ -111,7 +141,7 @@ export class DevDatabase {
 			const auto = [...(recipientTags.get(r.recipient ?? '') ?? []), ...(subscriptionTags.get(r.subscription ?? '') ?? [])];
 			const sub = subs.get(r.subscription ?? '');
 			let payment = 0;
-			if (sub && r.amount < 0) count.set(sub.name, payment = (count.get(sub.name) ?? sub.paid_before) + 1); // refunds aren't numbered
+			if (sub && r.amount < 0) count.set(sub.name, payment = (count.get(sub.name) ?? 0) + 1); // refunds aren't numbered
 			return {
 				id: r.id, date: r.date, month: monthOf(r.date), day: Number(r.date.slice(8, 10)), account: r.account, description: r.description,
 				counterparty: r.recipient ?? '', amount: r.amount, currency: r.currency,
@@ -125,11 +155,14 @@ export class DevDatabase {
 			};
 		});
 
-		// Pairs: transfers both ways, refunds with their purchase.
+		// Pairs: transfers both ways (not ones you unlinked), refunds with their purchase.
 		const byId = new Map(this.rows.map((r) => [r.id, r]));
-		for (const { a, b } of t.transfers) {
+		this.links = [];
+		for (const { a, b, status } of t.transfers) {
 			const out = byId.get(a), into = byId.get(b);
 			if (!out || !into) continue; // the other side is outside the loaded months
+			this.links.push({ out, into, status });
+			if (status === 'rejected') continue;
 			out.partner = into;
 			into.partner = out;
 		}
@@ -173,16 +206,16 @@ async function readAll(file: string) {
 			ORDER BY t.date, t.rowid`), // statement order within a day
 		get<CategoryRow>('SELECT c.name, c.kind, c.color, c.icon, p.name AS parent FROM Category c LEFT JOIN Category p ON p.id = c.parent_id ORDER BY c.position, c.id'),
 		get<{ name: string }>('SELECT name FROM Person ORDER BY name'),
-		get<{ name: string }>('SELECT name FROM Account ORDER BY position, id'),
+		get<{ name: string; color: string; icon: string }>('SELECT name, color, icon FROM Account ORDER BY position, id'),
 		get<RecipientRow>(`SELECT r.name, ${CATEGORY('c', 'p')} FROM Recipient r LEFT JOIN Category c ON c.id = r.category_id LEFT JOIN Category p ON p.id = c.parent_id ORDER BY r.name`),
 		get<Named>('SELECT p.text AS name, r.name AS owner FROM Pattern p JOIN Recipient r ON r.id = p.recipient_id ORDER BY p.id'),
-		get<SubscriptionRow>(`SELECT s.id, s.name, r.name AS recipient, s.amount, s.period, s.instalments_no, s.paid_before, s.last_date
+		get<SubscriptionRow>(`SELECT s.id, s.name, r.name AS recipient, s.amount, s.period, s.instalments_no, s.last_date
 			FROM Subscription s LEFT JOIN Recipient r ON r.id = s.recipient_id ORDER BY s.name`),
 		get<Named>(`SELECT tg.name, COALESCE('r:' || r.name, 's:' || s.name) AS owner FROM AutoTag at JOIN Tag tg ON tg.id = at.tag_id
 			LEFT JOIN Recipient r ON r.id = at.recipient_id LEFT JOIN Subscription s ON s.id = at.subscription_id`),
 		get<Named>('SELECT tg.name, tt.transaction_id AS owner FROM TransactionTag tt JOIN Tag tg ON tg.id = tt.tag_id'),
 		get<DebtRow>('SELECT d.id, pe.name AS person, d.date, d.amount, d.note, d.reason, d.transaction_id FROM Debt d JOIN Person pe ON pe.id = d.person_id ORDER BY d.date, d.id'),
-		get<Pair>("SELECT out_id AS a, in_id AS b FROM Transfer WHERE status <> 'rejected'"),
+		get<TransferRow>('SELECT out_id AS a, in_id AS b, status FROM Transfer'),
 		get<Pair>("SELECT purchase_id AS a, refund_id AS b FROM Refund WHERE status <> 'rejected'"),
 	]);
 	return { trans, categories, people, accounts, recipients, patterns, subscriptions, autoTags, handTags, debts, transfers, refunds };

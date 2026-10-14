@@ -11,6 +11,7 @@ export const SECTIONS = [
 	{ id: 'subscriptions', name: 'Subscriptions', icon: 'repeat' },
 	{ id: 'account', name: 'Spending by account', icon: 'landmark' },
 	{ id: 'transfers', name: 'Transfers between accounts', icon: 'arrow-left-right' },
+	{ id: 'transferLinks', name: 'Transfer links', icon: 'link', dev: true }, // dev dashboard only
 	{ id: 'comparison', name: 'Compared with last month', icon: 'git-compare-arrows' },
 	{ id: 'uncategorised', name: 'Uncategorised', icon: 'circle-help' },
 ] as const;

@@ -2,8 +2,7 @@ import { Notice, Setting } from 'obsidian';
 import { PERIOD_LABELS, STATUS_LABELS, type Period, type Subscription, type SubscriptionStatus } from '../../models/Subscription';
 import { addSubscription, deleteSubscription, deleteType, renameSubscription, renameType } from '../../models/subscriptions';
 import { countLabel } from '../../utils/countLabel';
-import { formatMoney, parseMoney } from '../../utils/money';
-import { setIconSafe } from '../../views/look/setIconSafe';
+import { parseMoney } from '../../utils/money';
 import { tagInput } from '../../edit/tagInput';
 import { tagNames } from '../../models/Labels';
 import { collapsible } from '../collapsible';
@@ -53,21 +52,6 @@ export function subscriptionsSection(el: HTMLElement, ctx: SettingsContext): voi
 		ctx.saveAndRedraw();
 	}));
 
-	// Look-alikes you said aren't subscriptions, as chips; × shows one on the dashboard again.
-	const st = ctx.plugin.settings;
-	if (st.hiddenRepeats.length === 0) return;
-	const hidden = new Setting(el).setName('Not subscriptions').setDesc('Hidden from "Look like subscriptions". Remove one to see it there again.');
-	const chips = hidden.descEl.createDiv({ cls: 'afm-chips' });
-	for (const key of st.hiddenRepeats) {
-		const [text, amount] = key.split('|');
-		const chip = chips.createSpan({ cls: 'afm-tag', text: `${text} · ${formatMoney(-Number(amount), st)}` });
-		const remove = chip.createSpan({ cls: 'afm-tag-remove', attr: { 'aria-label': 'Show again' } });
-		setIconSafe(remove, 'x');
-		remove.addEventListener('click', () => {
-			st.hiddenRepeats = st.hiddenRepeats.filter((k) => k !== key);
-			ctx.saveAndRedraw();
-		});
-	}
 }
 
 // One subscription: name, type, counterparty, extra text, amount, how often, out of, paid before, status, tags, delete.

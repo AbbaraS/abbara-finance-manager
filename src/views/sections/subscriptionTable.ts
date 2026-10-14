@@ -1,53 +1,38 @@
 import { setTooltip } from 'obsidian';
 import { sum } from '../../models/monthSummary';
 import { STATUS_LABELS, type Period, type SubscriptionStatus } from '../../models/Subscription';
-import { monthlyCost, subscriptionSummaries, unnamedRepeats, type SubscriptionSummary } from '../../models/subscriptions';
-import { countLabel } from '../../utils/countLabel';
-import { dayLabel } from '../../utils/dates';
+import { monthlyCost, subscriptionSummaries, type SubscriptionSummary } from '../../models/subscriptions';
+import { dayLabel, monthLabel } from '../../utils/dates';
 import { formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
 import { expandable } from './expandable';
-import { showMore } from './showMore';
 import { tableHead } from './tableHead';
 import { rowName } from './rowName';
 
 // "£2.99 a month".
 const PER: Record<Period, string> = { week: 'a week', month: 'a month', quarter: 'every 3 months', year: 'a year' };
 
-// Order: to cancel first, then active, then cancelled.
-const RANK: Record<SubscriptionStatus, number> = { cancel: 0, '': 1, cancelled: 2 };
-
-// How many look-alikes show before "Show more".
-const LIMIT = 5;
+// Order: to cancel first, then running, then cancelled (by the shown month).
+const rank = (x: SubscriptionSummary) => (x.ended ? 2 : x.sub.status === 'cancel' ? 0 : 1);
 
 // Your subscriptions and instalments: price, payments so far, this month and in total; click one for its payments.
-// Below, spending that repeats like a subscription but has no name yet.
+// Up to the shown month (as they were then) or Overall (every payment), remembered in settings.
 export function subscriptionTable(body: HTMLElement, ctx: DashboardContext): void {
 	const s = ctx.settings;
-	const list = subscriptionSummaries(ctx.rows, ctx.labels, ctx.month, s).sort((a, b) => RANK[a.sub.status] - RANK[b.sub.status]);
-	if (list.length === 0) body.createDiv({ cls: 'afm-muted', text: 'None yet. Name one from a payment\'s edit window, or from the list below.' });
-	else subscriptionList(body, list, ctx);
-
-	// Look-alikes without a name.
-	const repeats = unnamedRepeats(ctx.rows, s);
-	if (repeats.length === 0) return;
-	body.createDiv({ cls: 'afm-subhead', text: 'Look like subscriptions' });
-	const rows = repeats.map((r) => {
-		const line = body.createDiv({ cls: 'afm-repeat' });
-		const text = line.createDiv();
-		text.createDiv({ text: r.description });
-		text.createDiv({ cls: 'afm-muted', text: `${formatMoney(r.amount, s)} · ${countLabel(r.rows.length, 'payment')} in ${countLabel(r.months, 'month')}` });
-		const buttons = line.createDiv({ cls: 'afm-repeat-buttons' });
-		const hide = buttons.createEl('button', { text: 'Not a subscription' });
-		setTooltip(hide, 'Hide it from this list. Bring it back in settings, under Subscriptions.');
-		hide.addEventListener('click', () => {
-			s.hiddenRepeats.push(r.key);
+	const tabs = body.createDiv({ cls: 'afm-years afm-sub-view', attr: { role: 'tablist', 'aria-label': 'Subscriptions shown' } });
+	for (const [text, overall] of [[`Up to ${monthLabel(ctx.month, s.locale)}`, false], ['Overall', true]] as const) {
+		const tab = tabs.createEl('button', { cls: 'afm-tab', text, attr: { role: 'tab', 'aria-selected': String(overall === s.subscriptionsOverall) } });
+		tab.toggleClass('is-active', overall === s.subscriptionsOverall);
+		tab.addEventListener('click', () => {
+			if (overall === s.subscriptionsOverall) return;
+			s.subscriptionsOverall = overall;
 			ctx.saveSettings();
 		});
-		buttons.createEl('button', { text: 'Name it' }).addEventListener('click', () => ctx.editCategory(r.rows, false, true));
-		return line;
-	});
-	showMore(body, rows, LIMIT);
+	}
+
+	const list = subscriptionSummaries(ctx.rows, ctx.labels, ctx.month, s, !s.subscriptionsOverall).sort((a, b) => rank(a) - rank(b));
+	if (list.length > 0) subscriptionList(body, list, ctx);
+	else body.createDiv({ cls: 'afm-muted', text: s.subscriptionsOverall ? 'None yet. Name one from a payment\'s edit window.' : 'No subscription payments up to this month.' });
 }
 
 // The table of named subscriptions.
@@ -64,12 +49,13 @@ function subscriptionList(body: HTMLElement, list: SubscriptionSummary[], ctx: D
 	const tbody = table.createEl('tbody');
 	for (const x of list) {
 		const tr = tbody.createEl('tr');
-		tr.toggleClass('afm-not-income', x.sub.status === 'cancelled'); // faded
+		tr.toggleClass('afm-not-income', x.ended); // faded
 		const cell = tr.createEl('td');
 		const title = cell.createDiv({ cls: 'afm-row-title' });
 		const icon = title.createSpan({ cls: 'afm-chevron' });
 		title.createSpan({ cls: 'afm-strong', text: x.sub.name });
-		statusSelect(title, x, ctx);
+		if (x.sub.status === 'cancelled' && !x.ended) title.createSpan({ cls: 'afm-muted', text: 'cancelled later' }); // still running in the shown month
+		else statusSelect(title, x, ctx);
 		const when = [x.last && `last ${dayLabel(x.last, s.locale)}`, x.next && `next ${dayLabel(x.next, s.locale)}`].filter(Boolean);
 		cell.createDiv({ cls: 'afm-muted afm-indent-chevron', text: [x.sub.type, `${formatMoney(x.price, s)} ${PER[x.sub.period]}`, ...when].filter(Boolean).join(' · ') });
 

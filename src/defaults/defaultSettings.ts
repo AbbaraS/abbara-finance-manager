@@ -10,7 +10,7 @@ export const DEFAULT_SETTINGS: FinanceSettings = {
 	sectionOrder: [],
 	collapsedSections: [],
 	shownCounterparties: [],
-	hiddenRepeats: [],
+	subscriptionsOverall: false,
 };
 
 // A fresh copy of the defaults.
