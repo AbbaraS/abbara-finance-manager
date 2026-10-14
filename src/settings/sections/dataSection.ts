@@ -8,7 +8,7 @@ export function dataSection(el: HTMLElement, ctx: SettingsContext): void {
 
 	new Setting(el)
 		.setName('Database file')
-		.setDesc('The finance.db made by myFinances (transactions, categories, counterparties and your labels): a full path, ~/... or a path inside the vault.')
+		.setDesc('The data/finance.db in myFinances (statements, your lists and edits). After each save the plugin runs its rules (make rules). A full path, ~/... or a path inside the vault.')
 		.addText((t) => {
 			t.setPlaceholder('~/source/myFinances/data/finance.db').setValue(s.dbFile);
 			// Only on Enter / leaving the field, so half-typed paths aren't opened.
@@ -17,18 +17,6 @@ export function dataSection(el: HTMLElement, ctx: SettingsContext): void {
 				await ctx.plugin.saveData(s);
 				await ctx.plugin.openDatabase();
 				ctx.redraw();
-			});
-		});
-
-	new Setting(el)
-		.setName('Dev database file')
-		.setDesc('The dev-finance.db made by make dev (the new structure). Opened read only by the "Open dev dashboard" command, to compare with the one above.')
-		.addText((t) => {
-			t.setPlaceholder('~/source/myFinances/data/dev-finance.db').setValue(s.devDbFile);
-			t.inputEl.addEventListener('change', async () => {
-				s.devDbFile = t.getValue().trim();
-				await ctx.plugin.saveData(s);
-				await ctx.plugin.openDevDatabase();
 			});
 		});
 

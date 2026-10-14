@@ -1,26 +1,27 @@
+import { execFile } from 'child_process';
 import { existsSync, statSync, watch, type FSWatcher } from 'fs';
 import { homedir } from 'os';
-import { basename, dirname, resolve } from 'path';
+import { basename, dirname, join, resolve } from 'path';
 import { debounce, FileSystemAdapter, Notice, type App } from 'obsidian';
 import { copyDefaultLabels } from '../defaults/defaultLabels';
-import { syncLists } from '../models/categories';
-import { categorise } from '../models/categorise';
 import type { Labels } from '../models/Labels';
 import type { Transaction } from '../models/Transaction';
-import { run } from './sqlite';
-import { labelStatements, readIds, readTables, readVersion, resultKey, resultStatement } from './tables';
+import { run, sql } from './sqlite';
+import { fillIds, labelStatements, readTables, readVersion, type TransferLink } from './tables';
 
 // Database version this plugin understands (PRAGMA user_version, set by myFinances db.py).
-export const DB_VERSION = 10;
+export const DB_VERSION = 1;
 
-// Your finance database (SQLite, made by myFinances): transactions come from Python, your labels from here.
+// Your finance database (data/finance.db in myFinances). Python fills the statements and works out every row
+// (build.py); here you edit your lists and decisions. After each save the rules run again (build.py --rules).
 export class Database {
 	labels: Labels = copyDefaultLabels();
-	rows: Transaction[] = []; // every transaction, not yet categorised
-	error = '';               // why the file can't be used; nothing is written while set
-	private saved = new Map<string, string>(); // transaction id -> worked-out category as saved (resultKey)
-	private ownWrite = 0;     // file time after our last write, so the watcher skips our own changes
-	private writing = 0;      // writes running now
+	rows: Transaction[] = [];   // worked out by Python, oldest first
+	links: TransferLink[] = []; // every transfer pair, also ones you unlinked
+	error = '';                 // why the file can't be used; nothing is written while set
+	private queue: Promise<void> = Promise.resolve(); // saves, one after another
+	private writing = 0;        // saves running now; the watcher waits for them
+	private ownWrite = 0;       // file time after our last save, so the watcher skips it
 	private watcher: FSWatcher | null = null;
 
 	constructor(private app: App, private setting: () => string) {}
@@ -39,11 +40,11 @@ export class Database {
 			if (!file) throw new Error('set the database file in settings');
 			if (!existsSync(file)) throw new Error(`there's no file at ${file}. Run make in myFinances`);
 			const version = await readVersion(file);
-			if (version !== DB_VERSION) throw new Error(`it's version ${version}, this plugin uses ${DB_VERSION}. Run make in myFinances to upgrade it`);
-			const tables = await readTables(file);
-			this.labels = tables.labels;
-			this.rows = tables.rows;
-			this.saved = tables.saved;
+			if (version !== DB_VERSION) throw new Error(`it's version ${version}, this plugin uses ${DB_VERSION}. Run make in myFinances`);
+			const t = await readTables(file);
+			this.labels = t.labels;
+			this.rows = t.rows;
+			this.links = t.links;
 			this.error = '';
 		} catch (e) {
 			const error = `Finance: can't use the database: ${(e as Error).message}.`;
@@ -51,45 +52,50 @@ export class Database {
 			this.error = error;
 			this.labels = copyDefaultLabels();
 			this.rows = [];
-			return;
-		}
-
-		// A new database starts with the default categories, subcategories and counterparties; otherwise save only what changed (new rows).
-		if (this.labels.categories.length > 0) return this.save(false);
-		const { categories, subcategories, counterparties } = copyDefaultLabels();
-		this.labels = { ...this.labels, categories, subcategories, counterparties };
-		await this.save();
-	}
-
-	// Writes your labels, then each row's worked-out category where it changed. With `always` off, only when something did.
-	async save(always = true): Promise<void> {
-		if (this.error) return void (always && new Notice('Finance: not saved, the database can\'t be used.'));
-		const done = categorise(this.rows, this.labels);
-		const listed = syncLists(this.labels, done); // subcategories and people in use get rows too
-		const changed = new Map<string, string>();
-		const results: string[] = [];
-		for (const t of done) {
-			const key = resultKey(t);
-			if (this.saved.get(t.id) === key) continue;
-			changed.set(t.id, key);
-			results.push(resultStatement(t));
-		}
-		if (!always && !listed && results.length === 0) return;
-
-		this.writing++;
-		try {
-			await run(this.file, [...labelStatements(this.labels), ...results]);
-			this.ownWrite = statSync(this.file).mtimeMs;
-			changed.forEach((key, id) => this.saved.set(id, key));
-			await readIds(this.file, this.labels);
-		} catch (e) {
-			new Notice(`Finance: not saved: ${(e as Error).message}`, 0);
-		} finally {
-			this.writing--;
+			this.links = [];
 		}
 	}
 
-	// Reloads when another program (myFinances, a SQLite app) changes the file, then calls onChange.
+	// Writes your lists and decisions, runs the rules, then reads the rows again (your lists stay the same objects).
+	save(): Promise<void> {
+		return this.write(labelStatements(this.labels));
+	}
+
+	// Links two rows as one transfer, or unlinks them, then runs the rules.
+	editTransfer(action: 'link' | 'unlink', out: Transaction, into: Transaction): Promise<void> {
+		const [o, i] = [sql(out.id), sql(into.id)];
+		return this.write(action === 'link' ? [
+			`DELETE FROM Transfer WHERE status <> 'rejected' AND (out_id IN (${o}, ${i}) OR in_id IN (${o}, ${i}));`, // their old pairs
+			`INSERT INTO Transfer (out_id, in_id, status) VALUES (${o}, ${i}, 'confirmed') ON CONFLICT (out_id, in_id) DO UPDATE SET status = 'confirmed';`,
+		] : [
+			`INSERT INTO Transfer (out_id, in_id, status) VALUES (${o}, ${i}, 'rejected') ON CONFLICT (out_id, in_id) DO UPDATE SET status = 'rejected';`,
+		]);
+	}
+
+	// Runs SQL, then the rules, then reads the rows again. One save at a time.
+	private write(statements: string[]): Promise<void> {
+		this.queue = this.queue.then(async () => {
+			if (this.error) return void new Notice('Finance: not saved, the database can\'t be used.');
+			const file = this.file;
+			this.writing++;
+			try {
+				await run(file, statements);
+				await runRules(file);
+				const t = await readTables(file);
+				fillIds(this.labels, t.labels);
+				this.rows = t.rows;
+				this.links = t.links;
+				this.ownWrite = statSync(file).mtimeMs;
+			} catch (e) {
+				new Notice(`Finance: not saved: ${(e as Error).message}`, 0);
+			} finally {
+				this.writing--;
+			}
+		});
+		return this.queue;
+	}
+
+	// Reloads when another program (make in myFinances, a SQLite app) changes the file, then calls onChange.
 	watch(onChange: () => void): void {
 		this.close();
 		const file = this.file;
@@ -97,7 +103,7 @@ export class Database {
 		const reload = debounce(async () => { await this.load(); onChange(); }, 500, true);
 		this.watcher = watch(dirname(file), (_, name) => {
 			if (name !== basename(file) || this.writing > 0) return;
-			if (existsSync(file) && statSync(file).mtimeMs === this.ownWrite) return; // our own write
+			if (existsSync(file) && statSync(file).mtimeMs === this.ownWrite) return; // our own save
 			reload();
 		});
 	}
@@ -107,4 +113,15 @@ export class Database {
 		this.watcher?.close();
 		this.watcher = null;
 	}
+}
+
+// Runs myFinances' rules on the file: python -m finances.build --rules, from the project the file is in (<project>/data/finance.db).
+function runRules(file: string): Promise<void> {
+	const root = dirname(dirname(file));
+	const python = join(root, '.venv', 'bin', 'python');
+	if (!existsSync(python)) return Promise.reject(new Error(`no Python at ${python}. Run make in myFinances once`));
+	return new Promise((resolve, reject) => {
+		execFile(python, ['-m', 'finances.build', '--rules', '--db', file], { cwd: root, env: { ...process.env, FINANCES_RUN: 'obsidian' }, maxBuffer: 16 * 1024 * 1024 },
+			(err, _out, errText) => (err ? reject(new Error(errText.trim().split('\n').pop() || err.message)) : resolve()));
+	});
 }

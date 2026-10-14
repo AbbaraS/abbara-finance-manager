@@ -1,8 +1,6 @@
-import { REFUND } from './categorise';
 import { KIND_ICONS, type Category, type CategoryKind, type Subcategory } from './Category';
 import { COLOR_NAMES } from './colors';
 import { setLabel, type Labels } from './Labels';
-import { addPerson } from './people';
 import type { Transaction } from './Transaction';
 
 // Finding, adding, renaming and deleting categories and subcategories in your labels.
@@ -72,21 +70,3 @@ function usesSub(l: { category?: string; sub?: string; person?: string }, s: Sub
 }
 
 // Adds subcategories and people that counterparties, labels or rows use but the lists don't have yet,
-// and drops ones whose category or person is gone. Returns true when the lists changed.
-export function syncLists(labels: Labels, rows: Transaction[]): boolean {
-	const before = JSON.stringify([labels.subcategories, labels.people]);
-	const kinds = new Map(labels.categories.map((c) => [c.name, c.kind]));
-	labels.people = labels.people.filter((p) => kinds.get(p.category) === 'people');
-	labels.subcategories = labels.subcategories.filter((s) => kinds.has(s.parent) && (!s.person || labels.people.some((p) => p.name === s.person)));
-
-	const use = (category: string, sub = '', person = '') => {
-		if (!kinds.has(category)) return;
-		const who = kinds.get(category) === 'people' ? person : '';
-		if (who) addPerson(labels, who, category);
-		if (sub && sub !== REFUND) addSubcategory(labels, category, sub, who); // Refund is only shown, not saved
-	};
-	for (const r of labels.counterparties) if (r.category) use(r.category, r.subcategory, r.person);
-	for (const l of Object.values(labels.transactions)) if (l.category) use(l.category, l.sub, l.person);
-	for (const t of rows) use(t.category, t.subcategory, t.person);
-	return JSON.stringify([labels.subcategories, labels.people]) !== before;
-}

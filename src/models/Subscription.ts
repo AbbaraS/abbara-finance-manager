@@ -1,8 +1,8 @@
 // How often a subscription is paid.
 export type Period = 'week' | 'month' | 'quarter' | 'year';
 
-// Where a subscription stands: '' active, 'cancel' = remember to cancel it, 'cancelled'.
-export type SubscriptionStatus = '' | 'cancel' | 'cancelled';
+// Where a subscription stands: '' active, 'cancelled' (the database keeps its last payment's date).
+export type SubscriptionStatus = '' | 'cancelled';
 
 // A kind of regular payment: Subscription, Instalments...
 export interface SubscriptionType {
@@ -36,4 +36,4 @@ export const PERIOD_LABELS: Record<Period, string> = { week: 'Weekly', month: 'M
 export const PERIOD_DAYS: Record<Period, number> = { week: 7, month: 30.44, quarter: 91.31, year: 365.25 };
 
 // Badge text for each status.
-export const STATUS_LABELS: Record<SubscriptionStatus, string> = { '': 'Active', cancel: 'Cancel!', cancelled: 'Cancelled' };
+export const STATUS_LABELS: Record<SubscriptionStatus, string> = { '': 'Active', cancelled: 'Cancelled' };

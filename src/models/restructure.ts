@@ -1,6 +1,6 @@
 import { addCategory, findCategory, subcategoriesOf, addSubcategory } from './categories';
 import type { CategoryKind, Subcategory } from './Category';
-import { categorise, REFUND } from './categorise';
+import { REFUND } from './categorise';
 import { setLabel, type Labels } from './Labels';
 import type { Transaction } from './Transaction';
 
@@ -59,11 +59,11 @@ function makePlace(labels: Labels, to: Place, kind: CategoryKind): void {
 }
 
 // Moves rows to the place `map` gives (undefined = leave), by rewriting counterparties and one-off edits.
-// Rows those don't carry over (e.g. a subcategory set on a counterparty's row) get a one-off edit.
+// Python works the rows out again after the save.
 function moveRows(labels: Labels, raw: Transaction[], map: (p: Place) => Place | undefined): void {
 	const placeOf = (t: Transaction): Place => ({ category: t.category, sub: t.subcategory === REFUND ? '' : t.subcategory });
 	const want = new Map<string, Place>();
-	for (const t of categorise(raw, labels)) {
+	for (const t of raw) {
 		const to = map(placeOf(t));
 		if (to) want.set(t.id, to);
 	}
@@ -77,9 +77,9 @@ function moveRows(labels: Labels, raw: Transaction[], map: (p: Place) => Place |
 		if (to) setLabel(labels, id, { category: to.category, sub: to.sub, person: '' });
 	}
 
-	for (const t of categorise(raw, labels)) {
+	// Rows that got here another way (a person's spellings, by hand with no category): a one-off edit.
+	for (const t of raw) {
 		const to = want.get(t.id);
-		const now = placeOf(t);
-		if (to && (now.category !== to.category || now.sub !== to.sub)) setLabel(labels, t.id, { category: to.category, sub: to.sub, person: '' });
+		if (to && (t.source === 'person' || t.source === 'none')) setLabel(labels, t.id, { category: to.category, sub: to.sub, person: '' });
 	}
 }

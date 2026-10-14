@@ -906,21 +906,28 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 }
 .afm-tl-group.is-unlinked { opacity: 0.6; }
 .afm-tl-head { display: flex; align-items: center; gap: var(--size-4-2); margin-bottom: var(--size-4-1); }
+.afm-tl-title { flex: 1; min-width: 0; }
+.afm-tl-wrap { container-type: inline-size; }
+.afm-tl-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--size-4-3); margin-bottom: var(--size-4-3); align-items: start; }
+@container (max-width: 620px) { .afm-tl-cards { grid-template-columns: minmax(0, 1fr); } }
+.afm-tl-cards .afm-tl-group { margin-bottom: 0; }
+.afm-tl-card.is-dragging { opacity: 0.4; }
+.afm-tl-card.is-drop { outline: 2px dashed var(--afm-acc); outline-offset: 2px; }
+.afm-tl-grip { cursor: grab; color: var(--text-faint); display: inline-flex; }
+.afm-tl-grip svg { width: 14px; height: 14px; }
+.afm-tl-left { text-align: right; font-variant-numeric: tabular-nums; font-weight: var(--font-semibold); line-height: 1.2; }
+.afm-tl-left .afm-muted { font-weight: normal; font-size: var(--font-ui-smaller); }
+.afm-tl-left.is-up { color: color-mix(in srgb, var(--afm-c-green) 75%, var(--text-normal)); }
+.afm-tl-left.is-down { color: color-mix(in srgb, var(--afm-c-red) 75%, var(--text-normal)); }
+.afm-tl-sent { margin: 0 0 var(--size-4-1); font-size: var(--font-ui-smaller); }
+.afm-tl-none { padding: var(--size-4-2) 0; font-size: var(--font-ui-smaller); border-top: 1px solid var(--background-modifier-border); }
 .afm-tl-head .afm-dot-icon { width: 28px; height: 28px; }
 .afm-tl-head .afm-dot-icon svg { width: 15px; height: 15px; }
-.afm-tl-total {
-	position: absolute;
-	top: var(--size-4-2);
-	right: var(--size-4-3);
-	font-size: var(--font-ui-medium);
-	font-weight: var(--font-semibold);
-	font-variant-numeric: tabular-nums;
-	color: color-mix(in srgb, var(--afm-acc) 70%, var(--text-normal));
-}
 .afm-tl-row {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr) auto auto;
 	align-items: center;
+	font-size: var(--font-ui-small);
 	gap: var(--size-4-1) var(--size-4-2);
 	padding: var(--size-4-2) 0;
 	border-top: 1px solid var(--background-modifier-border);
@@ -940,4 +947,4 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 	color: color-mix(in srgb, var(--afm-acc) 70%, var(--text-normal));
 	background: color-mix(in srgb, var(--afm-acc) 16%, transparent);
 }
-.afm-view .afm-tl-btn { font-size: var(--font-ui-smaller); }
+.afm-view .afm-tl-btn { padding: var(--size-2-2); }

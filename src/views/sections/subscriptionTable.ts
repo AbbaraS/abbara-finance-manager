@@ -12,8 +12,8 @@ import { rowName } from './rowName';
 // "£2.99 a month".
 const PER: Record<Period, string> = { week: 'a week', month: 'a month', quarter: 'every 3 months', year: 'a year' };
 
-// Order: to cancel first, then running, then cancelled (by the shown month).
-const rank = (x: SubscriptionSummary) => (x.ended ? 2 : x.sub.status === 'cancel' ? 0 : 1);
+// Order: running, then cancelled (by the shown month).
+const rank = (x: SubscriptionSummary) => (x.ended ? 1 : 0);
 
 // Your subscriptions and instalments: price, payments so far, this month and in total; click one for its payments.
 // Up to the shown month (as they were then) or Overall (every payment), remembered in settings.

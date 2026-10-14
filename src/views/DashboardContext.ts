@@ -1,5 +1,5 @@
 import type { App } from 'obsidian';
-import type { TransferLink } from '../data/DevDatabase';
+import type { TransferLink } from '../data/tables';
 import type { FinanceSettings } from '../models/FinanceSettings';
 import type { Debt } from '../models/debts';
 import type { Label, Labels } from '../models/Labels';
@@ -24,11 +24,6 @@ export interface DashboardContext {
 	save: () => void;                                                // saves your labels and redraws
 	saveSettings: () => void;                                        // saves settings only (order, collapsed) and redraws
 	saveLabel: (t: Transaction, patch: Label) => void;               // changes one label, saves and redraws
-	transfers: DevTransfers | null;                                  // dev dashboard only
-}
-
-// Transfer pairs in the dev database, and linking / unlinking them (saved to dev-edits.sql).
-export interface DevTransfers {
-	links: TransferLink[];
-	edit: (action: 'link' | 'unlink', out: Transaction, into: Transaction) => void;
+	links: TransferLink[];                                           // every transfer pair, also ones you unlinked
+	editTransfer: (action: 'link' | 'unlink', out: Transaction, into: Transaction) => void; // saves, runs the rules, redraws
 }

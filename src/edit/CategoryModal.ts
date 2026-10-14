@@ -1,7 +1,6 @@
 import { App, Modal, Notice, Setting } from 'obsidian';
 import type FinancePlugin from '../main';
 import { applyCategory } from '../models/applyCategory';
-import { categorise } from '../models/categorise';
 import { setLabel } from '../models/Labels';
 import { KEEP_COUNTERPARTY, KEEP_SUBSCRIPTION, NEW_SUBSCRIPTION, type CategoryChoice } from '../models/CategoryChoice';
 import { findCounterparty } from '../models/counterparties';
@@ -86,12 +85,13 @@ export class CategoryModal extends Modal {
 		const labels = this.plugin.db.labels;
 		const now = labels.transactions[refund]?.notRefundOf ?? [];
 		setLabel(labels, refund, { notRefundOf: unlink ? [...new Set([...now, purchase])] : now.filter((id) => id !== purchase) });
-		void this.plugin.save();
-		this.rows = categorise(this.plugin.db.rows, labels);
-		const byId = new Map(this.rows.map((t) => [t.id, t]));
-		this.picked = this.picked.map((t) => byId.get(t.id) ?? t);
-		new Notice(unlink ? 'Unlinked: no longer counted as its refund.' : 'Linked again where it still fits.');
-		this.draw();
+		void this.plugin.save().then(() => {
+			this.rows = this.plugin.db.rows;
+			const byId = new Map(this.rows.map((t) => [t.id, t]));
+			this.picked = this.picked.map((t) => byId.get(t.id) ?? t);
+			new Notice(unlink ? 'Unlinked: no longer counted as its refund.' : 'Linked again where it still fits.');
+			this.draw();
+		});
 	}
 
 	// Checks the form, writes to your labels and closes.

@@ -1,7 +1,6 @@
 import { App, debounce, PluginSettingTab } from 'obsidian';
 import type FinancePlugin from '../main';
 import { accountNames } from '../models/accountNames';
-import { categorise } from '../models/categorise';
 import type { SettingsContext } from './context';
 import { accountsSection } from './sections/accountsSection';
 import { categoriesSection } from './sections/categoriesSection';
@@ -35,7 +34,7 @@ export class FinanceSettingTab extends PluginSettingTab {
 			saveAndRedraw: () => { void plugin.save(); this.display(); },
 			redraw: () => this.display(),
 			open: this.open,
-			rows: categorise(raw, plugin.db.labels),
+			rows: raw,
 			accounts: accountNames(raw, plugin.db.labels.accounts),
 		};
 

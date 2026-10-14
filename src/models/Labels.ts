@@ -1,6 +1,6 @@
 import type { Category, Subcategory } from './Category';
 import type { Person } from './people';
-import type { Counterparty } from './Counterparty';
+import type { Counterparty, Direction } from './Counterparty';
 import type { Debt } from './debts';
 import type { Subscription, SubscriptionType } from './Subscription';
 
@@ -17,15 +17,23 @@ export interface Label {
 	notRefundOf?: string[]; // money in: ids of purchases it was unlinked from, so it isn't paired with them again
 }
 
-// One of your accounts. Accounts in the data appear by themselves; add others so transfers to them aren't "Unknown".
+// One of your accounts, in your order. Ones with statements come from myFinances; add others so transfers to them have a home.
 export interface Account {
-	name: string;  // use the name myFinances will give it, so its statements link up later
-	match: string; // text in a transfer's description that means this account, '' = none
-	color?: string; // dev database: named colour or "#hex", '' = guessed from the name
-	icon?: string;  // dev database: Lucide icon name, '' = guessed from the name
+	id?: number;               // database id, empty until first saved
+	name: string;              // shown everywhere; rename freely
+	color: string;             // named colour or "#hex", '' = guessed from the name
+	icon: string;              // Lucide icon name, '' = guessed from the name
+	patterns: AccountPattern[]; // text that means a transaction is a transfer to/from this account
 }
 
-// Your own data, saved in the database (see data/Database.ts).
+// Text in a description that points at one of your accounts (e.g. its sort code).
+export interface AccountPattern {
+	text: string;
+	inAccount: string;   // only in this account's statements, '' = any
+	direction: Direction; // '' = money in and out
+}
+
+// Your lists and decisions, saved in the database (see data/tables.ts).
 // Keyed by the ids myFinances writes, so labels survive re-imports.
 export interface Labels {
 	categories: Category[];
