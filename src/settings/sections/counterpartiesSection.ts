@@ -19,26 +19,26 @@ const DIRECTIONS: Record<Direction, string> = { '': 'In or out', in: 'Money in',
 // Dropdown value that asks for a new subcategory's name.
 const NEW_SUB = '\u0000new';
 
-// Counterparties: who transactions are with, collapsed, with a filter and edit fields.
+// Recipients: who transactions are with, collapsed, with a filter and edit fields.
 export function counterpartiesSection(el: HTMLElement, ctx: SettingsContext): void {
 	const labels = ctx.plugin.db.labels;
 	new Setting(el)
-		.setName('Counterparties')
-		.setDesc('Who a transaction is with (a shop, service or employer); its name is shown instead of the description. Found by its spellings, one per line, checked top to bottom: the first match wins. With a category, its transactions get it too; one-off edits beat it. Its tags go on every transaction it finds. Add spellings from the edit window with "Remember for this counterparty".')
+		.setName('Recipients')
+		.setDesc('Who a transaction is with (a shop, service or employer); its name is shown instead of the description. Found by its spellings, one per line, checked top to bottom: the first match wins. With a category, its transactions get it too; one-off edits beat it. Its tags go on every transaction it finds. Add spellings from the edit window with "Remember for this recipient".')
 		.setHeading();
 
 	// Collapsed list, so it doesn't push the rest of the page down.
-	const list = collapsible(el, ctx, 'counterparties', `Show ${countLabel(labels.counterparties.length, 'counterparty', 'counterparties')}`);
+	const list = collapsible(el, ctx, 'recipients', `Show ${countLabel(labels.counterparties.length, 'recipient', 'recipients')}`);
 
 	// Filter + add.
 	const rows: { el: HTMLElement; text: string }[] = [];
 	new Setting(list)
-		.addSearch((q) => q.setPlaceholder('Filter counterparties').onChange((v) => {
+		.addSearch((q) => q.setPlaceholder('Filter recipients').onChange((v) => {
 			const f = v.trim().toLowerCase();
 			rows.forEach((r) => r.el.toggleClass('afm-hidden', !r.text.includes(f)));
 		}))
 		.addButton((b) => b.setButtonText('Add').onClick(() => {
-			labels.counterparties.unshift({ name: uniqueName(labels, 'New counterparty'), patterns: [], category: '', subcategory: '', account: '', direction: '' });
+			labels.counterparties.unshift({ name: uniqueName(labels, 'New recipient'), patterns: [], category: '', subcategory: '', account: '', direction: '' });
 			ctx.saveAndRedraw();
 		}));
 
@@ -110,14 +110,22 @@ function counterpartyRow(el: HTMLElement, cp: Counterparty, i: number, used: num
 	caption(setting, 'Money');
 	tagInput(ctx.app, setting.controlEl, cp.tags ?? [], tagNames(labels), (tags) => { cp.tags = tags; ctx.save(); });
 	caption(setting, 'Tags');
+	// Name rows by their bank description instead (a settings choice, not saved in the database).
+	const s = ctx.plugin.settings;
+	setting.addToggle((t) => t.setValue(s.describedRecipients.includes(cp.name)).setTooltip('Show each transaction\'s bank description as its name, e.g. Apple.com, where the app isn\'t known')
+		.onChange((on) => {
+			s.describedRecipients = on ? [...new Set([...s.describedRecipients, cp.name])] : s.describedRecipients.filter((n) => n !== cp.name);
+			ctx.save();
+		}));
+	caption(setting, 'Show description');
 	setting
 		.addExtraButton((b) => b.setIcon('arrow-up').setTooltip('Move up').setDisabled(i === 0)
 			.onClick(() => move(all, i, -1, ctx)))
 		.addExtraButton((b) => b.setIcon('arrow-down').setTooltip('Move down').setDisabled(i === all.length - 1)
 			.onClick(() => move(all, i, 1, ctx)))
-		.addExtraButton((b) => b.setIcon('git-merge').setTooltip('Merge into another counterparty (its spellings move there)')
+		.addExtraButton((b) => b.setIcon('git-merge').setTooltip('Merge into another recipient (its spellings move there)')
 			.onClick(() => new MergeModal(ctx.app, cp, ctx).open()));
-	confirmDelete(setting, 'Delete counterparty', () => {
+	confirmDelete(setting, 'Delete recipient', () => {
 		shownSwap(ctx, cp.name, '');
 		deleteCounterparty(labels, cp);
 		ctx.saveAndRedraw();
@@ -163,10 +171,12 @@ function move(list: Counterparty[], i: number, step: number, ctx: SettingsContex
 	ctx.saveAndRedraw();
 }
 
-// Keeps "Counterparties on the dashboard" in step: `from` becomes `to`, or is dropped when `to` is empty.
+// Keeps "Recipients on the dashboard" and "Show description" in step: `from` becomes `to`, or is dropped when `to` is empty.
 function shownSwap(ctx: SettingsContext, from: string, to: string): void {
 	const s = ctx.plugin.settings;
-	s.shownCounterparties = [...new Set(s.shownCounterparties.map((n) => (n === from ? to : n)).filter(Boolean))];
+	const swap = (list: string[]) => [...new Set(list.map((n) => (n === from ? to : n)).filter(Boolean))];
+	s.shownCounterparties = swap(s.shownCounterparties);
+	s.describedRecipients = swap(s.describedRecipients);
 }
 
 // Picker for the counterparty to merge into; the other one keeps its name, category and conditions.

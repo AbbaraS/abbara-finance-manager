@@ -1,6 +1,7 @@
 import { App, debounce, PluginSettingTab } from 'obsidian';
 import type FinancePlugin from '../main';
 import { accountNames } from '../models/accountNames';
+import { foldable } from './collapsible';
 import type { SettingsContext } from './context';
 import { accountsSection } from './sections/accountsSection';
 import { categoriesSection } from './sections/categoriesSection';
@@ -40,14 +41,15 @@ export class FinanceSettingTab extends PluginSettingTab {
 
 		const scroll = el.scrollTop;
 		el.empty();
-		dataSection(el, ctx);
-		sectionsSection(el, ctx);
-		categoriesSection(el, ctx);
-		peopleSection(el, ctx);
-		subscriptionsSection(el, ctx);
-		accountsSection(el, ctx);
-		counterpartiesSection(el, ctx);
-		editsSection(el, ctx);
+		// Each block folds under its heading.
+		foldable(el, ctx, 'block:data', dataSection);
+		foldable(el, ctx, 'block:sections', sectionsSection);
+		foldable(el, ctx, 'block:categories', categoriesSection);
+		foldable(el, ctx, 'block:people', peopleSection);
+		foldable(el, ctx, 'block:subscriptions', subscriptionsSection);
+		foldable(el, ctx, 'block:accounts', accountsSection);
+		foldable(el, ctx, 'block:recipients', counterpartiesSection);
+		foldable(el, ctx, 'block:edits', editsSection);
 		el.scrollTop = scroll;
 	}
 }

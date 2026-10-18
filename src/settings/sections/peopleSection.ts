@@ -12,7 +12,7 @@ export function peopleSection(el: HTMLElement, ctx: SettingsContext): void {
 	const homes = labels.categories.filter((c) => c.kind === 'people').map((c) => c.name);
 	new Setting(el)
 		.setName('People')
-		.setDesc('Each person is found by their spellings, one per line (checked before counterparties), and has their own subcategories, e.g. Mum: Allowance. New people and spellings can also be added from the edit window.')
+		.setDesc('Each person is found by their spellings, one per line (checked before recipients), and has their own subcategories, e.g. Mum: Allowance. New people and spellings can also be added from the edit window.')
 		.setHeading();
 	if (homes.length === 0) return void el.createDiv({ cls: 'afm-note', text: 'Make a category of the People kind first.' });
 

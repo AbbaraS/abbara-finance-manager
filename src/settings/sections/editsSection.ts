@@ -7,7 +7,7 @@ import { collapsible } from '../collapsible';
 import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
 
-// One-off categories (made with "Remember for this counterparty" off), with undo per edit or all at once.
+// One-off categories (made with "Remember for this recipient" off), with undo per edit or all at once.
 export function editsSection(el: HTMLElement, ctx: SettingsContext): void {
 	const s = ctx.plugin.settings;
 	const labels = ctx.plugin.db.labels;
@@ -18,7 +18,7 @@ export function editsSection(el: HTMLElement, ctx: SettingsContext): void {
 
 	const heading = new Setting(el)
 		.setName('One-off edits')
-		.setDesc(`${countLabel(keys.length, 'edit')}. Removing one lets its counterparty decide again.`)
+		.setDesc(`${countLabel(keys.length, 'edit')}. Removing one lets its recipient decide again.`)
 		.setHeading();
 	if (keys.length === 0) return;
 	const undo = (key: string) => setLabel(labels, key, { category: '', sub: '', person: '' }); // keeps note and tags
@@ -33,7 +33,7 @@ export function editsSection(el: HTMLElement, ctx: SettingsContext): void {
 	let left = keys.length;
 	const counts = () => {
 		summary.setText(`Show ${countLabel(left, 'edit')}`);
-		heading.setDesc(`${countLabel(left, 'edit')}. Removing one lets its counterparty decide again.`);
+		heading.setDesc(`${countLabel(left, 'edit')}. Removing one lets its recipient decide again.`);
 	};
 	counts();
 

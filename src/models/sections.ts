@@ -6,7 +6,7 @@ export const SECTIONS = [
 	{ id: 'moneyIn', name: 'Income', icon: 'hand-coins' },
 	{ id: 'category', name: 'Spending by category', icon: 'shopping-cart' },
 	{ id: 'people', name: 'People', icon: 'users' },
-	{ id: 'counterparty', name: 'Spending by counterparty', icon: 'store' },
+	{ id: 'counterparty', name: 'Spending by recipient', icon: 'store' },
 	{ id: 'tags', name: 'Spending by tag', icon: 'hash' },
 	{ id: 'subscriptions', name: 'Subscriptions', icon: 'repeat' },
 	{ id: 'account', name: 'Spending by account', icon: 'landmark' },

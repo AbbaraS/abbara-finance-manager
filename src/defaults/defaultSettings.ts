@@ -9,6 +9,7 @@ export const DEFAULT_SETTINGS: FinanceSettings = {
 	sectionOrder: [],
 	collapsedSections: [],
 	shownCounterparties: [],
+	describedRecipients: ['Apple.com'],
 	subscriptionsOverall: false,
 };
 

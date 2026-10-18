@@ -27,11 +27,11 @@ export function sectionsSection(el: HTMLElement, ctx: SettingsContext): void {
 				}));
 	});
 
-	// Counterparties for "Spending by counterparty", as removable chips.
+	// Recipients for "Spending by recipient", as removable chips.
 	const names = ctx.plugin.db.labels.counterparties.map((c) => c.name);
 	const setting = new Setting(el)
-		.setName('Counterparties on the dashboard')
-		.setDesc('Only these show in "Spending by counterparty".')
+		.setName('Recipients on the dashboard')
+		.setDesc('Only these show in "Spending by recipient".')
 		.addButton((b) => b.setButtonText('Add').onClick(() => new PickModal(ctx.app, names.filter((n) => !s.shownCounterparties.includes(n)), (name) => {
 			s.shownCounterparties.push(name);
 			ctx.saveAndRedraw();
@@ -54,7 +54,7 @@ export function sectionsSection(el: HTMLElement, ctx: SettingsContext): void {
 class PickModal extends FuzzySuggestModal<string> {
 	constructor(app: App, private names: string[], private onPick: (name: string) => void) {
 		super(app);
-		this.setPlaceholder('Show which counterparty?');
+		this.setPlaceholder('Show which recipient?');
 	}
 
 	getItems(): string[] { return [...this.names].sort((a, b) => a.localeCompare(b)); }

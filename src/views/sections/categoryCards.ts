@@ -2,7 +2,7 @@ import { groupSpending, type SpendGroup } from '../../models/groupSpending';
 import { sum } from '../../models/monthSummary';
 import { spendOf } from '../../models/rowKind';
 import { countLabel } from '../../utils/countLabel';
-import { formatMoney } from '../../utils/money';
+import { formatChange, formatMoney } from '../../utils/money';
 import { formatPercent } from '../../utils/percent';
 import type { DashboardContext } from '../DashboardContext';
 import { categoryLook } from '../look/categoryLook';
@@ -11,6 +11,7 @@ import { shareBar } from './shareBar';
 import { subRows } from './subRows';
 
 // Spending by category as a grid of cards, biggest first, each listing its subcategories. People have their own section.
+// Amounts are signed like the bank: − money out, + money back.
 export function categoryCards(body: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const s = ctx.settings;
@@ -28,7 +29,7 @@ export function categoryCards(body: HTMLElement, ctx: DashboardContext): void {
 	// Total, and what went to people on top.
 	const foot = body.createDiv({ cls: 'afm-grid-foot' });
 	foot.createSpan({ text: 'Total' });
-	foot.createSpan({ cls: 'afm-strong', text: formatMoney(sum(groups.map((g) => g.total)), s) });
+	foot.createSpan({ cls: 'afm-strong', text: formatChange(-sum(groups.map((g) => g.total)), s) });
 	if (toPeople !== 0) body.createDiv({ cls: 'afm-note', text: `Plus ${formatMoney(toPeople, s)} sent to people (see People). Both count in Spending.` });
 }
 
@@ -46,8 +47,8 @@ function categoryCard(grid: HTMLElement, g: SpendGroup, ctx: DashboardContext): 
 	const ids = new Set(g.rows.map((t) => t.id));
 	const shown = g.rows.filter((t) => !(t.refundOf && ids.has(t.refundOf.id))).length; // refunds listed under their purchase don't count again
 	title.createDiv({ cls: 'afm-muted', text: `${countLabel(shown)} · ${formatPercent(g.share)}` });
-	top.createDiv({ cls: 'afm-group-total', text: formatMoney(g.total, s) });
+	top.createDiv({ cls: 'afm-group-total', text: formatChange(-g.total, s) });
 	shareBar(card, g.share, look.color);
 
-	subRows(card, g.rows, `cat:${g.key}`, ctx, (t) => spendOf(t, s), (v) => formatMoney(v, s));
+	subRows(card, g.rows, `cat:${g.key}`, ctx, (t) => t.amount, (v) => formatChange(v, s));
 }

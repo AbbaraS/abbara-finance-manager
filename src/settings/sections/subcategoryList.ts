@@ -65,7 +65,7 @@ function moveWindow(ctx: SettingsContext, s: Subcategory, used: number, del = fa
 		title: `${del ? 'Delete' : 'Move'} ${s.parent} › ${s.name}`,
 		desc: del
 			? `${used} transactions use it. Keep them in ${s.parent} without a subcategory, or move them somewhere else.`
-			: `Its ${used} transactions and counterparties go with it. Pick a subcategory to merge into, or a category to drop the subcategory.`,
+			: `Its ${used} transactions and recipients go with it. Pick a subcategory to merge into, or a category to drop the subcategory.`,
 		button: del ? 'Delete' : 'Move',
 		warning: del,
 		choices,

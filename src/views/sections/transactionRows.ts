@@ -20,7 +20,7 @@ export function transactionRows(tbody: HTMLElement, rows: Transaction[], ctx: Da
 		tr.setCssProps({ '--afm-depth': String(depth) });
 		const cell = tr.createEl('td');
 		const name = cell.createDiv({ cls: 'afm-item-name' });
-		rowName(name, t);
+		rowName(name, t, s);
 		if (faded) refundBadge(name, t, ctx);
 		const details = cell.createDiv();
 		const meta = details.createDiv({ cls: 'afm-meta' });

@@ -13,7 +13,7 @@ export function noteLine(parent: HTMLElement, t: Transaction, ctx: DashboardCont
 	line.addEventListener('click', (e) => e.stopPropagation()); // typing tags doesn't open the row
 
 	// Tags: inherited ones, then its own (plain, or the tag box while editing).
-	for (const tag of t.autoTags) line.createSpan({ cls: 'afm-tag afm-tag-auto', text: `#${tag}`, attr: { title: 'From its counterparty or subscription' } });
+	for (const tag of t.autoTags) line.createSpan({ cls: 'afm-tag afm-tag-auto', text: `#${tag}`, attr: { title: 'From its recipient or subscription' } });
 	if (open) {
 		const input = tagInput(ctx.app, line, t.tags, tagNames(ctx.labels), (tags) => ctx.saveLabel(t, { tags }));
 		window.setTimeout(() => input.focus(), 0);

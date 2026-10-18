@@ -17,7 +17,7 @@ export function uncategorisedList(body: HTMLElement, ctx: DashboardContext): voi
 		body.createDiv({ cls: 'afm-muted', text: 'Everything is categorised this month.' });
 		return;
 	}
-	body.createDiv({ cls: 'afm-note', text: 'Pick a category for one. Tick several to give them one category and subcategory at once, as one-off edits (no counterparty made). Turn on "Remember" in the window for places you go back to.' });
+	body.createDiv({ cls: 'afm-note', text: 'Pick a category for one. Tick several to give them one category and subcategory at once, as one-off edits (no recipient made). Turn on "Remember" in the window for places you go back to.' });
 
 	// Bulk bar: how many are ticked, and a button to edit them together.
 	const picked = new Set<UncategorisedGroup>();
@@ -70,7 +70,7 @@ export function uncategorisedList(body: HTMLElement, ctx: DashboardContext): voi
 	showMore(body, rows, LIMIT);
 }
 
-// "Remember for this counterparty" starts on only for one place seen more than once; mixed or one-off picks are one-off edits.
+// "Remember for this recipient" starts on only for one place seen more than once; mixed or one-off picks are one-off edits.
 function remembers(groups: UncategorisedGroup[]): boolean {
 	return groups.length === 1 && groups[0].rows.length > 1;
 }

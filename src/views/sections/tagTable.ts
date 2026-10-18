@@ -20,7 +20,7 @@ export function tagTable(body: HTMLElement, ctx: DashboardContext): void {
 	const tags = new Map<string, Transaction[]>();
 	for (const t of spent) for (const tag of new Set([...t.tags, ...t.autoTags])) tags.set(tag, [...(tags.get(tag) ?? []), t]);
 	if (tags.size === 0) {
-		body.createDiv({ cls: 'afm-muted', text: 'No tagged spending this month. Add tags to a transaction, a counterparty or a subscription.' });
+		body.createDiv({ cls: 'afm-muted', text: 'No tagged spending this month. Add tags to a transaction, a recipient or a subscription.' });
 		return;
 	}
 	const groups = [...tags].map(([tag, rows]) => ({ tag, rows, total: sum(rows.map((t) => spendOf(t, s))) })).sort((a, b) => b.total - a.total);

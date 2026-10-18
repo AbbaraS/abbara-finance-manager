@@ -15,7 +15,7 @@ export function subscriptionsSection(el: HTMLElement, ctx: SettingsContext): voi
 	const labels = ctx.plugin.db.labels;
 	new Setting(el)
 		.setName('Subscriptions')
-		.setDesc('A payment gets a subscription when it\'s with its counterparty and, if set, has its amount and extra text. When two fit, the one due nearest the date wins. The category still comes from the counterparty. Name new ones from the edit window.')
+		.setDesc('A payment gets a subscription when it\'s with its recipient and, if set, has its amount and extra text. When two fit, the one due nearest the date wins. The category still comes from the recipient. Name new ones from the edit window.')
 		.setHeading();
 
 	// Types.
@@ -60,7 +60,7 @@ function subscriptionRow(el: HTMLElement, sub: Subscription, ctx: SettingsContex
 	const used = ctx.rows.filter((t) => t.subscription === sub.name).length;
 	const row = new Setting(el)
 		.setClass('afm-wrap')
-		.setDesc(sub.counterparty || sub.match ? countLabel(used, 'payment') : 'No counterparty or text: matches nothing (only payments you pick)')
+		.setDesc(sub.counterparty || sub.match ? countLabel(used, 'payment') : 'No recipient or text: matches nothing (only payments you pick)')
 		.addText((t) => {
 			t.setPlaceholder('Name').setValue(sub.name);
 			t.inputEl.addEventListener('change', () => {
@@ -77,14 +77,14 @@ function subscriptionRow(el: HTMLElement, sub: Subscription, ctx: SettingsContex
 			d.setValue(sub.type).onChange((v) => { sub.type = v; ctx.save(); });
 		})
 		.addDropdown((d) => {
-			d.addOption('', 'No counterparty');
+			d.addOption('', 'No recipient');
 			for (const cp of [...labels.counterparties].sort((a, b) => a.name.localeCompare(b.name))) d.addOption(cp.name, cp.name);
 			d.setValue(sub.counterparty).onChange((v) => { sub.counterparty = v; ctx.saveAndRedraw(); });
 		})
 		.addText((t) => {
 			t.setPlaceholder(sub.counterparty ? 'Also contains (optional)' : 'Description contains').setValue(sub.match)
 				.onChange((v) => { sub.match = v.trim(); ctx.save(); });
-			t.inputEl.title = 'Text in the description. With a counterparty, only needed to tell apart two plans at the same price.';
+			t.inputEl.title = 'Text in the description. With a recipient, only needed to tell apart two plans at the same price.';
 		})
 		.addText((t) => t.setPlaceholder('Any amount').setValue(sub.amount === null ? '' : sub.amount.toFixed(2))
 			.onChange((v) => { sub.amount = parseMoney(v); ctx.save(); }))
@@ -101,7 +101,7 @@ function subscriptionRow(el: HTMLElement, sub: Subscription, ctx: SettingsContex
 		})
 		.addDropdown((d) => d.addOptions(STATUS_LABELS).setValue(sub.status).onChange((v) => { sub.status = v as SubscriptionStatus; ctx.save(); }));
 	tagInput(ctx.app, row.controlEl, sub.tags ?? [], tagNames(labels), (tags) => { sub.tags = tags; ctx.save(); });
-	captions(row, ['Name', 'Type', 'Counterparty', sub.counterparty ? 'Also contains' : 'Description contains', 'Price', 'Every', 'Payments in total', 'Paid before statements', 'Status', 'Tags']);
+	captions(row, ['Name', 'Type', 'Recipient', sub.counterparty ? 'Also contains' : 'Description contains', 'Price', 'Every', 'Payments in total', 'Paid before statements', 'Status', 'Tags']);
 	row.nameEl.setText(sub.name);
 	confirmDelete(row, 'Delete subscription (its payments stay, without a name)', () => {
 		deleteSubscription(labels, sub.name);

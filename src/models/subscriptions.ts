@@ -45,6 +45,35 @@ export function subscriptionSummaries(rows: Transaction[], labels: Labels, month
 	});
 }
 
+// Payments filed under a "Subscriptions" subcategory that no subscription claimed, by recipient (else description).
+export interface LooseSubscription {
+	name: string;
+	rows: Transaction[]; // payments and their refunds, newest first
+	paid: number;        // payments
+	total: number;       // spent, refunds taken off
+	month: number;       // spent in the shown month
+}
+
+// Everything categorised as a subscription without one, so it still shows in the Subscriptions section.
+// Refunds go with their purchase; a refund of a named subscription's payment stays out (it's that subscription's).
+export function looseSubscriptions(rows: Transaction[], month: string, s: FinanceSettings, upTo: boolean): LooseSubscription[] {
+	const keyOf = (t: Transaction) => t.counterparty || t.description;
+	const groups = new Map<string, Transaction[]>();
+	for (const t of rows) {
+		if (t.subscription || t.currency !== s.currency || t.kind !== 'spending' || (upTo && t.month > month)) continue;
+		const base = t.amount > 0 ? t.refundOf : t;
+		if (!base || base.subscription || base.subcategory.toLowerCase() !== 'subscriptions') continue;
+		groups.set(keyOf(base), [...(groups.get(keyOf(base)) ?? []), t]);
+	}
+	return [...groups].map(([name, list]) => ({
+		name,
+		rows: [...list].reverse(),
+		paid: list.filter((t) => t.amount < 0).length,
+		total: -list.reduce((a, t) => a + t.amount, 0),
+		month: -list.filter((t) => t.month === month).reduce((a, t) => a + t.amount, 0),
+	})).sort((a, b) => b.total - a.total);
+}
+
 // Roughly what the subscriptions still running cost a month.
 export function monthlyCost(list: SubscriptionSummary[]): number {
 	return list.filter((x) => x.next).reduce((a, x) => a + (x.price * PERIOD_DAYS.month) / PERIOD_DAYS[x.sub.period], 0);

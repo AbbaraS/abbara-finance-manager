@@ -3,7 +3,7 @@ import { fullyRefunded, keptOf } from '../../models/linkRefunds';
 import type { FinanceSettings } from '../../models/FinanceSettings';
 import type { Transaction } from '../../models/Transaction';
 import { dayLabel } from '../../utils/dates';
-import { formatMoney, formatTidy } from '../../utils/money';
+import { formatChange, formatMoney, formatTidy } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
 import { setIconSafe } from '../look/setIconSafe';
 import { refundBadge } from './refundBadge';
@@ -19,11 +19,11 @@ export function transactionItem(parent: HTMLElement, t: Transaction, ctx: Dashbo
 	const item = parent.createDiv({ cls: `afm-item${faded ? ' is-refunded' : ''}`, attr: { tabindex: '0', role: 'button' } });
 	const top = item.createDiv({ cls: 'afm-item-top' });
 	const name = top.createDiv({ cls: 'afm-item-name' });
-	rowName(name, t);
+	rowName(name, t, s);
 	if (faded) refundBadge(name, t, ctx);
-	const money = top.createDiv({ cls: 'afm-item-amount' });
+	const money = top.createDiv({ cls: `afm-item-amount${t.amount > 0 ? ' afm-flow-in' : ''}` }); // money in in the income colour
 	money.createSpan({ cls: t.refunds.length ? 'afm-struck' : '', text: amount });
-	if (t.refunds.length && !faded) money.createDiv({ cls: 'afm-item-kept', text: formatMoney(keptOf(t), s) });
+	if (t.refunds.length && !faded) money.createDiv({ cls: 'afm-item-kept', text: formatChange(-keptOf(t), s) });
 
 	// Date, account and the rest.
 	const details = item.createDiv({ cls: 'afm-item-details' });
@@ -44,7 +44,7 @@ export function transactionItem(parent: HTMLElement, t: Transaction, ctx: Dashbo
 	for (const r of merged) {
 		const line = details.createDiv({ cls: 'afm-refund-line' });
 		setIconSafe(line.createSpan({ cls: 'afm-note-icon' }), 'undo-2');
-		line.createSpan({ text: `${formatMoney(r.amount, s)} back · ${dayLabel(r.date, s.locale)}` });
+		line.createSpan({ text: `${formatChange(r.amount, s)} back · ${dayLabel(r.date, s.locale)}` });
 	}
 
 	// Click: edit, or for a faded one show / hide its details (remembered across redraws).

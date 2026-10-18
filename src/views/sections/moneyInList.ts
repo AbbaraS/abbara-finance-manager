@@ -33,7 +33,7 @@ export function moneyInList(body: HTMLElement, ctx: DashboardContext): void {
 	for (const t of newestFirst(rows)) {
 		const tr = tbody.createEl('tr', { cls: 'afm-clickable' });
 		const cell = tr.createEl('td');
-		rowName(cell, t);
+		rowName(cell, t, s);
 		cell.createDiv({ cls: 'afm-muted', text: `${dayLabel(t.date, s.locale)} · ${t.account}` });
 		noteLine(cell, t, ctx);
 		categoryButton(tr.createEl('td', { cls: 'afm-chip-cell' }), t, ctx);

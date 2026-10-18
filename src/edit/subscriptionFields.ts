@@ -27,7 +27,7 @@ export function subscriptionFields(el: HTMLElement, c: CategoryChoice, labels: L
 	const found = picked.length === 1 ? picked[0].subscription : '';
 	new Setting(el)
 		.setName('Subscription')
-		.setDesc('Found by counterparty and price. Pick one here if a payment got the wrong one.')
+		.setDesc('Found by recipient and price. Pick one here if a payment got the wrong one.')
 		.addDropdown((d) => {
 			if (picked.length > 1) d.addOption(KEEP_SUBSCRIPTION, 'Keep as they are');
 			d.addOption('', `Automatic (${found || 'none'})`);
@@ -50,7 +50,7 @@ export function subscriptionFields(el: HTMLElement, c: CategoryChoice, labels: L
 		d.setValue(n.type).onChange((v) => (n.type = v));
 	});
 	new Setting(el)
-		.setName('Counterparty')
+		.setName('Recipient')
 		.setDesc('Its payments at the amount below get this subscription.')
 		.addDropdown((d) => {
 			d.addOption('', 'None (use the text below)');
@@ -59,7 +59,7 @@ export function subscriptionFields(el: HTMLElement, c: CategoryChoice, labels: L
 		});
 	new Setting(el)
 		.setName(n.counterparty ? 'Description also contains' : 'Description contains')
-		.setDesc(n.counterparty ? 'Optional. Only to tell apart two plans with the same counterparty and price.' : 'Payments with this text and amount get this subscription.')
+		.setDesc(n.counterparty ? 'Optional. Only to tell apart two plans with the same recipient and price.' : 'Payments with this text and amount get this subscription.')
 		.addText((t) => t.setValue(n.match).onChange((v) => (n.match = v)));
 	new Setting(el)
 		.setName('Amount')

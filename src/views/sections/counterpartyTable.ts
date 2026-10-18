@@ -17,19 +17,19 @@ export function counterpartyTable(body: HTMLElement, ctx: DashboardContext): voi
 	// Data.
 	const picked = ctx.settings.shownCounterparties;
 	if (picked.length === 0) {
-		body.createDiv({ cls: 'afm-muted', text: 'Pick the counterparties to show in settings, under Dashboard sections.' });
+		body.createDiv({ cls: 'afm-muted', text: 'Pick the recipients to show in settings, under Dashboard sections.' });
 		return;
 	}
 	const groups = groupSpending(ctx.rows, ctx.month, ctx.settings, (t) => t.counterparty).filter((g) => picked.includes(g.key));
 	if (groups.length === 0) {
-		body.createDiv({ cls: 'afm-muted', text: 'No spending with your picked counterparties this month.' });
+		body.createDiv({ cls: 'afm-muted', text: 'No spending with your picked recipients this month.' });
 		return;
 	}
 
 	// Table.
 	const table = body.createEl('table', { cls: 'afm-table' });
 	tableHead(table, [
-		{ text: 'Counterparty' },
+		{ text: 'Recipient' },
 		{ text: 'Share', cls: 'afm-bar-cell' },
 		{ text: 'Amount', cls: 'afm-num' },
 		{ text: '%', cls: 'afm-num' },

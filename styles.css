@@ -485,6 +485,22 @@ button.afm-badge.is-edited { border-style: dashed; } /* one-off edit */
 	font-size: var(--font-ui-small);
 }
 
+/* Subscriptions section: payments in a Subscriptions category that no subscription claims. */
+.afm-table tr.afm-loose-head td { padding-top: var(--size-4-3); color: var(--text-muted); font-size: var(--font-ui-smaller); font-weight: var(--font-semibold); text-transform: uppercase; letter-spacing: 0.04em; }
+.afm-table tr.afm-loose .afm-row-title { gap: var(--size-4-2); }
+.afm-view .afm-loose button.afm-item-edit { height: auto; padding: 0 8px; font-size: var(--font-ui-smaller); }
+
+/* Settings blocks: the heading folds everything under it (settings/collapsible.ts foldable). */
+.afm-block-head { cursor: pointer; border-radius: var(--radius-s); }
+.afm-block-head:hover { background: var(--background-modifier-hover); }
+.afm-block-head:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
+.afm-block-head .setting-item-name { display: flex; align-items: center; gap: var(--size-4-1); }
+.afm-block-chevron { display: inline-flex; color: var(--text-muted); transition: transform 120ms ease; }
+.afm-block-chevron svg { width: 16px; height: 16px; }
+.afm-block.is-open .afm-block-chevron { transform: rotate(90deg); }
+.afm-block:not(.is-open) .afm-block-body,
+.afm-block:not(.is-open) .afm-block-head .setting-item-description { display: none; }
+
 /* Colour names (see models/colors.ts). Steps from the validated data-viz palette, per theme. */
 body {
 	--afm-c-blue: #2a78d6;

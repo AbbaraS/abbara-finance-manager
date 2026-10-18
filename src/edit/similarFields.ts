@@ -10,13 +10,13 @@ import type { Transaction } from '../models/Transaction';
 import { counterpartyPreviewText } from './counterpartyPreviewText';
 import { directionOf } from './directionOf';
 
-// "Remember for this counterparty" toggle and its fields, with a live count when it's on.
-// When it's off, a counterparty can be picked by hand for rows its spellings don't find.
+// "Remember for this recipient" toggle and its fields, with a live count when it's on.
+// When it's off, a recipient can be picked by hand for rows its spellings don't find.
 export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels, picked: Transaction[], rows: Transaction[], redraw: () => void): void {
 	if (findCategory(labels, c.category.trim())?.kind === 'people') return personFields(el, c, labels, rows, redraw);
 	const names = labels.counterparties.map((x) => x.name).sort((a, b) => a.localeCompare(b));
 	new Setting(el)
-		.setName('Remember for this counterparty')
+		.setName('Remember for this recipient')
 		.setDesc('Saves who this is (e.g. Uber), so other months and new statements get the same name and category.')
 		.addToggle((t) => t.setValue(c.similar).onChange((v) => { c.similar = v; redraw(); }));
 
@@ -25,7 +25,7 @@ export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels
 		if (names.length === 0) return;
 		const found = picked.length === 1 ? labels.counterparties.find((x) => counterpartyMatches(x, picked[0]))?.name : '';
 		new Setting(el)
-			.setName('Counterparty')
+			.setName('Recipient')
 			.setDesc('Only needed when its spellings don\'t find this transaction.')
 			.addDropdown((d) => {
 				if (picked.length > 1) d.addOption(KEEP_COUNTERPARTY, 'Leave as it is');
@@ -47,9 +47,9 @@ export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels
 	new Setting(el)
 		.setName('Save as')
 		.setDesc(moves ? `${c.addTo!.name} is in ${c.addTo!.category} now; it moves to ${c.category.trim() || 'the category above'}.`
-			: 'Add spellings (UBER, UBR) to a counterparty you already have, or make a new one.')
+			: 'Add spellings (UBER, UBR) to a recipient you already have, or make a new one.')
 		.addDropdown((d) => {
-			d.addOption('', 'New counterparty');
+			d.addOption('', 'New recipient');
 			for (const n of names) d.addOption(n, `Add to ${n}`);
 			d.setValue(c.addTo?.name ?? '');
 			d.onChange((v) => {

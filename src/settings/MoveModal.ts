@@ -26,7 +26,7 @@ export class MoveModal extends Modal {
 
 		let pick = o.start ?? 0;
 		let keepSubs = true;
-		new Setting(el).setName('Move transactions and counterparties to').addDropdown((d) => {
+		new Setting(el).setName('Move transactions and recipients to').addDropdown((d) => {
 			o.choices.forEach((c, i) => d.addOption(String(i), c.label));
 			d.setValue(String(pick)).onChange((v) => (pick = Number(v)));
 		});

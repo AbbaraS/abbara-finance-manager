@@ -43,7 +43,7 @@ export function categoriesSection(el: HTMLElement, ctx: SettingsContext): void {
 				.onChange((v) => { c.kind = v as CategoryKind; ctx.saveAndRedraw(); }));
 		// People categories just delete; others can move, merge or delete into somewhere else.
 		if (c.kind === 'people') {
-			confirmDelete(row, 'Delete category, its subcategories, people and one-off edits (counterparties stay)', () => {
+			confirmDelete(row, 'Delete category, its subcategories, people and one-off edits (recipients stay)', () => {
 				deleteCategory(labels, c.name);
 				ctx.saveAndRedraw();
 			});
@@ -74,13 +74,13 @@ function moveWindow(ctx: SettingsContext, c: Category, used: number, del = false
 	const labels = ctx.plugin.db.labels;
 	const skip = { category: c.name, sub: '' };
 	const choices = del
-		? [{ label: 'Uncategorised (one-off edits removed, counterparties keep no category)', place: null }, ...placeChoices(labels, skip)]
+		? [{ label: 'Uncategorised (one-off edits removed, recipients keep no category)', place: null }, ...placeChoices(labels, skip)]
 		: placeChoices(labels, skip, c.name);
 	new MoveModal(ctx.app, {
 		title: `${del ? 'Delete' : 'Move'} ${c.name}`,
 		desc: del
 			? `${used} transactions use it. Leave them uncategorised, or move them somewhere else first.`
-			: `Its ${used} transactions and counterparties go with it. Pick "<category> › ${c.name} (new)" to make it a subcategory, or another place to merge into.`,
+			: `Its ${used} transactions and recipients go with it. Pick "<category> › ${c.name} (new)" to make it a subcategory, or another place to merge into.`,
 		button: del ? 'Delete' : 'Move',
 		warning: del,
 		choices,

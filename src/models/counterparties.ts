@@ -11,7 +11,7 @@ export function findCounterparty(labels: Labels, name: string): Counterparty | u
 
 // `name`, or "name 2", "name 3"... if it's taken.
 export function uniqueName(labels: Labels, name: string): string {
-	const base = name.trim() || 'Counterparty';
+	const base = name.trim() || 'Recipient';
 	let out = base;
 	for (let n = 2; labels.counterparties.some((x) => x.name.toLowerCase() === out.toLowerCase()); n++) out = `${base} ${n}`;
 	return out;

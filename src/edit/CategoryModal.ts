@@ -104,7 +104,7 @@ export class CategoryModal extends Modal {
 		if (forPerson && !c.person.trim()) return void new Notice('Pick or add the person first.');
 		if (forPerson && cleanPatterns(c.personPatterns).length === 0) return void new Notice('Type some text from the description.');
 		const name = c.draft.name.trim();
-		if (c.similar && !forPerson && !c.addTo && !name) return void new Notice('Name the counterparty first.');
+		if (c.similar && !forPerson && !c.addTo && !name) return void new Notice('Name the recipient first.');
 		if (c.similar && !forPerson && !c.addTo && labels.counterparties.some((x) => x.name.toLowerCase() === name.toLowerCase())) {
 			return void new Notice(`"${name}" already exists. Pick it under Save as.`);
 		}
