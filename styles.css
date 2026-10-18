@@ -2,9 +2,29 @@
 
 .afm-view {
 	padding: var(--size-4-4) var(--size-4-6);
-	max-width: 900px;
+	max-width: 1600px;
 	margin: 0 auto;
+	container: afm-view / inline-size;
 }
+
+/* Sections: full-width ones one under another; runs of half-width ones in two columns that grow on their own
+   (opening one only moves what's under it). Narrow: one column in page order (bands and columns step aside). */
+.afm-sections { display: flex; flex-direction: column; gap: var(--size-4-4); margin-top: var(--size-4-4); }
+.afm-sections .afm-section { margin-top: 0; min-width: 0; }
+.afm-band { display: flex; align-items: stretch; gap: var(--size-4-4); }
+.afm-band-col { flex: 1 1 0; min-width: 0; min-height: 60px; display: flex; flex-direction: column; gap: var(--size-4-4); border-radius: var(--radius-l); }
+.afm-band-col.is-drop { outline: 2px dashed var(--interactive-accent); outline-offset: 2px; }
+@container afm-view (max-width: 900px) { .afm-band, .afm-band-col { display: contents; } }
+.afm-width-button { display: inline-flex; padding: 2px; color: var(--text-faint); opacity: 0; }
+.afm-width-button svg { width: 14px; height: 14px; }
+.afm-section-title:hover .afm-width-button, .afm-width-button:focus-visible { opacity: 1; }
+.afm-section-title .afm-width-button { margin-left: auto; }
+.afm-section-title .afm-width-button + .afm-chevron { margin-left: 0; }
+@media (hover: none) { .afm-width-button { opacity: 1; } }
+@container afm-view (max-width: 900px) { .afm-width-button { display: none; } .afm-section-title .afm-width-button + .afm-chevron { margin-left: auto; } }
+
+/* A line under a section title saying what it shows. */
+.afm-caption { margin: -2px 0 var(--size-4-2); font-size: var(--font-ui-smaller); color: var(--text-muted); }
 
 /* Header. */
 .afm-header {
@@ -60,7 +80,7 @@
 	gap: var(--size-4-3);
 }
 .afm-card {
-	background: var(--background-secondary);
+	background: var(--afm-raised);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
 	padding: var(--size-4-3) var(--size-4-4);
@@ -171,7 +191,7 @@
 
 /* Transaction rows under a category. */
 .afm-detail td {
-	background: var(--background-secondary);
+	background: var(--afm-raised);
 	font-size: var(--font-ui-smaller);
 }
 .afm-hidden { display: none; }
@@ -222,6 +242,19 @@
 
 @media (max-width: 480px) {
 	.afm-narrow-hide { display: none; }
+}
+
+/* Panels: sections, cards and rows. A touch lighter than Obsidian's own backgrounds in the dark theme, so the
+   dashboard isn't so dark; the page behind stays as it is. */
+.afm-view {
+	--afm-panel: var(--background-primary);
+	--afm-panel-alt: var(--background-primary-alt);
+	--afm-raised: var(--background-secondary);
+}
+.theme-dark .afm-view {
+	--afm-panel: color-mix(in srgb, var(--background-primary) 91%, #fff);
+	--afm-panel-alt: color-mix(in srgb, var(--background-primary-alt) 89%, #fff);
+	--afm-raised: color-mix(in srgb, var(--background-secondary) 86%, #fff);
 }
 
 /* Chart colours (checked for colour-blind contrast in light and dark). */
@@ -460,7 +493,24 @@ button.afm-badge.is-edited { border-style: dashed; } /* one-off edit */
 	border-radius: var(--radius-m);
 	background: var(--background-secondary);
 }
-.afm-picked-title { font-weight: var(--font-semibold); }
+.afm-picked-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--size-4-3); }
+.afm-picked-main { min-width: 0; }
+.afm-picked-title { font-size: 1.15em; font-weight: var(--font-semibold); overflow-wrap: anywhere; }
+.afm-picked-amount { font-size: 1.5em; font-weight: var(--font-bold); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.afm-picked-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; color: var(--text-muted); font-size: var(--font-ui-small); }
+.afm-picked-desc {
+	margin-top: var(--size-4-2);
+	padding: 4px 8px;
+	border-radius: var(--radius-s);
+	background: var(--background-primary);
+	font-family: var(--font-monospace);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	overflow-wrap: anywhere;
+}
+.afm-picked-now { margin-top: var(--size-4-1); font-size: var(--font-ui-small); }
+.afm-inline-link { margin-left: 6px; }
+.afm-more-link { padding: var(--size-4-2) 0; font-size: var(--font-ui-small); }
 /* Refund links in the edit window, each with Unlink / Link again. */
 .afm-refund-links { display: flex; flex-direction: column; gap: 4px; margin-top: var(--size-4-2); padding-top: var(--size-4-2); border-top: 1px solid var(--background-modifier-border); }
 .afm-refund-link { display: flex; align-items: center; justify-content: space-between; gap: var(--size-4-2); }
@@ -535,7 +585,7 @@ body {
 	padding: var(--size-4-3) var(--size-4-4) var(--size-4-4);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-l);
-	background: var(--background-primary);
+	background: var(--afm-panel);
 }
 .afm-section-icon { display: inline-flex; color: var(--interactive-accent); }
 .afm-section-icon svg { width: 15px; height: 15px; }
@@ -543,7 +593,7 @@ body {
 /* Summary cards: coloured icon and a soft tint of their colour. */
 .afm-card {
 	border-top: 3px solid var(--afm-cat);
-	background: linear-gradient(160deg, color-mix(in srgb, var(--afm-cat) 10%, var(--background-secondary)), var(--background-secondary) 70%);
+	background: linear-gradient(160deg, color-mix(in srgb, var(--afm-cat) 10%, var(--afm-raised)), var(--afm-raised) 70%);
 }
 .afm-card-top { display: flex; align-items: center; gap: var(--size-4-2); margin-bottom: var(--size-4-1); }
 .afm-card-extra { font-size: var(--font-ui-smaller); color: var(--text-muted); }
@@ -642,7 +692,7 @@ button.afm-tag-button.is-open { color: var(--text-accent); border-style: solid; 
 
 /* Spending by category: subcategory (and person) rows with their totals. */
 .afm-group td {
-	background: var(--background-primary-alt);
+	background: var(--afm-panel-alt);
 	font-size: var(--font-ui-small);
 }
 .afm-group .afm-row-title { gap: var(--size-4-2); }
@@ -726,7 +776,7 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 	gap: 2px;
 	padding: 2px var(--size-4-1) 2px 2px;
 	border-radius: var(--radius-s);
-	background: var(--background-secondary);
+	background: var(--afm-raised);
 }
 .afm-sub input[type='text'] {
 	flex: 1;
@@ -784,7 +834,7 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 	border: 1px solid var(--background-modifier-border);
 	border-top: 3px solid var(--afm-cat);
 	border-radius: var(--radius-m);
-	background: linear-gradient(170deg, color-mix(in srgb, var(--afm-cat) 8%, var(--background-secondary)), var(--background-secondary) 60%);
+	background: linear-gradient(170deg, color-mix(in srgb, var(--afm-cat) 8%, var(--afm-raised)), var(--afm-raised) 60%);
 }
 .afm-group-top { display: flex; align-items: flex-start; gap: var(--size-4-2); }
 .afm-group-top .afm-dot-icon { width: 30px; height: 30px; }
@@ -830,7 +880,7 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 	cursor: pointer;
 	border-radius: 0 var(--radius-s) var(--radius-s) 0;
 }
-.afm-item + .afm-item { border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 60%, transparent); }
+.afm-item + .afm-item, .afm-fold-items + .afm-item { border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 60%, transparent); }
 .afm-item:hover { background: var(--background-modifier-hover); }
 .afm-item:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 .afm-item-top { display: flex; align-items: baseline; justify-content: space-between; gap: var(--size-4-2); }
@@ -986,3 +1036,48 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 	background: color-mix(in srgb, var(--afm-acc) 16%, transparent);
 }
 .afm-view .afm-tl-btn { padding: var(--size-2-2); }
+
+/* Card grids as columns (masonry.ts): each column stacks its own cards, so tall ones leave no holes. */
+.afm-card-grid.afm-masonry { display: flex; align-items: flex-start; gap: var(--size-4-3); }
+.afm-masonry-col { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: var(--size-4-3); }
+.afm-group-title .afm-strong { overflow-wrap: anywhere; hyphens: auto; }
+
+/* Several rows from one recipient folded into one line (subRows.ts). */
+.afm-item-fold .afm-item-name { align-items: center; }
+.afm-item-fold .afm-chevron { flex: none; }
+.afm-item-fold .afm-sub-count { font-size: var(--font-ui-smaller); }
+.afm-items.afm-fold-items { margin: 0 0 4px 14px; }
+
+/* Long bank descriptions as names: two lines at most (full text on hover). */
+.afm-item .afm-item-name .afm-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Income: one small card per payment, side by side. */
+.afm-income-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: var(--size-4-2); }
+.afm-income-card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: var(--size-4-2) var(--size-4-3);
+	border: 1px solid var(--background-modifier-border);
+	border-left: 3px solid var(--afm-income);
+	border-radius: var(--radius-m);
+	background: var(--afm-raised);
+	cursor: pointer;
+}
+.afm-income-card:hover { background: var(--background-modifier-hover); }
+.afm-income-top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--size-4-2); }
+.afm-income-top .afm-name { font-weight: var(--font-semibold); min-width: 0; }
+.afm-income-amount { font-size: 1.1em; font-weight: var(--font-semibold); font-variant-numeric: tabular-nums; white-space: nowrap; color: color-mix(in srgb, var(--afm-income) 70%, var(--text-normal)); }
+.afm-income-meta { font-size: var(--font-ui-smaller); }
+.afm-income-card .afm-badge { align-self: flex-start; }
+
+/* Top recipients and tags: two columns (one when narrow). */
+.afm-section-body { container-type: inline-size; }
+.afm-top-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--size-4-4); }
+@container (max-width: 520px) { .afm-top-grid { grid-template-columns: minmax(0, 1fr); } }
+.afm-top-title { margin-bottom: var(--size-4-1); font-size: var(--font-ui-small); font-weight: var(--font-semibold); color: var(--text-muted); }
+.afm-top-row .afm-top-dot { width: 20px; height: 20px; flex: none; }
+.afm-top-row .afm-top-dot svg { width: 12px; height: 12px; }
+
+/* Months without data in the monthly chart. */
+.afm-view button.afm-col:disabled { opacity: 0.4; cursor: default; }

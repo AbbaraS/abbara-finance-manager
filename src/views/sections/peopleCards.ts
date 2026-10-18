@@ -6,6 +6,7 @@ import { formatChange, formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
 import { personColor } from '../look/categoryLook';
 import { iconDot } from '../look/iconDot';
+import { masonry } from './masonry';
 import { subRows } from './subRows';
 
 // Money to and from people this month: one card per person in their colour, with what was sent and received. Inside:
@@ -48,6 +49,8 @@ export function peopleCards(body: HTMLElement, ctx: DashboardContext): void {
 			box.createDiv({ cls: 'afm-paid-back-note', text: 'Taken off what you bought for them, so not counted as received.' });
 		}
 	}
+
+	masonry(grid);
 
 	// Total.
 	const foot = body.createDiv({ cls: 'afm-grid-foot' });

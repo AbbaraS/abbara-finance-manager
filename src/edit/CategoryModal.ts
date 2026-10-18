@@ -49,6 +49,9 @@ export class CategoryModal extends Modal {
 			draft: { name: guessName(patterns[0] ?? ''), patterns, category: '', account: '', direction: directionOf(picked) },
 			addTo: shared ? findCounterparty(labels, shared) ?? null : null, // rows that already share one add to it
 			counterparty: one ? labels.transactions[first.id]?.counterparty ?? '' : KEEP_COUNTERPARTY,
+			knownRecipient: shared && findCounterparty(labels, shared) ? shared : '',
+			showSubscription: picked.some((t) => t.subscription || /subscription/i.test(t.subcategory))
+				|| !!(shared && labels.subscriptions.some((s) => s.counterparty === shared)) || newSubscription,
 		};
 	}
 
@@ -69,7 +72,7 @@ export class CategoryModal extends Modal {
 		const redraw = () => this.draw();
 
 		pickedSummary(this.app, el, this.picked, this.plugin.settings, this.plugin.db.labels, this.rows, (make, notice) => this.changeLinks(make, notice));
-		categoryField(el, this.choice, this.plugin.db.labels, redraw);
+		categoryField(el, this.choice, this.plugin.db.labels, this.rows, redraw);
 		detailsFields(this.app, el, this.choice, this.plugin.db.labels, this.rows, this.picked, this.plugin.settings, redraw);
 		similarFields(el, this.choice, this.plugin.db.labels, this.picked, this.rows, redraw);
 		subscriptionFields(el, this.choice, this.plugin.db.labels, this.picked, redraw);

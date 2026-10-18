@@ -6,7 +6,8 @@ export interface FinanceSettings {
 	hiddenSections: string[];     // dashboard section ids not drawn
 	sectionOrder: string[];       // dashboard section ids in page order, [] = default
 	collapsedSections: string[];  // dashboard section ids showing only their title
-	shownCounterparties: string[]; // counterparty names in "Spending by counterparty"
+	halfSections: string[];       // dashboard section ids half as wide, so two sit side by side
+	sectionColumns: Record<string, 'left' | 'right'>; // half-width sections: which column; missing = alternate
 	describedRecipients: string[]; // recipients whose rows keep the bank's description as their name (e.g. Apple.com: which app isn't known)
 	subscriptionsOverall: boolean; // Subscriptions section: every payment (true) or up to the shown month
 }

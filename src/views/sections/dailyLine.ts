@@ -23,7 +23,8 @@ export function dailyLine(body: HTMLElement, ctx: DashboardContext): void {
 	const f = chartFrame(days, range.min, range.max);
 	const last = points[points.length - 1];
 
-	// SVG with a text summary for screen readers.
+	// What it shows, then the SVG with a text summary for screen readers.
+	body.createDiv({ cls: 'afm-caption', text: `Income minus spending so far this month, day by day. It drops as you spend and jumps when income comes in; the last point is this month's net, the gap between its two bars in the monthly chart.` });
 	const wrap = body.createDiv({ cls: 'afm-line-chart', attr: { tabindex: '0' } });
 	const svg = wrap.createSvg('svg', { attr: {
 		viewBox: `0 0 ${f.width} ${f.height}`, role: 'img',

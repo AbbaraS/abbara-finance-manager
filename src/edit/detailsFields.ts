@@ -14,7 +14,7 @@ import { tagInput } from './tagInput';
 // Dropdown value that switches to "new" mode.
 const NEW = '__new__';
 
-// Person (under People) and whether it counts as a debt, subcategory (pick one or make one), note, tags, and the other account for transfers.
+// Person (under People), whether it counts as a debt and their subcategory; note, tags, and the other account for transfers.
 export function detailsFields(app: App, el: HTMLElement, c: CategoryChoice, labels: Labels, rows: Transaction[], picked: Transaction[], s: FinanceSettings, redraw: () => void): void {
 	const kind = c.newKind ?? findCategory(labels, c.category)?.kind ?? null;
 	const people = kind === 'people';
@@ -47,26 +47,26 @@ export function detailsFields(app: App, el: HTMLElement, c: CategoryChoice, labe
 		debtField(el, c, labels, picked, s, redraw);
 	}
 
-	// Subcategory: the category's own (the person's own under People), or a new one.
-	const person = people ? c.person.trim() : '';
-	const names = [...new Set([...subcategoryNames(c.category, person, labels, rows), c.subcategory].filter(Boolean))];
-	const desc = people ? `${person ? `${person}'s own` : 'Each person\'s own'}, e.g. Allowance. Optional.`
-		: kind === 'spending' ? 'Optional. Money in with none shows as "Refund".' : 'Optional.';
-	new Setting(el)
-		.setName('Subcategory')
-		.setDesc(desc)
-		.addDropdown((d) => {
-			d.addOption('', 'None');
-			for (const name of names) d.addOption(name, name);
-			d.addOption(NEW, '+ New subcategory…');
-			d.setValue(c.newSub ? NEW : c.subcategory);
-			d.onChange((v) => { c.newSub = v === NEW; c.subcategory = c.newSub ? '' : v; redraw(); });
-		});
-	if (c.newSub) {
-		new Setting(el).setName('New subcategory').addText((t) => {
-			t.setPlaceholder(people ? 'e.g. Allowance' : 'e.g. Groceries').setValue(c.subcategory).onChange((v) => (c.subcategory = v));
-			window.setTimeout(() => t.inputEl.focus(), 0);
-		});
+	// Subcategory under People: the person's own, or a new one (other categories pick theirs in the Category dropdown).
+	if (people) {
+		const person = c.person.trim();
+		const names = [...new Set([...subcategoryNames(c.category, person, labels, rows), c.subcategory].filter(Boolean))];
+		new Setting(el)
+			.setName('Subcategory')
+			.setDesc(`${person ? `${person}'s own` : 'Each person\'s own'}, e.g. Allowance. Optional.`)
+			.addDropdown((d) => {
+				d.addOption('', 'None');
+				for (const name of names) d.addOption(name, name);
+				d.addOption(NEW, '+ New subcategory…');
+				d.setValue(c.newSub ? NEW : c.subcategory);
+				d.onChange((v) => { c.newSub = v === NEW; c.subcategory = c.newSub ? '' : v; redraw(); });
+			});
+		if (c.newSub) {
+			new Setting(el).setName('New subcategory').addText((t) => {
+				t.setPlaceholder('e.g. Allowance').setValue(c.subcategory).onChange((v) => (c.subcategory = v));
+				window.setTimeout(() => t.inputEl.focus(), 0);
+			});
+		}
 	}
 
 	// Note: one transaction only.

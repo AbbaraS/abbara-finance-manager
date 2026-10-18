@@ -16,6 +16,7 @@ export interface DashboardContext {
 	labels: Labels;               // your categories, accounts and labels
 	accounts: string[];           // accounts in the data + ones you added
 	expanded: Set<string>;        // open rows, kept across redraws
+	columns: Record<string, 'left' | 'right'>; // where each half-width section is drawn now (filled while drawing)
 	selectMonth: (month: string) => void; // switch month and redraw
 	reload: () => void;                   // re-read the database
 	redraw: () => void;                   // redraw without saving

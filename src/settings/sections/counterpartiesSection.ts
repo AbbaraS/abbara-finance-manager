@@ -171,11 +171,10 @@ function move(list: Counterparty[], i: number, step: number, ctx: SettingsContex
 	ctx.saveAndRedraw();
 }
 
-// Keeps "Recipients on the dashboard" and "Show description" in step: `from` becomes `to`, or is dropped when `to` is empty.
+// Keeps "Show description" in step: `from` becomes `to`, or is dropped when `to` is empty.
 function shownSwap(ctx: SettingsContext, from: string, to: string): void {
 	const s = ctx.plugin.settings;
 	const swap = (list: string[]) => [...new Set(list.map((n) => (n === from ? to : n)).filter(Boolean))];
-	s.shownCounterparties = swap(s.shownCounterparties);
 	s.describedRecipients = swap(s.describedRecipients);
 }
 

@@ -23,7 +23,13 @@ export function draftSubscription(labels: Labels, rows: Transaction[], picked: T
 }
 
 // Subscription: found automatically, none, one you have, or a new one (name, type, text, amount, how often, out of).
+// Only shown for subscription payments (or a recipient that has one); otherwise a small link opens it.
 export function subscriptionFields(el: HTMLElement, c: CategoryChoice, labels: Labels, picked: Transaction[], redraw: () => void): void {
+	if (!c.showSubscription && (!c.subscription || c.subscription === KEEP_SUBSCRIPTION)) {
+		const link = el.createDiv({ cls: 'afm-more-link' }).createEl('a', { text: 'Is this a subscription payment?', href: '#' });
+		link.addEventListener('click', (e) => { e.preventDefault(); c.showSubscription = true; redraw(); });
+		return;
+	}
 	const found = picked.length === 1 ? picked[0].subscription : '';
 	new Setting(el)
 		.setName('Subscription')

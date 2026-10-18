@@ -14,6 +14,7 @@ import { directionOf } from './directionOf';
 // When it's off, a recipient can be picked by hand for rows its spellings don't find.
 export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels, picked: Transaction[], rows: Transaction[], redraw: () => void): void {
 	if (findCategory(labels, c.category.trim())?.kind === 'people') return personFields(el, c, labels, rows, redraw);
+	if (c.knownRecipient) return knownFields(el, c, labels, redraw);
 	const names = labels.counterparties.map((x) => x.name).sort((a, b) => a.localeCompare(b));
 	new Setting(el)
 		.setName('Remember for this recipient')
@@ -90,6 +91,28 @@ export function similarFields(el: HTMLElement, c: CategoryChoice, labels: Labels
 
 	el.appendChild(preview);
 	update();
+}
+
+// Rows that already have a recipient (Circuit Go): no need to remember it again. One toggle saves the category on
+// the recipient for all its transactions; "Not Circuit Go?" brings back the usual fields.
+function knownFields(el: HTMLElement, c: CategoryChoice, labels: Labels, redraw: () => void): void {
+	const name = c.knownRecipient;
+	const cp = findCounterparty(labels, name);
+	const where = [c.category.trim(), c.subcategory.trim()].filter(Boolean).join(' › ') || 'the category above';
+	const same = cp?.category === c.category.trim() && (cp?.subcategory ?? '') === c.subcategory.trim();
+	const s = new Setting(el)
+		.setName(`Every ${name} transaction`)
+		.setDesc(same ? `${name} is already in ${where}; this changes only this one.` : `Also moves ${name} to ${where}, so all its transactions follow. Off: only this one.`)
+		.addToggle((t) => t.setValue(c.similar).setDisabled(same).onChange((v) => {
+			Object.assign(c, { similar: v, addTo: v ? cp ?? null : c.addTo });
+			c.draft.patterns = v ? [] : c.draft.patterns; // its spellings already find it
+		}));
+	const other = s.descEl.createEl('a', { cls: 'afm-inline-link', text: `Not ${name}?`, href: '#' });
+	other.addEventListener('click', (e) => {
+		e.preventDefault();
+		Object.assign(c, { knownRecipient: '', similar: false });
+		redraw();
+	});
 }
 
 // Under People: "Remember for this person" saves spellings on the person (not a counterparty), with a live count.

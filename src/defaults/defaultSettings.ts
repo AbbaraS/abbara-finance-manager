@@ -8,7 +8,8 @@ export const DEFAULT_SETTINGS: FinanceSettings = {
 	hiddenSections: [],
 	sectionOrder: [],
 	collapsedSections: [],
-	shownCounterparties: [],
+	halfSections: ['monthly', 'daily', 'people', 'debts', 'moneyIn', 'top'],
+	sectionColumns: { monthly: 'left', daily: 'right', people: 'left', debts: 'right', moneyIn: 'left', top: 'right' },
 	describedRecipients: ['Apple.com'],
 	subscriptionsOverall: false,
 };

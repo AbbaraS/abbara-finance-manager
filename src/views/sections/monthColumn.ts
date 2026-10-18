@@ -4,11 +4,12 @@ import { monthLabel } from '../../utils/dates';
 import { formatChange, formatMoney } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
 
-// One month: two bars (income, spending) and a label. It's a button, so click, Tab and Enter all work.
-export function monthColumn(parent: HTMLElement, t: MonthTotal, max: number, ctx: DashboardContext): void {
+// One month: two bars (income, spending) and a label. It's a button, so click, Tab and Enter all work. `has` = it has data.
+export function monthColumn(parent: HTMLElement, t: MonthTotal, max: number, ctx: DashboardContext, has = true): void {
 	const s = ctx.settings;
 	const col = parent.createEl('button', { cls: 'afm-col' });
 	col.toggleClass('is-selected', t.month === ctx.month);
+	col.disabled = !has;
 
 	// Bars: height is a % of the chart's max.
 	const bars = col.createDiv({ cls: 'afm-col-bars' });
@@ -20,6 +21,6 @@ export function monthColumn(parent: HTMLElement, t: MonthTotal, max: number, ctx
 
 	// Hover text + screen reader label.
 	const text = `${monthLabel(t.month, s.locale)} · Income ${formatMoney(t.income, s)} · Spending ${formatMoney(t.spending, s)} · Net ${formatChange(t.income - t.spending, s)}`;
-	setTooltip(col, text, { placement: 'top' });
+	setTooltip(col, has ? text : `${monthLabel(t.month, s.locale)}: no transactions`, { placement: 'top' });
 	col.addEventListener('click', () => ctx.selectMonth(t.month));
 }

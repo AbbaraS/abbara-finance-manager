@@ -31,4 +31,6 @@ export interface CategoryChoice {
 	draft: Counterparty;          // the new counterparty, used when `similar` is on and `addTo` is empty
 	addTo: Counterparty | null;   // add the spellings to this saved counterparty instead; it takes the chosen category
 	counterparty: string;         // with `similar` off: picked by hand, '' = found by spellings, or KEEP_COUNTERPARTY
+	knownRecipient: string;       // the recipient every picked row already has, '' = none (then "Remember for this recipient" shows)
+	showSubscription: boolean;    // show the Subscription field (a subscription payment, or you asked for it)
 }

@@ -18,6 +18,17 @@ export function section(parent: HTMLElement, x: Section, ctx: DashboardContext):
 	setIconSafe(grip, 'grip-vertical');
 	setIconSafe(h.createSpan({ cls: 'afm-section-icon' }), x.icon);
 	h.createSpan({ cls: 'afm-section-name', text: x.name });
+
+	// Width: full, or half so two sit side by side (saved in settings).
+	const half = s.halfSections.includes(x.id);
+	wrap.toggleClass('is-half', half);
+	const width = h.createSpan({ cls: 'afm-width-button clickable-icon', attr: { 'aria-label': half ? 'Full width' : 'Half width (side by side)', role: 'button' } });
+	setIconSafe(width, half ? 'rectangle-horizontal' : 'columns-2');
+	width.addEventListener('click', (e) => {
+		e.stopPropagation(); // don't collapse
+		s.halfSections = half ? s.halfSections.filter((id) => id !== x.id) : [...s.halfSections, x.id];
+		ctx.saveSettings();
+	});
 	setIconSafe(h.createSpan({ cls: 'afm-chevron' }), 'chevron-right'); // CSS turns it down when open
 
 	// Collapse: click, Enter or Space on the title. Remembered in settings.
@@ -64,8 +75,39 @@ export function section(parent: HTMLElement, x: Section, ctx: DashboardContext):
 		if (!dragging || dragging === x.id) return;
 		e.preventDefault();
 		s.sectionOrder = moveSection(s.sectionOrder, dragging, x.id, after(e));
+		const side = ctx.columns[x.id];
+		if (side) place(ctx, dragging, side); // dropped on a half-width section: joins its column
 		ctx.saveSettings();
 	});
 
 	return collapsed ? null : wrap.createDiv({ cls: 'afm-section-body' });
+}
+
+// Empty space under a column of half-width sections takes a drop too: the section goes to the end of that column.
+// `band` = ids of the half-width sections in this run, in page order (filled while drawing).
+export function columnDrop(col: HTMLElement, side: 'left' | 'right', band: string[], ctx: DashboardContext): void {
+	const s = ctx.settings;
+	col.addEventListener('dragover', (e) => {
+		if (!dragging || e.target !== col) return; // over a section: its own handler decides
+		e.preventDefault();
+		col.addClass('is-drop');
+	});
+	col.addEventListener('dragleave', (e) => { if (e.target === col) col.removeClass('is-drop'); });
+	col.addEventListener('drop', (e) => {
+		col.removeClass('is-drop');
+		if (!dragging || e.target !== col) return;
+		e.preventDefault();
+		const others = band.filter((id) => id !== dragging);
+		const last = [...others].reverse().find((id) => ctx.columns[id] === side) ?? others[others.length - 1];
+		if (last) s.sectionOrder = moveSection(s.sectionOrder, dragging, last, true);
+		place(ctx, dragging, side);
+		ctx.saveSettings();
+	});
+}
+
+// Makes `id` a half-width section in column `side`, and saves where every other one is now, so none moves.
+function place(ctx: DashboardContext, id: string, side: 'left' | 'right'): void {
+	const s = ctx.settings;
+	s.sectionColumns = { ...s.sectionColumns, ...ctx.columns, [id]: side };
+	if (!s.halfSections.includes(id)) s.halfSections = [...s.halfSections, id];
 }

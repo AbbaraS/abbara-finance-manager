@@ -8,6 +8,7 @@ import type { DashboardContext } from '../DashboardContext';
 import { categoryLook } from '../look/categoryLook';
 import { iconDot } from '../look/iconDot';
 import { shareBar } from './shareBar';
+import { masonry } from './masonry';
 import { subRows } from './subRows';
 
 // Spending by category as a grid of cards, biggest first, each listing its subcategories. People have their own section.
@@ -25,6 +26,7 @@ export function categoryCards(body: HTMLElement, ctx: DashboardContext): void {
 	// Cards.
 	const grid = body.createDiv({ cls: 'afm-card-grid' });
 	for (const g of groups) categoryCard(grid, g, ctx);
+	masonry(grid);
 
 	// Total, and what went to people on top.
 	const foot = body.createDiv({ cls: 'afm-grid-foot' });

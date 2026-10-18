@@ -7,10 +7,10 @@ import { setLabel } from '../models/Labels';
 import { monthList } from '../models/monthList';
 import { orderedSections } from '../models/sections';
 import type { DashboardContext } from './DashboardContext';
-import { SECTION_DRAWERS } from './sectionDrawers';
+import { SECTION_DRAWERS, SECTION_EMPTY } from './sectionDrawers';
 import { emptyState } from './sections/emptyState';
 import { header } from './sections/header';
-import { section } from './sections/section';
+import { columnDrop, section } from './sections/section';
 
 export const VIEW_TYPE = 'afm-dashboard';
 
@@ -45,7 +45,7 @@ export class DashboardView extends ItemView {
 
 		const ctx: DashboardContext = {
 			app: this.app, title: 'Finances',
-			rows, months, month: this.month, settings: s, labels, accounts: accountNames(rows, labels.accounts), expanded: this.expanded,
+			rows, months, month: this.month, settings: s, labels, accounts: accountNames(rows, labels.accounts), expanded: this.expanded, columns: {},
 			selectMonth: (m) => { this.month = m; this.render(); },
 			reload: () => void this.plugin.openDatabase(),
 			redraw: () => this.render(),
@@ -59,12 +59,33 @@ export class DashboardView extends ItemView {
 		};
 
 		header(el, ctx);
-		const shown = orderedSections(s.sectionOrder).filter((x) => !s.hiddenSections.includes(x.id));
+		const shown = orderedSections(s.sectionOrder).filter((x) => !s.hiddenSections.includes(x.id) && !SECTION_EMPTY[x.id]?.(ctx));
 		if (shown.length === 0) el.createDiv({ cls: 'afm-note', text: 'All sections are hidden. Turn them on in settings.' });
-		for (const x of shown) {
-			const body = section(el, x, ctx);
+		// Full-width sections one under another; each run of half-width ones in two columns that grow on their own,
+		// each section in the column you put it in (saved; new ones take turns). Empty space under a column takes drops too.
+		// `order` keeps page order when narrow (one column).
+		const list = el.createDiv({ cls: 'afm-sections' });
+		let cols: HTMLElement[] = [];
+		let band: string[] = []; // ids in the current run of half-width sections
+		shown.forEach((x, i) => {
+			const half = s.halfSections.includes(x.id);
+			if (!half) cols = [];
+			else if (cols.length === 0) {
+				const row = list.createDiv({ cls: 'afm-band' });
+				band = [];
+				cols = [row.createDiv({ cls: 'afm-band-col' }), row.createDiv({ cls: 'afm-band-col' })];
+				columnDrop(cols[0], 'left', band, ctx);
+				columnDrop(cols[1], 'right', band, ctx);
+			}
+			if (half) {
+				ctx.columns[x.id] = s.sectionColumns[x.id] ?? (band.length % 2 ? 'right' : 'left');
+				band.push(x.id);
+			}
+			const parent = half ? cols[ctx.columns[x.id] === 'right' ? 1 : 0] : list;
+			const body = section(parent, x, ctx);
+			(parent.lastElementChild as HTMLElement | null)?.setCssProps({ order: String(i) });
 			if (body) SECTION_DRAWERS[x.id](body, ctx);
-		}
+		});
 		el.scrollTop = scroll;
 	}
 }

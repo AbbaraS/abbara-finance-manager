@@ -10,6 +10,7 @@ import { personColor } from '../look/categoryLook';
 import { iconDot } from '../look/iconDot';
 import { setIconSafe } from '../look/setIconSafe';
 import { expandable } from './expandable';
+import { masonry } from './masonry';
 
 // What you owe people (and they owe you), all time, apart from this month's money in People. One card per person in their
 // colour, most owed first, with one row per debt (Car, Shein...) still open. Paid-off debts are hidden behind "Show 2 paid off",
@@ -32,6 +33,7 @@ export function debtCards(body: HTMLElement, ctx: DashboardContext): void {
 	const grid = body.createDiv({ cls: 'afm-card-grid' });
 	if (open.length === 0 && !showSettled) grid.createDiv({ cls: 'afm-muted', text: 'Everything is paid off.' });
 	for (const p of [...open, ...(showSettled ? settled : [])]) debtCard(grid, p.person, p.groups, p.balance, ctx);
+	masonry(grid);
 
 	// Totals, the paid-off people, and adding a debt for anyone.
 	const foot = body.createDiv({ cls: 'afm-grid-foot' });

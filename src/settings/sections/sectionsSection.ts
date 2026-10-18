@@ -1,12 +1,11 @@
-import { App, FuzzySuggestModal, Setting } from 'obsidian';
+import { Setting } from 'obsidian';
 import { moveSection, orderedSections } from '../../models/sections';
-import { setIconSafe } from '../../views/look/setIconSafe';
 import type { SettingsContext } from '../context';
 
-// Dashboard sections in page order: a toggle each, with up / down to move them. Then the counterparties to show.
+// Dashboard sections in page order: shown or not, full or half width (two side by side), and up / down to move them.
 export function sectionsSection(el: HTMLElement, ctx: SettingsContext): void {
 	const s = ctx.plugin.settings;
-	new Setting(el).setName('Dashboard sections').setDesc('Shown in this order. You can also drag a section by its grip on the dashboard, and click its title to collapse it.').setHeading();
+	new Setting(el).setName('Dashboard sections').setDesc('Shown in this order. Half-width sections sit side by side when the window is wide enough. On the dashboard you can also drag a section by its grip, switch its width, and click its title to collapse it.').setHeading();
 
 	const list = orderedSections(s.sectionOrder);
 	list.forEach((section, i) => {
@@ -14,8 +13,15 @@ export function sectionsSection(el: HTMLElement, ctx: SettingsContext): void {
 			s.sectionOrder = moveSection(s.sectionOrder, section.id, list[to].id, to > i);
 			ctx.saveAndRedraw();
 		};
+		const half = s.halfSections.includes(section.id);
 		new Setting(el)
 			.setName(section.name)
+			.addDropdown((d) => d.addOptions({ full: 'Full width', left: 'Half · left column', right: 'Half · right column' })
+				.setValue(half ? s.sectionColumns[section.id] ?? 'left' : 'full').onChange((v) => {
+					s.halfSections = [...s.halfSections.filter((id) => id !== section.id), ...(v === 'full' ? [] : [section.id])];
+					if (v !== 'full') s.sectionColumns = { ...s.sectionColumns, [section.id]: v as 'left' | 'right' };
+					ctx.save();
+				}))
 			.addExtraButton((b) => b.setIcon('arrow-up').setTooltip('Move up').setDisabled(i === 0).onClick(() => move(i - 1)))
 			.addExtraButton((b) => b.setIcon('arrow-down').setTooltip('Move down').setDisabled(i === list.length - 1).onClick(() => move(i + 1)))
 			.addToggle((t) => t
@@ -26,38 +32,4 @@ export function sectionsSection(el: HTMLElement, ctx: SettingsContext): void {
 					ctx.save();
 				}));
 	});
-
-	// Recipients for "Spending by recipient", as removable chips.
-	const names = ctx.plugin.db.labels.counterparties.map((c) => c.name);
-	const setting = new Setting(el)
-		.setName('Recipients on the dashboard')
-		.setDesc('Only these show in "Spending by recipient".')
-		.addButton((b) => b.setButtonText('Add').onClick(() => new PickModal(ctx.app, names.filter((n) => !s.shownCounterparties.includes(n)), (name) => {
-			s.shownCounterparties.push(name);
-			ctx.saveAndRedraw();
-		}).open()));
-	const chips = setting.descEl.createDiv({ cls: 'afm-chips' });
-	if (s.shownCounterparties.length === 0) chips.createSpan({ cls: 'afm-muted', text: 'None picked yet.' });
-	for (const name of s.shownCounterparties) {
-		const chip = chips.createSpan({ cls: 'afm-tag', text: name });
-		chip.toggleClass('afm-missing', !names.includes(name)); // renamed or deleted elsewhere
-		const remove = chip.createSpan({ cls: 'afm-tag-remove', attr: { 'aria-label': `Remove ${name}` } });
-		setIconSafe(remove, 'x');
-		remove.addEventListener('click', () => {
-			s.shownCounterparties = s.shownCounterparties.filter((n) => n !== name);
-			ctx.saveAndRedraw();
-		});
-	}
-}
-
-// Fuzzy picker for one counterparty name.
-class PickModal extends FuzzySuggestModal<string> {
-	constructor(app: App, private names: string[], private onPick: (name: string) => void) {
-		super(app);
-		this.setPlaceholder('Show which recipient?');
-	}
-
-	getItems(): string[] { return [...this.names].sort((a, b) => a.localeCompare(b)); }
-	getItemText(name: string): string { return name; }
-	onChooseItem(name: string): void { this.onPick(name); }
 }

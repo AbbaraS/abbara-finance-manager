@@ -18,17 +18,29 @@ export function pickedSummary(app: App, el: HTMLElement, picked: Transaction[], 
 	change: (make: () => void, notice: string) => void): void {
 	const box = el.createDiv({ cls: 'afm-picked' });
 	const first = picked[0];
-	box.createDiv({ cls: 'afm-picked-title', text: first.description });
-	if (picked.every((t) => t.counterparty === first.counterparty) && first.counterparty) box.createDiv({ cls: 'afm-muted', text: `Recipient: ${first.counterparty}` });
+	const one = picked.length === 1;
 
+	// Name and amount on top; then date with year, the account ("From" for money out, "Into" for money in), the bank's description.
+	const top = box.createDiv({ cls: 'afm-picked-top' });
+	const left = top.createDiv({ cls: 'afm-picked-main' });
+	const name = one ? first.person || first.subscription || first.counterparty || first.description : countLabel(picked.length);
+	left.createDiv({ cls: 'afm-picked-title', text: name });
 	const total = picked.reduce((a, t) => a + t.amount, 0);
+	top.createDiv({ cls: `afm-picked-amount ${total < 0 ? 'afm-flow-out' : 'afm-flow-in'}`, text: formatChange(total, s) });
+
 	const accounts = [...new Set(picked.map((t) => t.account))].join(', ');
-	const when = picked.length === 1 ? dayLabel(first.date, s.locale) : countLabel(picked.length);
-	box.createDiv({ cls: 'afm-muted', text: `${when} · ${accounts} · ${formatChange(total, s)}` });
+	const dir = picked.every((t) => t.amount < 0) ? 'From' : picked.every((t) => t.amount > 0) ? 'Into' : 'Account';
+	const when = one ? `${dayLabel(first.date, s.locale)} ${first.date.slice(0, 4)}` : dateRange(picked, s);
+	const meta = left.createDiv({ cls: 'afm-picked-meta' });
+	meta.createSpan({ text: when });
+	meta.createSpan({ text: `${dir}: ${accounts}` });
+	if (one) box.createDiv({ cls: 'afm-picked-desc', text: first.description, attr: { title: 'Description from the bank statement' } });
 
 	const source = SOURCE_TEXT[first.source];
 	const now = [first.category, first.person, first.subcategory].filter(Boolean).join(' › ');
-	box.createDiv({ cls: 'afm-muted', text: `Now: ${now}${source ? ` (${source})` : ''}` });
+	const line = box.createDiv({ cls: 'afm-muted afm-picked-now' });
+	line.setText(`Now in ${now}${source ? ` (${source})` : ''}`);
+	if (first.counterparty && picked.every((t) => t.counterparty === first.counterparty) && name !== first.counterparty) line.appendText(` · Recipient: ${first.counterparty}`);
 	if (picked.length !== 1) return;
 
 	// Money back links: linked ones (yours with an amount to change), then ones you unlinked; for money in, a way to link one.
@@ -88,4 +100,11 @@ export function pickedSummary(app: App, el: HTMLElement, picked: Transaction[], 
 		add.addEventListener('click', () => new PurchasePicker(app, purchasesFor(rows, first), s,
 			(p) => change(() => linkBack(labels, first, p), `Linked to ${p.counterparty || p.description}.`)).open());
 	}
+}
+
+// "3 Sept – 25 Sept 2025" for several rows.
+function dateRange(picked: Transaction[], s: FinanceSettings): string {
+	const dates = picked.map((t) => t.date).sort();
+	const [a, b] = [dates[0], dates[dates.length - 1]];
+	return a === b ? `${dayLabel(a, s.locale)} ${a.slice(0, 4)}` : `${dayLabel(a, s.locale)}${a.slice(0, 4) === b.slice(0, 4) ? '' : ` ${a.slice(0, 4)}`} – ${dayLabel(b, s.locale)} ${b.slice(0, 4)}`;
 }
