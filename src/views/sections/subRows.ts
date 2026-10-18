@@ -6,10 +6,11 @@ import { transactionItem } from './transactionItem';
 
 // A card's subcategories, biggest first (no subcategory last), each with its total and a soft bar for its share.
 // Click one to list its transactions (refunds sit under their purchase). `valueOf` is what a row adds to the total, `show` formats it.
+// `keyOf` groups by something else than the subcategory (People: "Debt").
 export function subRows(parent: HTMLElement, rows: Transaction[], id: string, ctx: DashboardContext,
-	valueOf: (t: Transaction) => number, show: (value: number) => string): void {
+	valueOf: (t: Transaction) => number, show: (value: number) => string, keyOf = (t: Transaction) => t.subcategory): void {
 	const groups = new Map<string, Transaction[]>();
-	for (const t of rows) groups.set(t.subcategory, [...(groups.get(t.subcategory) ?? []), t]);
+	for (const t of rows) groups.set(keyOf(t), [...(groups.get(keyOf(t)) ?? []), t]);
 	const totals = new Map([...groups].map(([key, list]) => [key, sum(list.map(valueOf))]));
 	const all = sum([...totals.values()].map(Math.abs));
 	const keys = [...groups.keys()].sort((a, b) => Number(!a) - Number(!b) || Math.abs(totals.get(b)!) - Math.abs(totals.get(a)!));
@@ -31,7 +32,7 @@ export function subRows(parent: HTMLElement, rows: Transaction[], id: string, ct
 		// Its transactions, newest first, hidden until opened.
 		const box = list.createDiv({ cls: 'afm-items' });
 		for (const t of newestFirst(shown)) {
-			transactionItem(box, t, ctx, show(valueOf(t)), t.refunds.filter((r) => here.has(r.id)));
+			transactionItem(box, t, ctx, show(valueOf(t)), t.refunds.filter((r) => here.has(r.t.id)));
 		}
 		expandable(row, icon, [box], `${id}›${key}`, ctx.expanded);
 	}

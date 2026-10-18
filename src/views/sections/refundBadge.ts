@@ -11,10 +11,11 @@ export function refundBadge(parent: HTMLElement, t: Transaction, ctx: DashboardC
 	const day = (x: Transaction) => dayLabel(x.date, s.locale);
 	if (t.refunds.length) {
 		const full = keptOf(t) === 0;
-		const el = parent.createSpan({ cls: `afm-refund-badge${full ? ' is-full' : ''}`, text: full ? 'Refunded' : 'Part refunded' });
-		setTooltip(el, t.refunds.map((r) => `${formatMoney(r.amount, s)} back on ${day(r)}`).join('\n') + (full ? '' : `\n${formatMoney(keptOf(t), s)} still spent`));
+		const word = t.refunds.every((r) => r.t.person) ? 'paid back' : 'refunded'; // all from people: "Part paid back"
+		const el = parent.createSpan({ cls: `afm-refund-badge${full ? ' is-full' : ''}`, text: full ? word[0].toUpperCase() + word.slice(1) : `Part ${word}` });
+		setTooltip(el, t.refunds.map((r) => `${formatMoney(r.amount, s)} back${r.t.person ? ` from ${r.t.person}` : ''} on ${day(r.t)}`).join('\n') + (full ? '' : `\n${formatMoney(keptOf(t), s)} still spent`));
 	} else if (t.refundOf) {
-		const el = parent.createSpan({ cls: 'afm-refund-badge', text: 'Refund' });
+		const el = parent.createSpan({ cls: 'afm-refund-badge', text: t.person ? `For ${t.refundOf.counterparty || t.refundOf.description}` : 'Refund' });
 		setTooltip(el, `Of ${t.refundOf.description}, ${day(t.refundOf)}, ${formatMoney(-t.refundOf.amount, s)}`);
 	}
 }

@@ -29,10 +29,15 @@ export interface Transaction {
 	otherAccount: string; // transfers: the other account if set by hand, '' = find it
 	foundAccount: string; // transfers: the other account used (by hand or found), '' = not a transfer
 	partner: Transaction | null; // transfers: the matching row in the other account
-	refundOf: Transaction | null; // money back: the purchase it refunds (see linkRefunds)
-	refunds: Transaction[];       // purchases: the refunds found for it
+	refundOf: Transaction | null; // money back: the (first) purchase it gives back for (see linkRefunds)
+	refunds: RefundPart[];        // purchases: money back for it, from the shop or from a person
+	givenBack: number;            // money back: how much of it goes to purchases (positive), 0 = none
+	spendMonth: string;           // the month it counts in: money back in its purchase's month, else its own
 	debt: Debt | null;            // its entry in what you owe a person, when marked as a debt
 }
+
+// Money back for a purchase: the row it came in on and how much of it goes to this purchase (positive).
+export interface RefundPart { t: Transaction; amount: number }
 
 // Newest first, fully refunded purchases last. Rows on the same day: latest in the statement first.
 export function newestFirst(rows: Transaction[]): Transaction[] {

@@ -21,10 +21,12 @@ export function rowKind(t: Transaction, s: FinanceSettings): RowKind {
 	return t.kind === 'spending' ? 'refund' : 'skip'; // uncategorised money in isn't counted
 }
 
-// How much a row adds to spending (refunds give a negative number).
+// How much a row adds to spending (refunds give a negative number). A payment linked to purchases only takes off the
+// part linked (the rest of Mum's £100 isn't spending). Counted in t.spendMonth.
 export function spendOf(t: Transaction, s: FinanceSettings): number {
 	const kind = rowKind(t, s);
-	return kind === 'spend' || kind === 'refund' ? -t.amount : 0;
+	if (kind === 'refund') return -(t.refundOf ? t.givenBack : t.amount);
+	return kind === 'spend' ? -t.amount : 0;
 }
 
 // How much a row adds to income.

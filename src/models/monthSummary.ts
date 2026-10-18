@@ -11,9 +11,9 @@ export interface MonthSummary {
 	otherCurrency: number;  // rows skipped for being in another currency
 }
 
-// Adds up one month's rows.
+// Adds up one month's rows (money back in its purchase's month).
 export function monthSummary(rows: Transaction[], month: string, s: FinanceSettings): MonthSummary {
-	const inMonth = rows.filter((t) => t.month === month);
+	const inMonth = rows.filter((t) => t.spendMonth === month);
 	const income = sum(inMonth.map((t) => incomeOf(t, s)));
 	const spending = sum(inMonth.map((t) => spendOf(t, s)));
 	const count = inMonth.filter((t) => incomeOf(t, s) !== 0 || spendOf(t, s) !== 0).length;

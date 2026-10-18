@@ -8,3 +8,9 @@ export function categoryLook(name: string, labels: Labels): { color: string; ico
 	if (!c) return { color: colorCss('gray'), icon: 'circle-help' };
 	return { color: colorCss(c.color), icon: c.icon };
 }
+
+// A person's colour (CSS): their own, else their People category's.
+export function personColor(name: string, labels: Labels): string {
+	const p = labels.people.find((x) => x.name === name);
+	return p?.color ? colorCss(p.color) : categoryLook(p?.category ?? '', labels).color;
+}

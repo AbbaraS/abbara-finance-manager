@@ -36,7 +36,7 @@ export function subscriptionSummaries(rows: Transaction[], labels: Labels, month
 			rows: [...mine].reverse(),
 			price: sub.amount ?? (latest ? -latest.amount : 0),
 			total: -mine.reduce((a, t) => a + t.amount, 0),
-			month: -mine.filter((t) => t.month === month).reduce((a, t) => a + t.amount, 0),
+			month: -mine.filter((t) => t.spendMonth === month).reduce((a, t) => a + t.amount, 0),
 			paid,
 			ended,
 			last: latest?.date ?? '',
@@ -70,7 +70,7 @@ export function looseSubscriptions(rows: Transaction[], month: string, s: Financ
 		rows: [...list].reverse(),
 		paid: list.filter((t) => t.amount < 0).length,
 		total: -list.reduce((a, t) => a + t.amount, 0),
-		month: -list.filter((t) => t.month === month).reduce((a, t) => a + t.amount, 0),
+		month: -list.filter((t) => t.spendMonth === month).reduce((a, t) => a + t.amount, 0),
 	})).sort((a, b) => b.total - a.total);
 }
 

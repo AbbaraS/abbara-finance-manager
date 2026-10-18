@@ -1,7 +1,6 @@
 import { App, Modal, Notice, Setting } from 'obsidian';
 import type FinancePlugin from '../main';
 import { applyCategory } from '../models/applyCategory';
-import { setLabel } from '../models/Labels';
 import { KEEP_COUNTERPARTY, KEEP_SUBSCRIPTION, NEW_SUBSCRIPTION, type CategoryChoice } from '../models/CategoryChoice';
 import { findCounterparty } from '../models/counterparties';
 import { cleanPatterns } from '../models/counterpartyMatches';
@@ -69,7 +68,7 @@ export class CategoryModal extends Modal {
 		el.addClass('afm-modal');
 		const redraw = () => this.draw();
 
-		pickedSummary(el, this.picked, this.plugin.settings, this.plugin.db.labels, this.rows, (r, p, unlink) => this.relink(r, p, unlink));
+		pickedSummary(this.app, el, this.picked, this.plugin.settings, this.plugin.db.labels, this.rows, (make, notice) => this.changeLinks(make, notice));
 		categoryField(el, this.choice, this.plugin.db.labels, redraw);
 		detailsFields(this.app, el, this.choice, this.plugin.db.labels, this.rows, this.picked, this.plugin.settings, redraw);
 		similarFields(el, this.choice, this.plugin.db.labels, this.picked, this.rows, redraw);
@@ -80,16 +79,16 @@ export class CategoryModal extends Modal {
 			.addButton((b) => b.setButtonText('Save').setCta().onClick(() => this.save()));
 	}
 
-	// Unlinks a refund from a purchase (or links them again), saves straight away and redraws with the new links.
-	private relink(refund: string, purchase: string, unlink: boolean) {
-		const labels = this.plugin.db.labels;
-		const now = labels.transactions[refund]?.notRefundOf ?? [];
-		setLabel(labels, refund, { notRefundOf: unlink ? [...new Set([...now, purchase])] : now.filter((id) => id !== purchase) });
+	// Changes money back links (`make`), saves straight away and redraws with the new links and category.
+	private changeLinks(make: () => void, notice: string) {
+		make();
 		void this.plugin.save().then(() => {
 			this.rows = this.plugin.db.rows;
 			const byId = new Map(this.rows.map((t) => [t.id, t]));
 			this.picked = this.picked.map((t) => byId.get(t.id) ?? t);
-			new Notice(unlink ? 'Unlinked: no longer counted as its refund.' : 'Linked again where it still fits.');
+			const first = this.picked[0];
+			Object.assign(this.choice, { category: first.category === UNCATEGORISED ? '' : first.category, subcategory: first.subcategory, person: first.person });
+			new Notice(notice);
 			this.draw();
 		});
 	}

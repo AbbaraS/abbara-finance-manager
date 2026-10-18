@@ -10,13 +10,14 @@ export interface DayPoint {
 	running: number; // net from day 1 to this day
 }
 
-// Running net for each day, up to the last day that has data.
+// Running net for each day, up to the last day that has data. Money back from a later month counts on its purchase's day.
 export function dailyRunning(rows: Transaction[], month: string, s: FinanceSettings): DayPoint[] {
 	const byDay = new Map<number, number>();
 	for (const t of rows) {
-		if (t.month !== month) continue;
+		if (t.spendMonth !== month) continue;
 		const net = incomeOf(t, s) - spendOf(t, s);
-		if (net !== 0) byDay.set(t.day, (byDay.get(t.day) ?? 0) + net);
+		const day = t.month === month ? t.day : t.refundOf?.day ?? t.day;
+		if (net !== 0) byDay.set(day, (byDay.get(day) ?? 0) + net);
 	}
 	if (byDay.size === 0) return [];
 

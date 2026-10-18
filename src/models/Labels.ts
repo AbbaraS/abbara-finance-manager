@@ -15,7 +15,11 @@ export interface Label {
 	other?: string;        // transfers: the other account, set by hand
 	counterparty?: string; // picked by hand; empty = found by patterns
 	notRefundOf?: string[]; // money in: ids of purchases it was unlinked from, so it isn't paired with them again
+	backFor?: BackLink[];   // money in: purchases you linked it to (Mum paying you back for sandals)
 }
+
+// One purchase a payment pays back, and how much of the payment goes to it (positive).
+export interface BackLink { purchase: string; amount: number }
 
 // One of your accounts, in your order. Ones with statements come from myFinances; add others so transfers to them have a home.
 export interface Account {

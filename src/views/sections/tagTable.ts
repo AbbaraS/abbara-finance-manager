@@ -15,7 +15,7 @@ import { transactionRows } from './transactionRows';
 export function tagTable(body: HTMLElement, ctx: DashboardContext): void {
 	// Data.
 	const s = ctx.settings;
-	const spent = ctx.rows.filter((t) => t.month === ctx.month && ['spend', 'refund'].includes(rowKind(t, s)));
+	const spent = ctx.rows.filter((t) => t.spendMonth === ctx.month && ['spend', 'refund'].includes(rowKind(t, s)));
 	const all = sum(spent.map((t) => spendOf(t, s)));
 	const tags = new Map<string, Transaction[]>();
 	for (const t of spent) for (const tag of new Set([...t.tags, ...t.autoTags])) tags.set(tag, [...(tags.get(tag) ?? []), t]);

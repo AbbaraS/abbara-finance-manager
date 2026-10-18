@@ -10,7 +10,7 @@ import { run, sql } from './sqlite';
 import { fillIds, labelStatements, readTables, readVersion, type TransferLink } from './tables';
 
 // Database version this plugin understands (PRAGMA user_version, set by myFinances db.py).
-export const DB_VERSION = 1;
+export const DB_VERSION = 2;
 
 // Your finance database (data/finance.db in myFinances). Python fills the statements and works out every row
 // (build.py); here you edit your lists and decisions. After each save the rules run again (build.py --rules).

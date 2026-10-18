@@ -906,6 +906,28 @@ button.afm-sub-chip:hover { color: var(--text-normal); }
 }
 .afm-debt-chip.is-paid { color: color-mix(in srgb, var(--afm-c-green) 75%, var(--text-normal)); background: color-mix(in srgb, var(--afm-c-green) 14%, transparent); }
 .afm-view button.afm-add-debt { margin-top: var(--size-4-2); }
+.afm-debt-label { font-size: var(--font-ui-smaller); font-weight: var(--font-normal); color: var(--text-muted); }
+.afm-view button.afm-link-button {
+	align-self: flex-start;
+	height: auto;
+	margin-top: var(--size-4-1);
+	padding: 0;
+	background: none;
+	box-shadow: none;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+.afm-view button.afm-link-button:hover { color: var(--text-normal); text-decoration: underline; }
+.afm-grid-foot .afm-link-button { display: block; }
+
+/* People: money linked to your purchases, shown but not counted as received. */
+.afm-paid-back { opacity: 0.7; }
+.afm-paid-back-note { padding: 2px 8px 0 22px; font-size: var(--font-ui-smaller); color: var(--text-faint); }
+
+/* Edit window: amount of a payment that goes to a purchase, and linking one. */
+.afm-refund-link input.afm-link-amount { width: 6.5em; text-align: right; font-variant-numeric: tabular-nums; }
+.afm-refund-links button.afm-link-purchase { align-self: flex-start; margin-top: var(--size-4-1); }
 
 /* Transfer links (dev): accounts in their own colours (--afm-acc), one box per account the money went into. */
 .afm-tl-bar { display: flex; gap: 2px; height: 10px; margin: var(--size-4-2) 0 var(--size-4-1); border-radius: var(--radius-s); overflow: hidden; }

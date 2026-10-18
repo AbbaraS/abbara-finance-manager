@@ -1,4 +1,5 @@
 import { Notice, Setting } from 'obsidian';
+import { COLOR_NAMES } from '../../models/colors';
 import { cleanPatterns } from '../../models/counterpartyMatches';
 import { deletePerson, movePerson, renamePerson } from '../../models/people';
 import { countLabel } from '../../utils/countLabel';
@@ -6,13 +7,13 @@ import { confirmDelete } from '../confirmDelete';
 import type { SettingsContext } from '../context';
 import { subcategoryList } from './subcategoryList';
 
-// People under your People categories: rename, move, spellings, delete, and each person's own subcategories.
+// People under your People categories: rename, colour, move, spellings, delete, and each person's own subcategories.
 export function peopleSection(el: HTMLElement, ctx: SettingsContext): void {
 	const labels = ctx.plugin.db.labels;
 	const homes = labels.categories.filter((c) => c.kind === 'people').map((c) => c.name);
 	new Setting(el)
 		.setName('People')
-		.setDesc('Each person is found by their spellings, one per line (checked before recipients), and has their own subcategories, e.g. Mum: Allowance. New people and spellings can also be added from the edit window.')
+		.setDesc('Each person has a colour for their People and Debts cards and is found by their spellings, one per line (checked before recipients), and has their own subcategories, e.g. Mum: Allowance. New people and spellings can also be added from the edit window.')
 		.setHeading();
 	if (homes.length === 0) return void el.createDiv({ cls: 'afm-note', text: 'Make a category of the People kind first.' });
 
@@ -29,6 +30,11 @@ export function peopleSection(el: HTMLElement, ctx: SettingsContext): void {
 					renamePerson(labels, p.name, to);
 					ctx.saveAndRedraw();
 				});
+			})
+			.addDropdown((d) => {
+				d.addOption('', 'Colour: category');
+				for (const c of COLOR_NAMES) d.addOption(c, c[0].toUpperCase() + c.slice(1));
+				d.setValue(p.color ?? '').onChange((v) => { p.color = v; ctx.save(); });
 			})
 			.addDropdown((d) => {
 				for (const h of homes) d.addOption(h, h);

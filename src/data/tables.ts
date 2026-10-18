@@ -39,7 +39,7 @@ interface SubscriptionRow {
 }
 interface OverrideRow { id: string; category: string | null; sub: string | null; person: string | null; recipient: string | null; account: string | null }
 interface DebtRow { id: number; person: string; date: string; amount: number; note: string; reason: string; transaction_id: string | null }
-type Pair = { a: string; b: string; status?: string };
+type Pair = { a: string; b: string; status?: string; amount?: number | null };
 type Named = { name: string; owner: string };
 
 // Result.why -> where the category came from, in the plugin's words.
@@ -71,7 +71,7 @@ export async function readTables(file: string): Promise<Tables> {
 			LEFT JOIN Override ov ON ov.transaction_id = t.id LEFT JOIN Account ho ON ho.id = ov.account_id
 			ORDER BY t.date, t.rowid`), // statement order within a day
 		get<CategoryRow>('SELECT c.id, c.name, c.kind, c.color, c.icon, p.name AS parent FROM Category c LEFT JOIN Category p ON p.id = c.parent_id ORDER BY c.position, c.id'),
-		get<NamedRow>('SELECT id, name FROM Person ORDER BY name'),
+		get<NamedRow & { color: string }>('SELECT id, name, color FROM Person ORDER BY name'),
 		get<AccountRow>('SELECT id, name, color, icon FROM Account ORDER BY position, id'),
 		get<RecipientRow>(`SELECT r.id, r.name, ${CATEGORY('c', 'p')} FROM Recipient r LEFT JOIN Category c ON c.id = r.category_id LEFT JOIN Category p ON p.id = c.parent_id ORDER BY r.name`),
 		get<PatternRow & { kind: string }>(`SELECT p.text, COALESCE(p.recipient_id, p.person_id, p.account_id, p.subscription_id) AS owner,
@@ -84,7 +84,7 @@ export async function readTables(file: string): Promise<Tables> {
 		get<Named>('SELECT tg.name, tt.transaction_id AS owner FROM TransactionTag tt JOIN Tag tg ON tg.id = tt.tag_id'),
 		get<DebtRow>('SELECT d.id, pe.name AS person, d.date, d.amount, d.note, d.reason, d.transaction_id FROM Debt d JOIN Person pe ON pe.id = d.person_id ORDER BY d.date, d.id'),
 		get<Pair>('SELECT out_id AS a, in_id AS b, status FROM Transfer'),
-		get<Pair>('SELECT purchase_id AS a, refund_id AS b, status FROM Refund'),
+		get<Pair>('SELECT purchase_id AS a, refund_id AS b, status, amount FROM Refund'),
 		get<OverrideRow>(`SELECT ov.transaction_id AS id, ${CATEGORY('c', 'p')}, pe.name AS person, r.name AS recipient, a.name AS account
 			FROM Override ov LEFT JOIN Category c ON c.id = ov.category_id LEFT JOIN Category p ON p.id = c.parent_id
 			LEFT JOIN Person pe ON pe.id = ov.person_id LEFT JOIN Recipient r ON r.id = ov.recipient_id LEFT JOIN Account a ON a.id = ov.account_id`),
@@ -97,12 +97,13 @@ export async function readTables(file: string): Promise<Tables> {
 	for (const t of handTags) setLabel(labels, t.owner, { tags: [...(labels.transactions[t.owner]?.tags ?? []), t.name] });
 	for (const p of picks) setLabel(labels, p.id, { subscription: p.status === 'rejected' ? NO_SUBSCRIPTION : p.name });
 	for (const r of refunds) if (r.status === 'rejected') setLabel(labels, r.b, { notRefundOf: [...(labels.transactions[r.b]?.notRefundOf ?? []), r.a] });
+	for (const r of refunds) if (r.status === 'confirmed') setLabel(labels, r.b, { backFor: [...(labels.transactions[r.b]?.backFor ?? []), { purchase: r.a, amount: r.amount ?? 0 }] });
 	const { rows, links } = toRows(trans, labels, autoTags, transfers, refunds);
 	return { labels, rows, links };
 }
 
 // Your lists, from their tables.
-function toLabels(categories: CategoryRow[], people: NamedRow[], accounts: AccountRow[], recipients: RecipientRow[], patterns: (PatternRow & { kind: string })[],
+function toLabels(categories: CategoryRow[], people: (NamedRow & { color: string })[], accounts: AccountRow[], recipients: RecipientRow[], patterns: (PatternRow & { kind: string })[],
 	subscriptions: SubscriptionRow[], autoTags: Named[], debts: DebtRow[]): Labels {
 	const of = (kind: string, id: number) => patterns.filter((p) => p.kind === kind && p.owner === id);
 	const tagsOf = (owner: string) => autoTags.filter((t) => t.owner === owner).map((t) => t.name);
@@ -110,7 +111,7 @@ function toLabels(categories: CategoryRow[], people: NamedRow[], accounts: Accou
 	return {
 		categories: categories.filter((c) => !c.parent).map((c) => ({ id: c.id, name: c.name, kind: c.kind ?? 'spending', color: c.color, icon: c.icon })),
 		subcategories: categories.filter((c) => c.parent).map((c) => ({ id: c.id, name: c.name, parent: c.parent ?? '', person: '' })),
-		people: people.map((p) => ({ id: p.id, name: p.name, category: people_, patterns: of('p', p.id).map((x) => x.text) })),
+		people: people.map((p) => ({ id: p.id, name: p.name, category: people_, color: p.color, patterns: of('p', p.id).map((x) => x.text) })),
 		accounts: accounts.map((a) => ({
 			id: a.id, name: a.name, color: a.color, icon: a.icon,
 			patterns: of('a', a.id).map((x) => ({ text: x.text, inAccount: x.account ?? '', direction: x.direction })),
@@ -150,11 +151,11 @@ function toRows(trans: TransRow[], labels: Labels, autoTags: Named[], transfers:
 			counterparty: r.recipient ?? '', amount: r.amount, currency: r.currency,
 			category: r.category ?? UNCATEGORISED, kind, source: SOURCES[r.why ?? 'none'] ?? 'none',
 			subcategory: r.sub || (kind === 'spending' && r.amount > 0 ? REFUND : ''), // money back goes into its category
-			person: kind === 'people' ? r.person ?? '' : '',
+			person: kind === 'people' || r.why === 'refund' ? r.person ?? '' : '', // a payback keeps its person
 			subscription: r.subscription ?? '', payment, note: r.note ?? '',
 			tags, autoTags: [...new Set(auto)].filter((x) => !tags.includes(x)),
 			otherAccount: r.hand_other ?? '', foundAccount: kind === 'transfer' ? r.other ?? '' : '',
-			partner: null, refundOf: null, refunds: [], debt: debts.get(r.id) ?? null,
+			partner: null, refundOf: null, refunds: [], givenBack: 0, spendMonth: monthOf(r.date), debt: debts.get(r.id) ?? null,
 		};
 	});
 
@@ -170,11 +171,17 @@ function toRows(trans: TransRow[], labels: Labels, autoTags: Named[], transfers:
 		into.partner = out;
 	}
 	for (const r of rows) if (r.kind === 'transfer') r.foundAccount ||= r.partner?.account ?? UNKNOWN_ACCOUNT;
-	for (const { a, b, status } of refunds) {
+	// Refunds: the part of each that goes to its purchase (all of it, up to the price, when not set), counted in the
+	// purchase's month and listed under it.
+	for (const { a, b, status, amount } of refunds) {
 		const purchase = byId.get(a), refund = byId.get(b);
 		if (!purchase || !refund || status === 'rejected') continue;
-		refund.refundOf = purchase;
-		purchase.refunds.push(refund);
+		const part = amount ?? Math.min(refund.amount, -purchase.amount);
+		refund.refundOf ??= purchase;
+		refund.givenBack = Math.min(refund.amount, Math.round((refund.givenBack + part) * 100) / 100);
+		refund.spendMonth = refund.refundOf.month;
+		if (refund.category === purchase.category && purchase.subcategory) refund.subcategory = purchase.subcategory;
+		purchase.refunds.push({ t: refund, amount: part });
 	}
 	return { rows, links };
 }
@@ -204,7 +211,7 @@ export function labelStatements(labels: Labels): string[] {
 		// Lists, in your order.
 		...categories.map((c, i) => upsert('Category', c.id, { name: sql(c.name), parent_id: 'NULL', kind: sql(c.kind), color: sql(c.color), icon: sql(c.icon), position: sql(i) })),
 		...subcategories.map((s) => upsert('Category', s.id, { name: sql(s.name), parent_id: topId(s.parent), position: sql(subcategories.filter((x) => x.parent === s.parent).indexOf(s)) })),
-		...people.map((p) => upsert('Person', p.id, { name: sql(p.name) })),
+		...people.map((p) => upsert('Person', p.id, { name: sql(p.name), color: sql(p.color ?? '') })),
 		...accounts.map((a, i) => (a.id ? `UPDATE Account SET name = ${sql(a.name)}, color = ${sql(a.color)}, icon = ${sql(a.icon)}, position = ${i} WHERE id = ${a.id};`
 			: `INSERT OR IGNORE INTO Account (key, name, bank, type, currency, position, color, icon) VALUES (${sql(a.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'))},
 				${sql(a.name)}, '', 'current', 'GBP', ${i}, ${sql(a.color)}, ${sql(a.icon)});`)),
@@ -237,7 +244,7 @@ export function labelStatements(labels: Labels): string[] {
 		// Your decisions on single transactions.
 		'DELETE FROM Override;', 'DELETE FROM Note;', 'DELETE FROM TransactionTag;',
 		`DELETE FROM SubscriptionPayment WHERE status = 'confirmed' OR (status = 'rejected' AND transaction_id NOT IN (${notSubs.map(sql).join(', ')}));`,
-		"DELETE FROM Refund WHERE status = 'rejected';",
+		"DELETE FROM Refund WHERE status <> 'found';",
 		...Object.entries(transactions).flatMap(([id, l]) => [
 			...(l.category || l.person || l.counterparty || l.other ? [`INSERT INTO Override (transaction_id, category_id, person_id, recipient_id, account_id)
 				VALUES (${sql(id)}, ${categoryId(l.category, l.sub)}, ${personId(l.person)}, ${recipientId(l.counterparty)}, ${accountId(l.other)});`] : []),
@@ -247,7 +254,8 @@ export function labelStatements(labels: Labels): string[] {
 			...(l.subscription === NO_SUBSCRIPTION ? [`INSERT INTO SubscriptionPayment VALUES (${sql(id)}, COALESCE((SELECT subscription_id FROM SubscriptionPayment
 				WHERE transaction_id = ${sql(id)}), (SELECT min(id) FROM Subscription)), 'rejected') ON CONFLICT (transaction_id) DO UPDATE SET status = 'rejected';`]
 				: l.subscription ? [`INSERT OR REPLACE INTO SubscriptionPayment VALUES (${sql(id)}, ${subscriptionId(l.subscription)}, 'confirmed');`] : []),
-			...(l.notRefundOf ?? []).map((p) => `INSERT OR REPLACE INTO Refund VALUES (${sql(p)}, ${sql(id)}, 'rejected');`),
+			...(l.notRefundOf ?? []).map((p) => `INSERT OR REPLACE INTO Refund (purchase_id, refund_id, status) VALUES (${sql(p)}, ${sql(id)}, 'rejected');`),
+			...(l.backFor ?? []).map((b) => `INSERT OR REPLACE INTO Refund (purchase_id, refund_id, status, amount) VALUES (${sql(b.purchase)}, ${sql(id)}, 'confirmed', ${sql(b.amount)});`),
 		]),
 	];
 }

@@ -10,14 +10,14 @@ export interface SpendGroup {
 	rows: Transaction[]; // the rows behind it, newest first
 }
 
-// Groups a month's spending by any key, biggest first.
+// Groups a month's spending by any key, biggest first. Money back counts in its purchase's month.
 export function groupSpending(
 	rows: Transaction[], month: string, s: FinanceSettings, keyOf: (t: Transaction) => string,
 ): SpendGroup[] {
 	const groups = new Map<string, Transaction[]>();
 	for (const t of rows) {
 		const kind = rowKind(t, s);
-		if (t.month !== month || (kind !== 'spend' && kind !== 'refund')) continue;
+		if (t.spendMonth !== month || (kind !== 'spend' && kind !== 'refund')) continue;
 		const key = keyOf(t);
 		groups.set(key, [...(groups.get(key) ?? []), t]);
 	}

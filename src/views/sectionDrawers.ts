@@ -5,6 +5,7 @@ import { categoryCards } from './sections/categoryCards';
 import { comparison } from './sections/comparison';
 import { counterpartyTable } from './sections/counterpartyTable';
 import { dailyLine } from './sections/dailyLine';
+import { debtCards } from './sections/debtCards';
 import { moneyInList } from './sections/moneyInList';
 import { monthlyBars } from './sections/monthlyBars';
 import { peopleCards } from './sections/peopleCards';
@@ -23,6 +24,7 @@ export const SECTION_DRAWERS: Record<SectionId, (el: HTMLElement, ctx: Dashboard
 	moneyIn: moneyInList,
 	category: categoryCards,
 	people: peopleCards,
+	debts: debtCards,
 	counterparty: counterpartyTable,
 	tags: tagTable,
 	subscriptions: subscriptionTable,

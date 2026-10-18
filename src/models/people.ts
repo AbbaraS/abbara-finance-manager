@@ -5,6 +5,7 @@ export interface Person {
 	id?: number;      // database id, empty until first saved
 	name: string;
 	category: string; // the People category they're under
+	color?: string;   // named colour or "#hex", '' = the People category's
 	patterns?: string[]; // text in the description that means them, any case; checked before counterparties
 }
 

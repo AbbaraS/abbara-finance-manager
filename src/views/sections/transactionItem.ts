@@ -1,7 +1,7 @@
 import { setTooltip } from 'obsidian';
 import { fullyRefunded, keptOf } from '../../models/linkRefunds';
 import type { FinanceSettings } from '../../models/FinanceSettings';
-import type { Transaction } from '../../models/Transaction';
+import type { RefundPart, Transaction } from '../../models/Transaction';
 import { dayLabel } from '../../utils/dates';
 import { formatChange, formatMoney, formatTidy } from '../../utils/money';
 import type { DashboardContext } from '../DashboardContext';
@@ -13,7 +13,7 @@ import { subscriptionChip } from './subscriptionChip';
 // One transaction inside a card: name and `amount` on top, then date, account, chips, tags and note on one wrapping line.
 // `merged` are its refunds listed in the same card: shown under it instead of as rows of their own.
 // Click it to open the edit window. A fully refunded purchase is one faded line; click it to see its details and an Edit button.
-export function transactionItem(parent: HTMLElement, t: Transaction, ctx: DashboardContext, amount: string, merged: Transaction[] = []): void {
+export function transactionItem(parent: HTMLElement, t: Transaction, ctx: DashboardContext, amount: string, merged: RefundPart[] = []): void {
 	const s = ctx.settings;
 	const faded = fullyRefunded(t);
 	const item = parent.createDiv({ cls: `afm-item${faded ? ' is-refunded' : ''}`, attr: { tabindex: '0', role: 'button' } });
@@ -40,11 +40,11 @@ export function transactionItem(parent: HTMLElement, t: Transaction, ctx: Dashbo
 		note.createSpan({ text: t.note });
 	}
 
-	// Its refunds in this card.
+	// Its refunds in this card: "+£55.00 from Mum · 24 Jun" for a person, "+£17.47 back · 13 Oct" for a shop.
 	for (const r of merged) {
 		const line = details.createDiv({ cls: 'afm-refund-line' });
 		setIconSafe(line.createSpan({ cls: 'afm-note-icon' }), 'undo-2');
-		line.createSpan({ text: `${formatChange(r.amount, s)} back · ${dayLabel(r.date, s.locale)}` });
+		line.createSpan({ text: `${formatChange(r.amount, s)} ${r.t.person ? `from ${r.t.person}` : 'back'} · ${dayLabel(r.t.date, s.locale)}` });
 	}
 
 	// Click: edit, or for a faded one show / hide its details (remembered across redraws).
